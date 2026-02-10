@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CESTIS Budget Lines Manager | Oct–Dec 2025</title>
+<style>
+* {
+    margin:0; padding:0; box-sizing:border-box;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+.container {
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    max-width:900px;
+    width:100%;
+    overflow:hidden;
+}
+.header {
+    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color:#fff;
+    padding:30px;
+    text-align:center;
+}
+.header h1 {
+    font-size:28px;
+    margin-bottom:8px;
+}
+.header p {
+    opacity:0.9;
+    font-size:14px;
+}
+.content {
+    padding:30px;
+}
+.back-link {
+    display:inline-block;
+    color:#667eea;
+    text-decoration:none;
+    margin-bottom:20px;
+    font-weight:500;
+}
+.back-link:hover {
+    text-decoration:underline;
+}
+.form-section {
+    background:#f8f9fa;
+    border-radius:12px;
+    padding:25px;
+    margin-bottom:30px;
+}
+.form-section h2 {
+    font-size:18px;
+    margin-bottom:20px;
+    color:#333;
+}
+.form-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:15px;
+    align-items:end;
+}
+.form-group {
+    display:flex;
+    flex-direction:column;
+}
+.form-group label {
+    font-size:13px;
+    font-weight:600;
+    color:#555;
+    margin-bottom:6px;
+}
+.form-group input {
+    padding:10px 14px;
+    border:2px solid #ddd;
+    border-radius:8px;
+    font-size:14px;
+    transition:border-color 0.2s;
+}
+.form-group input:focus {
+    outline:none;
+    border-color:#667eea;
+}
+.btn {
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.2s;
+}
+.btn-primary {
+    background:#667eea;
+    color:#fff;
+}
+.btn-primary:hover {
+    background:#5568d3;
+    transform:translateY(-1px);
+}
+.btn-danger {
+    background:#dc3545;
+    color:#fff;
+    padding:6px 12px;
+    font-size:12px;
+}
+.btn-danger:hover {
+    background:#c82333;
+}
+.btn-secondary {
+    background:#6c757d;
+    color:#fff;
+    padding:6px 12px;
+    font-size:12px;
+}
+.btn-secondary:hover {
+    background:#5a6268;
+}
+.budget-list {
+    margin-top:20px;
+}
+.budget-item {
+    background:#fff;
+    border:2px solid #e9ecef;
+    border-radius:8px;
+    padding:15px;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    transition:all 0.2s;
+}
+.budget-item:hover {
+    border-color:#667eea;
+    box-shadow:0 2px 8px rgba(102,126,234,0.1);
+}
+.budget-item-info {
+    flex:1;
+}
+.budget-item-name {
+    font-weight:600;
+    font-size:15px;
+    color:#333;
+    margin-bottom:4px;
+}
+.budget-item-amount {
+    font-size:18px;
+    color:#667eea;
+    font-weight:700;
+}
+.budget-item-actions {
+    display:flex;
+    gap:8px;
+}
+.summary-cards {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+.summary-card {
+    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color:#fff;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+}
+.summary-card-label {
+    font-size:13px;
+    opacity:0.9;
+    margin-bottom:8px;
+}
+.summary-card-value {
+    font-size:28px;
+    font-weight:700;
+}
+.empty-state {
+    text-align:center;
+    padding:40px;
+    color:#999;
+}
+.empty-state-icon {
+    font-size:48px;
+    margin-bottom:12px;
+}
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>💰 Budget Lines Manager</h1>
+        <p>CESTIS Cash Book · Oct–Dec 2025</p>
+    </div>
+
+    <div class="content">
+        <a href="index.html" class="back-link">← Back to Dashboard</a>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="summary-card-label">Total Line Items</div>
+                <div class="summary-card-value" id="totalItems">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-card-label">Total Budget</div>
+                <div class="summary-card-value" id="totalBudget">$0</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Add New Budget Line</h2>
+            <form id="budgetForm" onsubmit="addBudgetLine(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="lineName">Line Item Name</label>
+                        <input type="text" id="lineName" placeholder="e.g., Salary Deduction" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lineAmount">Budgeted Amount ($)</label>
+                        <input type="number" id="lineAmount" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">+ Add Line</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>Budget Lines</h2>
+            <div id="budgetList" class="budget-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>No budget lines added yet. Add your first line item above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// DATA MANAGEMENT
+// ============================================================
+let budgetLines = [];
+
+// Load data from localStorage
+function loadData() {
+    const saved = localStorage.getItem('cestis_budget_lines');
+    if (saved) {
+        budgetLines = JSON.parse(saved);
+    }
+    renderBudgetLines();
+    updateSummary();
+}
+
+// Save data to localStorage
+function saveData() {
+    localStorage.setItem('cestis_budget_lines', JSON.stringify(budgetLines));
+}
+
+// ============================================================
+// CRUD OPERATIONS
+// ============================================================
+function addBudgetLine(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('lineName').value.trim();
+    const amount = parseFloat(document.getElementById('lineAmount').value);
+
+    if (!name || amount < 0) {
+        alert('Please provide valid line item details');
+        return;
+    }
+
+    const newLine = {
+        id: Date.now(),
+        name: name,
+        amount: amount,
+        createdAt: new Date().toISOString()
+    };
+
+    budgetLines.push(newLine);
+    saveData();
+    renderBudgetLines();
+    updateSummary();
+
+    // Reset form
+    document.getElementById('budgetForm').reset();
+    document.getElementById('lineName').focus();
+}
+
+function editBudgetLine(id) {
+    const line = budgetLines.find(l => l.id === id);
+    if (!line) return;
+
+    const newName = prompt('Edit Line Item Name:', line.name);
+    if (newName === null) return;
+
+    const newAmount = prompt('Edit Budgeted Amount ($):', line.amount);
+    if (newAmount === null) return;
+
+    const amount = parseFloat(newAmount);
+    if (isNaN(amount) || amount < 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+
+    line.name = newName.trim();
+    line.amount = amount;
+
+    saveData();
+    renderBudgetLines();
+    updateSummary();
+}
+
+function deleteBudgetLine(id) {
+    const line = budgetLines.find(l => l.id === id);
+    if (!line) return;
+
+    if (!confirm(`Are you sure you want to delete "${line.name}"?`)) {
+        return;
+    }
+
+    budgetLines = budgetLines.filter(l => l.id !== id);
+    saveData();
+    renderBudgetLines();
+    updateSummary();
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderBudgetLines() {
+    const listEl = document.getElementById('budgetList');
+
+    if (budgetLines.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>No budget lines added yet. Add your first line item above.</p>
+            </div>
+        `;
+        return;
+    }
+
+    listEl.innerHTML = budgetLines
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(line => `
+            <div class="budget-item">
+                <div class="budget-item-info">
+                    <div class="budget-item-name">${escapeHtml(line.name)}</div>
+                    <div class="budget-item-amount">$${formatNumber(line.amount)}</div>
+                </div>
+                <div class="budget-item-actions">
+                    <button class="btn btn-secondary" onclick="editBudgetLine(${line.id})">✏️ Edit</button>
+                    <button class="btn btn-danger" onclick="deleteBudgetLine(${line.id})">🗑️ Delete</button>
+                </div>
+            </div>
+        `).join('');
+}
+
+function updateSummary() {
+    const totalItems = budgetLines.length;
+    const totalBudget = budgetLines.reduce((sum, line) => sum + line.amount, 0);
+
+    document.getElementById('totalItems').textContent = totalItems;
+    document.getElementById('totalBudget').textContent = '$' + formatNumber(totalBudget);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function formatNumber(num) {
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    document.getElementById('lineName').focus();
+});
+</script>
+</body>
+</html>
