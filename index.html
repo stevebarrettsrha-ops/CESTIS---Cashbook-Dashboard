@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CESTI Cash Book Dashboard | Oct–Dec 2025</title>
+<title>CESTIS Cash Book Dashboard | Oct–Dec 2025</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -255,7 +255,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
-            <h1>💼 CESTI</h1>
+            <h1>💼 CESTIS</h1>
             <p>Cash Book Manager</p>
         </div>
         <div class="nav-section">
@@ -1020,7 +1020,7 @@ function exportCSV() {
     const blob = new Blob([csv], {type:'text/csv'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'CESTI_CashBook_Oct-Dec_2025.csv';
+    a.download = 'CESTIS_CashBook_Oct-Dec_2025.csv';
     a.click();
 }
 
