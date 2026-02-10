@@ -275,6 +275,10 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="nav-item" onclick="showPage('reconciliation')"><span class="icon">🏦</span> Reconciliation</div>
         </div>
         <div class="nav-section">
+            <div class="nav-label">Management</div>
+            <div class="nav-item" onclick="openExternalLink('budgetLines')"><span class="icon">💰</span> Budget Lines</div>
+        </div>
+        <div class="nav-section">
             <div class="nav-label">External Links</div>
             <div class="nav-item" onclick="openExternalLink('staffPayslip')"><span class="icon">💳</span> Staff Payslip</div>
             <div class="nav-item" onclick="openExternalLink('virementRequest')"><span class="icon">📤</span> Virement Request</div>
@@ -542,6 +546,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 // CONFIGURATION: External Links
 // ============================================================
 const EXTERNAL_LINKS = {
+    budgetLines: './budget-lines.html',
     staffPayslip: 'https://stevebarrettsrha-ops.github.io/Staff-Payslip---Dashboard/',
     virementRequest: 'https://stevebarrettsrha-ops.github.io/CESTIS---Virement-Request/'
 };
