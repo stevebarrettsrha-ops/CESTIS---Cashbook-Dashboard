@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CESTI Cash Book Dashboard | Oct–Dec 2025</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+    --bg: #0c0f1a;
+    --surface: #141827;
+    --surface2: #1a1f35;
+    --surface3: #222842;
+    --border: #2a3050;
+    --text: #e8eaf0;
+    --text2: #9ba3bf;
+    --text3: #6a7294;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --purple: #a855f7;
+    --teal: #14b8a6;
+    --pink: #ec4899;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+input, select, button, textarea { font-family: var(--sans); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* Layout */
+.app { display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+
+/* Sidebar */
+.sidebar {
+    background: var(--surface);
+    border-right:1px solid var(--border);
+    padding:1.5rem 0;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+    overflow-y:auto;
+}
+.logo { padding:0 1.25rem 1.5rem; border-bottom:1px solid var(--border); margin-bottom:1rem; }
+.logo h1 { font-size:.85rem; font-weight:700; color:var(--accent2); letter-spacing:1px; text-transform:uppercase; }
+.logo p { font-size:.7rem; color:var(--text3); margin-top:.25rem; }
+.nav-section { padding:0 .75rem; margin-bottom:.5rem; }
+.nav-label { font-size:.6rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px; padding:.5rem .5rem; }
+.nav-item {
+    display:flex; align-items:center; gap:.625rem;
+    padding:.625rem .75rem; border-radius:8px; cursor:pointer;
+    color:var(--text2); font-size:.8125rem; font-weight:500;
+    transition: all .15s;
+}
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:rgba(59,130,246,0.12); color:var(--accent2); }
+.nav-item .icon { font-size:1rem; width:1.25rem; text-align:center; }
+.sidebar-footer { margin-top:auto; padding:1rem 1.25rem; border-top:1px solid var(--border); }
+.sidebar-footer p { font-size:.65rem; color:var(--text3); }
+
+/* Main */
+.main { padding:1.5rem 2rem; overflow-y:auto; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* Header */
+.page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
+.page-header h2 { font-size:1.375rem; font-weight:700; }
+.page-header .subtitle { font-size:.8125rem; color:var(--text3); margin-top:.125rem; }
+.header-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+
+/* Buttons */
+.btn {
+    padding:.5rem 1rem; border:none; border-radius:6px; cursor:pointer;
+    font-size:.8125rem; font-weight:600; display:inline-flex; align-items:center; gap:.375rem;
+    transition:all .15s;
+}
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#2563eb; }
+.btn-success { background:var(--green); color:#fff; }
+.btn-success:hover { background:#16a34a; }
+.btn-danger { background:var(--red); color:#fff; }
+.btn-danger:hover { background:#dc2626; }
+.btn-ghost { background:var(--surface2); color:var(--text2); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--surface3); color:var(--text); }
+.btn-amber { background:var(--amber); color:#000; }
+.btn-sm { padding:.375rem .625rem; font-size:.75rem; }
+
+/* Stats Grid */
+.stats-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.5rem; }
+.stat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.25rem; position:relative; overflow:hidden;
+}
+.stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+}
+.stat-card.blue::before { background:var(--accent); }
+.stat-card.green::before { background:var(--green); }
+.stat-card.red::before { background:var(--red); }
+.stat-card.amber::before { background:var(--amber); }
+.stat-card.purple::before { background:var(--purple); }
+.stat-card .label { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.75px; }
+.stat-card .value { font-size:1.5rem; font-weight:700; font-family:var(--mono); margin:.375rem 0 .125rem; }
+.stat-card .change { font-size:.6875rem; color:var(--text3); }
+.stat-card .value.green-text { color:var(--green); }
+.stat-card .value.red-text { color:var(--red); }
+.stat-card .value.amber-text { color:var(--amber); }
+
+/* Cards */
+.card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.25rem; margin-bottom:1rem;
+}
+.card-title { font-size:.9375rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+.card-title .badge {
+    font-size:.625rem; padding:.125rem .5rem; border-radius:10px; font-weight:600;
+    background:rgba(59,130,246,0.15); color:var(--accent2);
+}
+
+/* Table */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+thead th {
+    background:var(--surface2); color:var(--text2); font-weight:600; font-size:.6875rem;
+    text-transform:uppercase; letter-spacing:.5px; padding:.625rem .75rem;
+    text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:2;
+}
+tbody td {
+    padding:.5rem .75rem; border-bottom:1px solid var(--border);
+    vertical-align:middle;
+}
+tbody tr:hover { background:var(--surface2); }
+tbody tr.cancelled { opacity:.45; text-decoration:line-through; }
+tbody tr.deposit-row { background:var(--green-bg); }
+tbody tr.bank-charge { color:var(--text3); font-style:italic; }
+.amount { font-family:var(--mono); font-weight:500; text-align:right; white-space:nowrap; }
+.amount.positive { color:var(--green); }
+.amount.negative { color:var(--red); }
+.cheque-num { font-family:var(--mono); color:var(--purple); font-weight:500; }
+.tag {
+    display:inline-block; padding:.125rem .5rem; border-radius:4px;
+    font-size:.6875rem; font-weight:600;
+}
+.tag-salary { background:rgba(59,130,246,0.12); color:var(--accent2); }
+.tag-statutory { background:rgba(168,85,247,0.12); color:var(--purple); }
+.tag-admin { background:rgba(245,158,11,0.12); color:var(--amber); }
+.tag-maintenance { background:rgba(236,72,153,0.12); color:var(--pink); }
+.tag-utility { background:rgba(20,184,166,0.12); color:var(--teal); }
+.tag-lunch { background:rgba(34,197,94,0.12); color:var(--green); }
+.tag-bank { background:rgba(107,114,148,0.12); color:var(--text3); }
+.tag-cancelled { background:rgba(239,68,68,0.1); color:var(--red); }
+.tag-travel { background:rgba(251,146,60,0.12); color:#fb923c; }
+.tag-instructor { background:rgba(99,102,241,0.12); color:#818cf8; }
+.tag-subvention { background:rgba(34,197,94,0.15); color:var(--green); }
+
+/* Charts */
+.charts-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:1rem; margin-bottom:1rem; }
+.chart-container { position:relative; height:280px; }
+
+/* Budget Table */
+.budget-row { display:grid; grid-template-columns: 1fr 120px 120px 120px 80px; gap:.5rem; align-items:center; padding:.5rem .75rem; border-bottom:1px solid var(--border); font-size:.8125rem; }
+.budget-row.header { font-weight:700; color:var(--text2); font-size:.6875rem; text-transform:uppercase; letter-spacing:.5px; background:var(--surface2); border-radius:6px 6px 0 0; }
+.budget-row .bar-cell { display:flex; align-items:center; gap:.5rem; }
+.mini-bar { height:6px; border-radius:3px; background:var(--surface3); flex:1; overflow:hidden; }
+.mini-bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+.mini-bar-fill.under { background:var(--green); }
+.mini-bar-fill.over { background:var(--red); }
+.mini-bar-fill.warning { background:var(--amber); }
+
+/* Form */
+.form-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1rem; }
+.form-group { display:flex; flex-direction:column; gap:.25rem; }
+.form-group label { font-size:.75rem; font-weight:600; color:var(--text2); }
+.form-group input, .form-group select, .form-group textarea {
+    padding:.5rem .75rem; background:var(--surface2); border:1px solid var(--border);
+    border-radius:6px; color:var(--text); font-size:.8125rem;
+}
+.form-group input:focus, .form-group select:focus {
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,.15);
+}
+
+/* Modal */
+.modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
+    align-items:center; justify-content:center; padding:1rem;
+}
+.modal-overlay.show { display:flex; }
+.modal {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:1.5rem; max-width:640px; width:100%; max-height:85vh; overflow-y:auto;
+}
+.modal h3 { font-size:1.125rem; margin-bottom:1rem; }
+.modal-actions { display:flex; gap:.5rem; justify-content:flex-end; margin-top:1.25rem; }
+
+/* Financial Summary */
+.fin-summary { display:grid; grid-template-columns:1fr auto 1fr; gap:1rem; align-items:stretch; margin-bottom:1.5rem; }
+.fin-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
+.fin-box h4 { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:.75rem; }
+.fin-line { display:flex; justify-content:space-between; padding:.375rem 0; font-size:.8125rem; border-bottom:1px dashed var(--border); }
+.fin-line:last-child { border-bottom:none; }
+.fin-line.total { font-weight:700; font-size:.9375rem; border-top:2px solid var(--border); border-bottom:none; padding-top:.625rem; margin-top:.375rem; }
+.fin-connector { display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:1.5rem; }
+
+/* Monthly tabs */
+.month-tabs { display:flex; gap:.25rem; margin-bottom:1rem; }
+.month-tab {
+    padding:.5rem 1rem; border-radius:6px; cursor:pointer; font-size:.8125rem; font-weight:600;
+    background:var(--surface2); color:var(--text3); border:1px solid transparent; transition:all .15s;
+}
+.month-tab:hover { color:var(--text); }
+.month-tab.active { background:rgba(59,130,246,0.12); color:var(--accent2); border-color:var(--accent); }
+
+/* Search */
+.search-bar {
+    display:flex; align-items:center; gap:.5rem; background:var(--surface2); border:1px solid var(--border);
+    border-radius:6px; padding:.375rem .75rem; flex:1; max-width:320px;
+}
+.search-bar input { border:none; background:none; color:var(--text); font-size:.8125rem; flex:1; outline:none; }
+
+/* Print */
+@media print {
+    .sidebar, .header-actions, .btn, .nav-item, .search-bar { display:none !important; }
+    .app { grid-template-columns:1fr; }
+    .main { padding:.5rem; }
+    .stat-card, .card { break-inside:avoid; }
+    body { background:#fff; color:#000; }
+    .stat-card, .card { background:#fff; border:1px solid #ccc; }
+}
+
+/* Responsive */
+@media (max-width:900px) {
+    .app { grid-template-columns:1fr; }
+    .sidebar { display:none; }
+    .charts-grid { grid-template-columns:1fr; }
+    .fin-summary { grid-template-columns:1fr; }
+    .fin-connector { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <h1>💼 CESTI</h1>
+            <p>Cash Book Manager</p>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Overview</div>
+            <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+            <div class="nav-item" onclick="showPage('transactions')"><span class="icon">📋</span> Transactions</div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Analysis</div>
+            <div class="nav-item" onclick="showPage('budget')"><span class="icon">📈</span> Budget vs Actual</div>
+            <div class="nav-item" onclick="showPage('categories')"><span class="icon">🏷️</span> Categories</div>
+            <div class="nav-item" onclick="showPage('monthly')"><span class="icon">📅</span> Monthly View</div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Reporting</div>
+            <div class="nav-item" onclick="showPage('financial')"><span class="icon">📄</span> Financial Data Form</div>
+            <div class="nav-item" onclick="showPage('reconciliation')"><span class="icon">🏦</span> Reconciliation</div>
+        </div>
+        <div class="sidebar-footer">
+            <p>HEART/NSTA Trust · CTI</p>
+            <p>Oct–Dec 2025 Quarter</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- ====== DASHBOARD ====== -->
+        <div id="page-dashboard" class="page active">
+            <div class="page-header">
+                <div>
+                    <h2>Cash Book Dashboard</h2>
+                    <div class="subtitle">Hazard STC · Subvention Period: Oct–Dec 2025</div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+                    <button class="btn btn-primary" onclick="window.print()">🖨 Print</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="label">Total Budget</div>
+                    <div class="value" id="dash-budget">$0</div>
+                    <div class="change">Approved subvention + B/F</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Deposits</div>
+                    <div class="value green-text" id="dash-deposits">$0</div>
+                    <div class="change">Subvention received</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="label">Total Expenditure</div>
+                    <div class="value red-text" id="dash-spent">$0</div>
+                    <div class="change" id="dash-txn-count">0 transactions</div>
+                </div>
+                <div class="stat-card amber">
+                    <div class="label">Closing Balance</div>
+                    <div class="value amber-text" id="dash-balance">$0</div>
+                    <div class="change">Cash book balance</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Budget Utilization</div>
+                    <div class="value" id="dash-util">0%</div>
+                    <div class="change">Spent of available</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-title">📊 Expenditure by Category</div>
+                    <div class="chart-container"><canvas id="chartCategory"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📅 Monthly Expenditure Trend</div>
+                    <div class="chart-container"><canvas id="chartMonthly"></canvas></div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-title">💰 Running Balance Over Time</div>
+                    <div class="chart-container"><canvas id="chartBalance"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🎯 Budget vs Actual (Top 10)</div>
+                    <div class="chart-container"><canvas id="chartBudgetVsActual"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TRANSACTIONS ====== -->
+        <div id="page-transactions" class="page">
+            <div class="page-header">
+                <div>
+                    <h2>All Transactions</h2>
+                    <div class="subtitle">Complete cash book ledger</div>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <span>🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search transactions..." oninput="filterTransactions()">
+                    </div>
+                    <button class="btn btn-success" onclick="openAddModal()">+ Add Entry</button>
+                    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+                </div>
+            </div>
+
+            <div class="month-tabs">
+                <div class="month-tab active" onclick="filterMonth('all', this)">All</div>
+                <div class="month-tab" onclick="filterMonth('oct', this)">October</div>
+                <div class="month-tab" onclick="filterMonth('nov', this)">November</div>
+                <div class="month-tab" onclick="filterMonth('dec', this)">December</div>
+            </div>
+
+            <div class="card" style="padding:0;">
+                <div class="table-wrap" style="max-height:65vh; overflow-y:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:80px;">Date</th>
+                                <th style="width:80px;">Cheque #</th>
+                                <th>Details</th>
+                                <th>Category</th>
+                                <th style="width:110px;">Deposit</th>
+                                <th style="width:110px;">Payment</th>
+                                <th style="width:120px;">Balance</th>
+                                <th style="width:50px;" class="no-print">Act</th>
+                            </tr>
+                        </thead>
+                        <tbody id="txnBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== BUDGET VS ACTUAL ====== -->
+        <div id="page-budget" class="page">
+            <div class="page-header">
+                <div><h2>Budget vs Actual</h2><div class="subtitle">Line item comparison</div></div>
+            </div>
+            <div class="card" id="budgetCard"></div>
+        </div>
+
+        <!-- ====== CATEGORIES ====== -->
+        <div id="page-categories" class="page">
+            <div class="page-header">
+                <div><h2>Category Breakdown</h2><div class="subtitle">Expenditure analysis by category</div></div>
+            </div>
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-title">Category Distribution</div>
+                    <div class="chart-container"><canvas id="chartCatPie"></canvas></div>
+                </div>
+                <div class="card" id="catTable"></div>
+            </div>
+        </div>
+
+        <!-- ====== MONTHLY VIEW ====== -->
+        <div id="page-monthly" class="page">
+            <div class="page-header">
+                <div><h2>Monthly Analysis</h2><div class="subtitle">Month-by-month breakdown</div></div>
+            </div>
+            <div class="stats-grid" id="monthlyStats"></div>
+            <div class="card" id="monthlyDetail"></div>
+        </div>
+
+        <!-- ====== FINANCIAL DATA FORM ====== -->
+        <div id="page-financial" class="page">
+            <div class="page-header">
+                <div><h2>Financial Data Collection Form</h2><div class="subtitle">HEART/NSTA Trust · CTI</div></div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="window.print()">🖨 Print Form</button>
+                </div>
+            </div>
+
+            <div class="fin-summary">
+                <div class="fin-box">
+                    <h4>Subvention Summary</h4>
+                    <div class="fin-line"><span>Opening Balance</span><span class="amount" id="fin-opening">$0</span></div>
+                    <div class="fin-line"><span>Subvention Received</span><span class="amount positive" id="fin-subvention">$0</span></div>
+                    <div class="fin-line"><span>Other Deposits</span><span class="amount">$0.00</span></div>
+                    <div class="fin-line total"><span>Total Available</span><span class="amount" id="fin-total">$0</span></div>
+                </div>
+                <div class="fin-connector">→</div>
+                <div class="fin-box">
+                    <h4>Expenditure Summary</h4>
+                    <div class="fin-line"><span>Amount Spent</span><span class="amount negative" id="fin-spent">$0</span></div>
+                    <div class="fin-line"><span>Bank Charges</span><span class="amount negative" id="fin-bank">$0</span></div>
+                    <div class="fin-line total"><span>Closing Balance</span><span class="amount" id="fin-closing">$0</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📝 Items of Recipient Expenses <span class="badge">Funded by HEART Subvention</span></div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Item</th><th style="width:140px;">Expenses ($)</th></tr></thead>
+                        <tbody id="finItemsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== RECONCILIATION ====== -->
+        <div id="page-reconciliation" class="page">
+            <div class="page-header">
+                <div><h2>Bank Reconciliation</h2><div class="subtitle">Cash book vs bank statement</div></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🏦 Quick Reconciliation View</div>
+                <div class="form-grid" style="margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label>Bank Statement Balance</label>
+                        <input type="number" id="recon-bank" step="0.01" oninput="calcRecon()" placeholder="Enter bank balance">
+                    </div>
+                    <div class="form-group">
+                        <label>Cash Book Balance</label>
+                        <input type="number" id="recon-cashbook" step="0.01" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Difference</label>
+                        <input type="text" id="recon-diff" readonly style="font-weight:700;">
+                    </div>
+                </div>
+                <p style="font-size:.8125rem; color:var(--text3);">Enter the bank statement closing balance to see any reconciling items. Outstanding cheques and deposits in transit should explain any difference.</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔖 Cheque Register Summary</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Cheque #</th><th>Date</th><th>Payee</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody id="chequeRegBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <h3 id="modalTitle">Add Transaction</h3>
+        <div class="form-grid">
+            <div class="form-group"><label>Date</label><input type="date" id="m-date"></div>
+            <div class="form-group"><label>Cheque #</label><input type="text" id="m-cheque" placeholder="e.g. 1000148"></div>
+            <div class="form-group" style="grid-column:1/-1;"><label>Details</label><input type="text" id="m-details" placeholder="Description"></div>
+            <div class="form-group"><label>Deposit ($)</label><input type="number" id="m-deposit" step="0.01" placeholder="0.00"></div>
+            <div class="form-group"><label>Payment ($)</label><input type="number" id="m-payment" step="0.01" placeholder="0.00"></div>
+            <div class="form-group"><label>Category</label>
+                <select id="m-category">
+                    <option value="Coordinator Salary">Coordinator Salary</option>
+                    <option value="Asst. Coordinator">Asst. Coordinator</option>
+                    <option value="Instructor Pay">Instructor Pay</option>
+                    <option value="Statutory Deductions">Statutory Deductions</option>
+                    <option value="Admin Expenses">Admin Expenses</option>
+                    <option value="Training Material">Training Material</option>
+                    <option value="Assessor Fees">Assessor Fees</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Travelling">Travelling</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Bank Charges">Bank Charges</option>
+                    <option value="Subvention">Subvention</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-success" onclick="saveTransaction()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// DATA: Pre-loaded from the Excel Cash Book Oct-Dec 2025
+// ============================================================
+const BUDGET = {
+    'Coordinator Salary':345394.95, 'Asst. Coordinator':234000, 'Statutory Deductions':457490.66,
+    'Admin Expenses':150000, 'Training Material':150000, 'Assessor Fees':250000,
+    'Utilities':150000, 'Maintenance':150000,
+    'Welding L3 Instructor':308091.99, 'Electrical L3 Instructor':308091.99,
+    'Welding Instructor':287829.27, 'BT Instructor':287829.27, 'Electrical Instructor':287829.27,
+    'BNV Welding Instructor':287829.27, 'BNV Electrical Instructor':287829.27,
+    'Data Instructor':193800, 'Remedial English':193800, 'Personal Dev':0,
+    'Entrep Instructor':193800, 'Math Instructor':193800,
+    'Bank Charges':30000, 'Travelling':0, 'Lunch':0
+};
+
+const OPENING_BALANCE = 237948.69;
+const SUBVENTION = 4509467.25;
+
+let transactions = [
+    {id:1,date:'2025-10-06',cheque:'1000102',details:'Nakia Sterling (Ink Cartridge)',deposit:0,payment:120000,category:'Admin Expenses'},
+    {id:2,date:'2025-10-16',cheque:'1000103',details:'Rohan Hamilton (Lunch Register)',deposit:0,payment:100000,category:'Lunch'},
+    {id:3,date:'2025-10-25',cheque:'',details:'SUBVENTION',deposit:4509467.25,payment:0,category:'Subvention'},
+    {id:4,date:'2025-10-25',cheque:'1000104',details:'Rohan Hamilton - Salary October',deposit:0,payment:89051.98,category:'Welding Instructor'},
+    {id:5,date:'2025-10-25',cheque:'1000105',details:'Kevin Allen - Salary October',deposit:0,payment:89051.98,category:'BNV Welding Instructor'},
+    {id:6,date:'2025-10-25',cheque:'1000106',details:'Peter Williams - Salary October',deposit:0,payment:89051.98,category:'Electrical Instructor'},
+    {id:7,date:'2025-10-25',cheque:'1000107',details:'Melvin Barnes - Salary October',deposit:0,payment:89051.98,category:'BNV Electrical Instructor'},
+    {id:8,date:'2025-10-25',cheque:'1000108',details:'Fontanette Whittingham - Salary October',deposit:0,payment:89051.98,category:'BT Instructor'},
+    {id:9,date:'2025-10-25',cheque:'1000109',details:'Steve Barrett - Salary October',deposit:0,payment:106862.32,category:'Coordinator Salary'},
+    {id:10,date:'2025-10-25',cheque:'1000110',details:'Rashaun Barrett - Salary October',deposit:0,payment:72397.65,category:'Asst. Coordinator'},
+    {id:11,date:'2025-10-25',cheque:'',details:'BANK CHARGES',deposit:0,payment:1017.27,category:'Bank Charges'},
+    {id:12,date:'2025-11-03',cheque:'1000111',details:'Markrys Enterprise Ltd.',deposit:0,payment:44898.30,category:'Admin Expenses'},
+    {id:13,date:'2025-11-03',cheque:'1000112',details:'Rohan Hamilton (Travelling)',deposit:0,payment:21117.60,category:'Travelling'},
+    {id:14,date:'2025-11-03',cheque:'1000113',details:'Dermain Jarrett (Maintenance)',deposit:0,payment:375000,category:'Maintenance'},
+    {id:15,date:'2025-11-03',cheque:'1000114',details:'Nakia Sterling (Ink Cartridge - Colored & Maintenance)',deposit:0,payment:350000,category:'Admin Expenses'},
+    {id:16,date:'2025-11-11',cheque:'1000115',details:'Rohan Hamilton (Lunch Register)',deposit:0,payment:400000,category:'Lunch'},
+    {id:17,date:'2025-11-11',cheque:'1000116',details:'Tenesha Patterson (Communication Instructor)',deposit:0,payment:34477.06,category:'Remedial English'},
+    {id:18,date:'2025-11-11',cheque:'1000117',details:'National Water Commission',deposit:0,payment:21792.91,category:'Utilities'},
+    {id:19,date:'2025-11-11',cheque:'1000118',details:'Columbus Communication Ja Ltd.',deposit:0,payment:15981.44,category:'Utilities'},
+    {id:20,date:'2025-11-11',cheque:'1000119',details:'Cancelled Cheque',deposit:0,payment:0,category:'Cancelled'},
+    {id:21,date:'2025-11-11',cheque:'1000120',details:'Cancelled Cheque',deposit:0,payment:0,category:'Cancelled'},
+    {id:22,date:'2025-11-17',cheque:'1000121',details:'Nakia Sterling (Maintenance)',deposit:0,payment:80000,category:'Maintenance'},
+    {id:23,date:'2025-11-25',cheque:'1000122',details:'Steve Barrett - Salary November',deposit:0,payment:106862.32,category:'Coordinator Salary'},
+    {id:24,date:'2025-11-25',cheque:'1000123',details:'Rashaun Barrett - Salary November',deposit:0,payment:72397.65,category:'Asst. Coordinator'},
+    {id:25,date:'2025-11-25',cheque:'1000124',details:'Rohan Hamilton - Salary November',deposit:0,payment:89051.98,category:'Welding Instructor'},
+    {id:26,date:'2025-11-25',cheque:'1000125',details:'Kevin Allen - Salary November',deposit:0,payment:89051.98,category:'BNV Welding Instructor'},
+    {id:27,date:'2025-11-25',cheque:'1000126',details:'Peter Williams - Salary November',deposit:0,payment:89051.98,category:'Electrical Instructor'},
+    {id:28,date:'2025-11-25',cheque:'1000127',details:'Melvin Barnes - Salary November',deposit:0,payment:89051.98,category:'BNV Electrical Instructor'},
+    {id:29,date:'2025-11-25',cheque:'1000128',details:'Cancelled Cheque',deposit:0,payment:0,category:'Cancelled'},
+    {id:30,date:'2025-11-25',cheque:'1000129',details:'Fontanette Whittingham - Salary November',deposit:0,payment:89051.98,category:'BT Instructor'},
+    {id:31,date:'2025-11-25',cheque:'',details:'TAJ - Bank Transfer (Sep-Oct)',deposit:0,payment:298707.93,category:'Statutory Deductions'},
+    {id:32,date:'2025-11-25',cheque:'',details:'TAJ - Bank Transfer (November)',deposit:0,payment:134539.29,category:'Statutory Deductions'},
+    {id:33,date:'2025-11-25',cheque:'',details:'BANK CHARGES',deposit:0,payment:4.20,category:'Bank Charges'},
+    {id:34,date:'2025-11-25',cheque:'1000130',details:'Cancelled Cheque',deposit:0,payment:0,category:'Cancelled'},
+    {id:35,date:'2025-11-25',cheque:'1000131',details:'Steve Barrett (Travelling)',deposit:0,payment:36363.60,category:'Travelling'},
+    {id:36,date:'2025-11-28',cheque:'1000132',details:'Rohan Campbell (Welding Plant Diagnostics)',deposit:0,payment:56000,category:'Maintenance'},
+    {id:37,date:'2025-12-11',cheque:'1000133',details:'Rashaun Barrett (Salary Advance)',deposit:0,payment:47058.47,category:'Asst. Coordinator'},
+    {id:38,date:'2025-12-11',cheque:'1000134',details:'Cancelled Cheque',deposit:0,payment:0,category:'Cancelled'},
+    {id:39,date:'2025-12-11',cheque:'1000135',details:'Steve Barrett (Reimbursement)',deposit:0,payment:55809.50,category:'Admin Expenses'},
+    {id:40,date:'2025-12-11',cheque:'1000136',details:'Tenesha Patterson (Entrep Instructor)',deposit:0,payment:119920.21,category:'Entrep Instructor'},
+    {id:41,date:'2025-12-11',cheque:'1000137',details:'Kristof Williams (IT Instructor)',deposit:0,payment:119920.21,category:'Data Instructor'},
+    {id:42,date:'2025-12-18',cheque:'1000138',details:'Steve Barrett - Salary December',deposit:0,payment:106862.32,category:'Coordinator Salary'},
+    {id:43,date:'2025-12-18',cheque:'1000139',details:'Rashaun Barrett - Salary December (Advance Taken)',deposit:0,payment:25339.18,category:'Asst. Coordinator'},
+    {id:44,date:'2025-12-18',cheque:'1000140',details:'Rohan Hamilton - Salary December',deposit:0,payment:89051.98,category:'Welding Instructor'},
+    {id:45,date:'2025-12-18',cheque:'1000141',details:'Kevin Allen - Salary December',deposit:0,payment:89051.98,category:'BNV Welding Instructor'},
+    {id:46,date:'2025-12-18',cheque:'1000142',details:'Peter Williams - Salary December',deposit:0,payment:89051.98,category:'Electrical Instructor'},
+    {id:47,date:'2025-12-18',cheque:'1000143',details:'Melvin Barnes - Salary December',deposit:0,payment:89051.98,category:'BNV Electrical Instructor'},
+    {id:48,date:'2025-12-18',cheque:'1000144',details:'Fontanette Whittingham - Salary December',deposit:0,payment:89051.98,category:'BT Instructor'},
+    {id:49,date:'2025-12-18',cheque:'1000145',details:'Tenesha Patterson (Communication Instructor)',deposit:0,payment:71952.13,category:'Entrep Instructor'},
+    {id:50,date:'2025-12-18',cheque:'1000146',details:'Kristof Williams (IT Instructor)',deposit:0,payment:71952.13,category:'Data Instructor'},
+    {id:51,date:'2025-12-20',cheque:'1000147',details:'Rohan Hamilton (Lunch Register) - Replace Chq 1000134',deposit:0,payment:100000,category:'Lunch'},
+    {id:52,date:'2025-12-20',cheque:'',details:'Tax Administration - December',deposit:0,payment:130565.96,category:'Statutory Deductions'},
+    {id:53,date:'2025-12-22',cheque:'',details:'BANK CHARGES',deposit:0,payment:2070,category:'Bank Charges'},
+];
+
+let nextId = 100;
+let currentFilter = 'all';
+let chartInstances = {};
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+function fmt(n) {
+    return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtShort(n) {
+    if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
+    return '$' + n.toFixed(0);
+}
+function getMonth(d) {
+    if (!d) return '';
+    const m = parseInt(d.split('-')[1]);
+    if (m === 10) return 'oct';
+    if (m === 11) return 'nov';
+    if (m === 12) return 'dec';
+    return '';
+}
+function getMonthName(m) { return {oct:'October',nov:'November',dec:'December'}[m] || m; }
+
+function getCategoryTag(cat) {
+    const map = {
+        'Coordinator Salary':'tag-salary','Asst. Coordinator':'tag-salary',
+        'Statutory Deductions':'tag-statutory','Admin Expenses':'tag-admin',
+        'Maintenance':'tag-maintenance','Utilities':'tag-utility','Lunch':'tag-lunch',
+        'Bank Charges':'tag-bank','Cancelled':'tag-cancelled','Travelling':'tag-travel',
+        'Subvention':'tag-subvention',
+    };
+    return map[cat] || 'tag-instructor';
+}
+
+// ============================================================
+// CALCULATIONS
+// ============================================================
+function calcTotals() {
+    let totalDeposits = 0, totalPayments = 0;
+    const catSpend = {};
+    const monthSpend = {oct:0, nov:0, dec:0};
+    const monthDeposit = {oct:0, nov:0, dec:0};
+    const activeTxns = transactions.filter(t => t.category !== 'Cancelled');
+
+    activeTxns.forEach(t => {
+        totalDeposits += t.deposit;
+        totalPayments += t.payment;
+        if (t.payment > 0 && t.category !== 'Subvention') {
+            catSpend[t.category] = (catSpend[t.category]||0) + t.payment;
+        }
+        const m = getMonth(t.date);
+        if (m) {
+            monthSpend[m] += t.payment;
+            monthDeposit[m] += t.deposit;
+        }
+    });
+
+    const totalAvailable = OPENING_BALANCE + totalDeposits;
+    const closingBalance = OPENING_BALANCE + totalDeposits - totalPayments;
+    const utilization = totalAvailable > 0 ? (totalPayments / totalAvailable * 100) : 0;
+
+    return { totalDeposits, totalPayments, totalAvailable, closingBalance, utilization, catSpend, monthSpend, monthDeposit, activeTxns };
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+function renderDashboard() {
+    const d = calcTotals();
+    document.getElementById('dash-budget').textContent = fmt(d.totalAvailable);
+    document.getElementById('dash-deposits').textContent = fmt(d.totalDeposits);
+    document.getElementById('dash-spent').textContent = fmt(d.totalPayments);
+    document.getElementById('dash-balance').textContent = fmt(d.closingBalance);
+    document.getElementById('dash-util').textContent = d.utilization.toFixed(1) + '%';
+    document.getElementById('dash-txn-count').textContent = d.activeTxns.filter(t=>t.payment>0).length + ' payments processed';
+
+    renderCharts(d);
+}
+
+function renderTransactions() {
+    const tbody = document.getElementById('txnBody');
+    let balance = OPENING_BALANCE;
+    const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+
+    // Add opening balance row
+    let html = `<tr class="deposit-row"><td></td><td></td><td><strong>BALANCE B/F</strong></td><td></td>
+        <td class="amount positive">${fmt(OPENING_BALANCE)}</td><td></td>
+        <td class="amount" style="font-weight:700;">${fmt(balance)}</td><td class="no-print"></td></tr>`;
+
+    transactions.forEach(t => {
+        balance += t.deposit - t.payment;
+        const m = getMonth(t.date);
+
+        if (currentFilter !== 'all' && m !== currentFilter && t.category !== 'Subvention') return;
+        if (search && !t.details.toLowerCase().includes(search) && !(t.cheque||'').toLowerCase().includes(search) && !t.category.toLowerCase().includes(search)) return;
+
+        const isCancelled = t.category === 'Cancelled';
+        const isDeposit = t.deposit > 0;
+        const isBank = t.category === 'Bank Charges';
+        let rowClass = isCancelled ? 'cancelled' : isDeposit ? 'deposit-row' : isBank ? 'bank-charge' : '';
+
+        html += `<tr class="${rowClass}">
+            <td>${t.date ? t.date.substring(5) : ''}</td>
+            <td class="cheque-num">${t.cheque||''}</td>
+            <td>${t.details}</td>
+            <td><span class="tag ${getCategoryTag(t.category)}">${t.category}</span></td>
+            <td class="amount ${t.deposit>0?'positive':''}">${t.deposit>0?fmt(t.deposit):''}</td>
+            <td class="amount ${t.payment>0?'negative':''}">${t.payment>0?fmt(t.payment):''}</td>
+            <td class="amount" style="font-weight:600;">${fmt(balance)}</td>
+            <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteTxn(${t.id})">✕</button></td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+function renderBudgetPage() {
+    const d = calcTotals();
+    let html = `<div class="card-title">📊 Budget Line Comparison <span class="badge">${Object.keys(BUDGET).length} line items</span></div>`;
+    html += `<div class="budget-row header"><div>Category</div><div>Budgeted</div><div>Actual</div><div>Variance</div><div>%</div></div>`;
+
+    let totalBudget = 0, totalActual = 0;
+    Object.keys(BUDGET).forEach(cat => {
+        const budgeted = BUDGET[cat];
+        const actual = d.catSpend[cat] || 0;
+        const variance = budgeted - actual;
+        const pct = budgeted > 0 ? (actual/budgeted*100) : (actual > 0 ? 999 : 0);
+        totalBudget += budgeted;
+        totalActual += actual;
+
+        const barClass = pct > 110 ? 'over' : pct > 90 ? 'warning' : 'under';
+        html += `<div class="budget-row">
+            <div>${cat}</div>
+            <div class="amount">${fmt(budgeted)}</div>
+            <div class="amount">${fmt(actual)}</div>
+            <div class="amount ${variance<0?'negative':'positive'}">${variance<0?'-':''}${fmt(Math.abs(variance))}</div>
+            <div class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill ${barClass}" style="width:${Math.min(pct,100)}%"></div></div><span style="font-size:.7rem;color:var(--text3)">${pct.toFixed(0)}%</span></div>
+        </div>`;
+    });
+
+    const tVar = totalBudget - totalActual;
+    html += `<div class="budget-row" style="font-weight:700;background:var(--surface2);border-radius:0 0 6px 6px;">
+        <div>TOTAL</div><div class="amount">${fmt(totalBudget)}</div><div class="amount">${fmt(totalActual)}</div>
+        <div class="amount ${tVar<0?'negative':'positive'}">${tVar<0?'-':''}${fmt(Math.abs(tVar))}</div><div>${(totalActual/totalBudget*100).toFixed(1)}%</div>
+    </div>`;
+
+    document.getElementById('budgetCard').innerHTML = html;
+}
+
+function renderCategoriesPage() {
+    const d = calcTotals();
+    const sorted = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]);
+    const total = sorted.reduce((s,e)=>s+e[1],0);
+
+    let html = `<div class="card-title">🏷️ Category Ranking</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Category</th><th>Amount</th><th>Share</th><th>Visual</th></tr></thead><tbody>`;
+    sorted.forEach(([cat,amt],i) => {
+        const pct = (amt/total*100);
+        html += `<tr><td style="color:var(--text3)">${i+1}</td><td><span class="tag ${getCategoryTag(cat)}">${cat}</span></td>
+            <td class="amount">${fmt(amt)}</td><td class="amount">${pct.toFixed(1)}%</td>
+            <td><div class="mini-bar" style="width:200px;"><div class="mini-bar-fill under" style="width:${pct}%;background:var(--accent);"></div></div></td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+    document.getElementById('catTable').innerHTML = html;
+
+    // Pie chart
+    destroyChart('chartCatPie');
+    const top8 = sorted.slice(0,8);
+    const otherAmt = sorted.slice(8).reduce((s,e)=>s+e[1],0);
+    const labels = top8.map(e=>e[0]);
+    const data = top8.map(e=>e[1]);
+    if (otherAmt > 0) { labels.push('Other'); data.push(otherAmt); }
+
+    chartInstances['chartCatPie'] = new Chart(document.getElementById('chartCatPie'), {
+        type:'doughnut', data:{labels, datasets:[{data, backgroundColor:['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7','#14b8a6','#ec4899','#fb923c','#6366f1'], borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#9ba3bf',font:{size:11}}}}}
+    });
+}
+
+function renderMonthlyPage() {
+    const d = calcTotals();
+    const months = ['oct','nov','dec'];
+    let html = '';
+    months.forEach(m => {
+        const spent = d.monthSpend[m];
+        const dep = d.monthDeposit[m];
+        html += `<div class="stat-card ${m==='oct'?'blue':m==='nov'?'green':'amber'}">
+            <div class="label">${getMonthName(m)} 2025</div>
+            <div class="value red-text">${fmt(spent)}</div>
+            <div class="change">Deposits: ${fmt(dep)}</div></div>`;
+    });
+    document.getElementById('monthlyStats').innerHTML = html;
+
+    // Monthly detail table
+    let detail = `<div class="card-title">📅 Monthly Category Breakdown</div><div class="table-wrap"><table><thead><tr><th>Category</th><th>October</th><th>November</th><th>December</th><th>Total</th></tr></thead><tbody>`;
+    const allCats = [...new Set(transactions.filter(t=>t.category!=='Cancelled'&&t.category!=='Subvention'&&t.payment>0).map(t=>t.category))];
+    allCats.sort().forEach(cat => {
+        const oct = transactions.filter(t=>getMonth(t.date)==='oct'&&t.category===cat).reduce((s,t)=>s+t.payment,0);
+        const nov = transactions.filter(t=>getMonth(t.date)==='nov'&&t.category===cat).reduce((s,t)=>s+t.payment,0);
+        const dec = transactions.filter(t=>getMonth(t.date)==='dec'&&t.category===cat).reduce((s,t)=>s+t.payment,0);
+        const tot = oct+nov+dec;
+        if (tot > 0) detail += `<tr><td><span class="tag ${getCategoryTag(cat)}">${cat}</span></td><td class="amount">${oct?fmt(oct):'-'}</td><td class="amount">${nov?fmt(nov):'-'}</td><td class="amount">${dec?fmt(dec):'-'}</td><td class="amount" style="font-weight:700">${fmt(tot)}</td></tr>`;
+    });
+    detail += `</tbody></table></div>`;
+    document.getElementById('monthlyDetail').innerHTML = detail;
+}
+
+function renderFinancialForm() {
+    const d = calcTotals();
+    document.getElementById('fin-opening').textContent = fmt(OPENING_BALANCE);
+    document.getElementById('fin-subvention').textContent = fmt(SUBVENTION);
+    document.getElementById('fin-total').textContent = fmt(d.totalAvailable);
+    document.getElementById('fin-spent').textContent = fmt(d.totalPayments);
+    document.getElementById('fin-bank').textContent = fmt(d.catSpend['Bank Charges']||0);
+    document.getElementById('fin-closing').textContent = fmt(d.closingBalance);
+
+    // Items table
+    const items = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]);
+    let html = '';
+    let total = 0;
+    items.forEach(([cat,amt]) => {
+        html += `<tr><td>${cat.toUpperCase()}</td><td class="amount">${fmt(amt)}</td></tr>`;
+        total += amt;
+    });
+    html += `<tr style="font-weight:700;background:var(--surface2);"><td>TOTAL</td><td class="amount">${fmt(total)}</td></tr>`;
+    document.getElementById('finItemsBody').innerHTML = html;
+}
+
+function renderReconciliation() {
+    const d = calcTotals();
+    document.getElementById('recon-cashbook').value = d.closingBalance.toFixed(2);
+
+    // Cheque register
+    const cheques = transactions.filter(t => t.cheque);
+    let html = '';
+    cheques.forEach(t => {
+        const status = t.category === 'Cancelled' ? '<span class="tag tag-cancelled">VOID</span>' : '<span class="tag tag-salary">Issued</span>';
+        html += `<tr class="${t.category==='Cancelled'?'cancelled':''}">
+            <td class="cheque-num">${t.cheque}</td><td>${t.date||''}</td><td>${t.details}</td>
+            <td class="amount">${t.payment>0?fmt(t.payment):'-'}</td><td>${status}</td></tr>`;
+    });
+    document.getElementById('chequeRegBody').innerHTML = html;
+}
+
+function calcRecon() {
+    const bank = parseFloat(document.getElementById('recon-bank').value) || 0;
+    const cb = parseFloat(document.getElementById('recon-cashbook').value) || 0;
+    const diff = bank - cb;
+    const el = document.getElementById('recon-diff');
+    el.value = (diff >= 0 ? '' : '-') + fmt(Math.abs(diff));
+    el.style.color = Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)';
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+function renderCharts(d) {
+    const colors = {bg:'#9ba3bf', grid:'#222842'};
+    Chart.defaults.color = colors.bg;
+    Chart.defaults.borderColor = colors.grid;
+
+    // Category Doughnut
+    destroyChart('chartCategory');
+    const catEntries = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]).slice(0,10);
+    chartInstances['chartCategory'] = new Chart(document.getElementById('chartCategory'), {
+        type:'doughnut',
+        data:{labels:catEntries.map(e=>e[0]), datasets:[{data:catEntries.map(e=>e[1]),
+            backgroundColor:['#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7','#14b8a6','#ec4899','#fb923c','#6366f1','#84cc16'], borderWidth:0}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#9ba3bf',font:{size:10},boxWidth:12}}}}
+    });
+
+    // Monthly Bar
+    destroyChart('chartMonthly');
+    chartInstances['chartMonthly'] = new Chart(document.getElementById('chartMonthly'), {
+        type:'bar',
+        data:{labels:['October','November','December'], datasets:[
+            {label:'Expenditure',data:[d.monthSpend.oct,d.monthSpend.nov,d.monthSpend.dec],backgroundColor:'#ef4444',borderRadius:4},
+            {label:'Deposits',data:[d.monthDeposit.oct,d.monthDeposit.nov,d.monthDeposit.dec],backgroundColor:'#22c55e',borderRadius:4}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9ba3bf',font:{size:11}}}},
+            scales:{y:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},x:{grid:{display:false}}}}
+    });
+
+    // Running Balance Line
+    destroyChart('chartBalance');
+    let bal = OPENING_BALANCE;
+    const balData = [{x:'B/F',y:bal}];
+    transactions.filter(t=>t.category!=='Cancelled').forEach(t => {
+        bal += t.deposit - t.payment;
+        balData.push({x:t.date?t.date.substring(5):'', y:bal});
+    });
+    chartInstances['chartBalance'] = new Chart(document.getElementById('chartBalance'), {
+        type:'line',
+        data:{labels:balData.map(b=>b.x), datasets:[{label:'Balance',data:balData.map(b=>b.y),
+            borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:.3,pointRadius:1,borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+            scales:{y:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},x:{display:false}}}
+    });
+
+    // Budget vs Actual Horizontal Bar
+    destroyChart('chartBudgetVsActual');
+    const topBudget = Object.entries(BUDGET).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    chartInstances['chartBudgetVsActual'] = new Chart(document.getElementById('chartBudgetVsActual'), {
+        type:'bar',
+        data:{labels:topBudget.map(e=>e[0].length>18?e[0].substring(0,18)+'…':e[0]),
+            datasets:[
+                {label:'Budget',data:topBudget.map(e=>e[1]),backgroundColor:'rgba(59,130,246,0.3)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3},
+                {label:'Actual',data:topBudget.map(e=>d.catSpend[e[0]]||0),backgroundColor:'rgba(239,68,68,0.5)',borderColor:'#ef4444',borderWidth:1,borderRadius:3}
+            ]},
+        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#9ba3bf',font:{size:10}}}},
+            scales:{x:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
+    });
+}
+
+// ============================================================
+// CRUD
+// ============================================================
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Transaction';
+    ['m-date','m-cheque','m-details','m-deposit','m-payment'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('m-category').value = 'Admin Expenses';
+    document.getElementById('addModal').classList.add('show');
+}
+function closeModal() { document.getElementById('addModal').classList.remove('show'); }
+
+function saveTransaction() {
+    const t = {
+        id: nextId++,
+        date: document.getElementById('m-date').value,
+        cheque: document.getElementById('m-cheque').value,
+        details: document.getElementById('m-details').value,
+        deposit: parseFloat(document.getElementById('m-deposit').value) || 0,
+        payment: parseFloat(document.getElementById('m-payment').value) || 0,
+        category: document.getElementById('m-category').value
+    };
+    if (!t.details) { alert('Please enter details'); return; }
+    transactions.push(t);
+    closeModal();
+    refreshAll();
+    saveToStorage();
+}
+
+function deleteTxn(id) {
+    if (!confirm('Delete this transaction?')) return;
+    transactions = transactions.filter(t=>t.id!==id);
+    refreshAll();
+    saveToStorage();
+}
+
+// ============================================================
+// FILTERS & NAVIGATION
+// ============================================================
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    refreshAll();
+}
+
+function filterMonth(m, el) {
+    currentFilter = m;
+    document.querySelectorAll('.month-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    renderTransactions();
+}
+
+function filterTransactions() { renderTransactions(); }
+
+function refreshAll() {
+    renderDashboard();
+    renderTransactions();
+    renderBudgetPage();
+    renderCategoriesPage();
+    renderMonthlyPage();
+    renderFinancialForm();
+    renderReconciliation();
+}
+
+// ============================================================
+// EXPORT & STORAGE
+// ============================================================
+function exportCSV() {
+    let csv = 'Date,Cheque#,Details,Category,Deposit,Payment\n';
+    transactions.forEach(t => {
+        csv += `"${t.date}","${t.cheque}","${t.details}","${t.category}",${t.deposit},${t.payment}\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'CESTI_CashBook_Oct-Dec_2025.csv';
+    a.click();
+}
+
+function saveToStorage() {
+    try { localStorage.setItem('cesti_cashbook_data', JSON.stringify(transactions)); } catch(e) {}
+}
+
+function loadFromStorage() {
+    try {
+        const saved = localStorage.getItem('cesti_cashbook_data');
+        if (saved) { transactions = JSON.parse(saved); }
+    } catch(e) {}
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadFromStorage();
+    refreshAll();
+});
+</script>
+</body>
+</html>
