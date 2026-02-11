@@ -401,6 +401,95 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     flex:1;
     outline:none;
 }
+/* Void Cheque Section */
+.void-cheque-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:1.25rem;
+    margin-bottom:1rem;
+    position:relative;
+    overflow:hidden;
+}
+.void-cheque-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--amber);
+}
+.void-cheque-grid {
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:1rem;
+    align-items:end;
+}
+.void-cheque-select-wrap {
+    position:relative;
+}
+.void-cheque-search {
+    padding:.5rem .75rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:6px 6px 0 0;
+    color:var(--text);
+    font-size:.8125rem;
+    width:100%;
+    outline:none;
+    border-bottom:none;
+}
+.void-cheque-search:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(59,130,246,.15);
+}
+.void-cheque-select {
+    width:100%;
+    padding:.5rem .75rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:0 0 6px 6px;
+    color:var(--text);
+    font-size:.8125rem;
+    font-family:var(--mono);
+    outline:none;
+}
+.void-cheque-select:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(59,130,246,.15);
+}
+.void-cheque-select option {
+    background:var(--surface2);
+    color:var(--text);
+    padding:.25rem;
+}
+.void-cheque-preview {
+    margin-top:.75rem;
+    padding:.75rem 1rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:.8125rem;
+    display:none;
+}
+.void-cheque-preview.show { display:block; }
+.void-cheque-preview .preview-row {
+    display:flex;
+    justify-content:space-between;
+    padding:.25rem 0;
+}
+.void-cheque-preview .preview-label {
+    color:var(--text3);
+    font-size:.75rem;
+}
+.void-cheque-preview .preview-value {
+    font-weight:600;
+}
+.void-count-badge {
+    font-size:.625rem;
+    padding:.125rem .5rem;
+    border-radius:10px;
+    font-weight:600;
+    background:rgba(239,68,68,0.15);
+    color:var(--red);
+    margin-left:.5rem;
+}
+
 /* Budget Line Edit Modal */
 .budget-edit-modal .form-grid {
     gap:1rem;
@@ -543,6 +632,29 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     </div>
                     <button class="btn btn-success" onclick="openAddModal()">+ Add Entry</button>
                     <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+                </div>
+            </div>
+
+            <div class="void-cheque-card">
+                <div class="card-title">🚫 Void Cheque <span class="void-count-badge" id="voidCountBadge">0 voided</span></div>
+                <div class="void-cheque-grid">
+                    <div class="form-group">
+                        <label>Select transaction to void</label>
+                        <div class="void-cheque-select-wrap">
+                            <input type="text" class="void-cheque-search" id="voidChequeSearch" placeholder="Search by cheque #, payee, or details..." oninput="filterVoidDropdown()">
+                            <select id="voidChequeSelect" class="void-cheque-select" size="6" onchange="previewVoidCheque()"></select>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-amber" onclick="voidSelectedCheque()" id="voidBtn" disabled>🚫 Void Cheque</button>
+                    </div>
+                </div>
+                <div class="void-cheque-preview" id="voidPreview">
+                    <div class="preview-row"><span class="preview-label">Date</span><span class="preview-value" id="voidPreviewDate">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Cheque #</span><span class="preview-value" id="voidPreviewCheque">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Payee / Details</span><span class="preview-value" id="voidPreviewDetails">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Amount</span><span class="preview-value" id="voidPreviewAmount">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Category</span><span class="preview-value" id="voidPreviewCategory">-</span></div>
                 </div>
             </div>
 
@@ -1263,6 +1375,95 @@ function deleteTxn(id) {
 }
 
 // ============================================================
+// VOID CHEQUE
+// ============================================================
+function populateVoidDropdown() {
+    const sel = document.getElementById('voidChequeSelect');
+    const search = (document.getElementById('voidChequeSearch')?.value || '').toLowerCase();
+    if (!sel) return;
+
+    sel.innerHTML = '';
+    const active = transactions.filter(t => t.category !== 'Cancelled' && (t.cheque || t.payment > 0 || t.deposit > 0));
+
+    const filtered = search
+        ? active.filter(t =>
+            (t.cheque||'').toLowerCase().includes(search) ||
+            t.details.toLowerCase().includes(search) ||
+            t.category.toLowerCase().includes(search))
+        : active;
+
+    filtered.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        const chequeLabel = t.cheque ? 'Chq #' + t.cheque : 'No Chq#';
+        const amtLabel = t.payment > 0 ? fmt(t.payment) : (t.deposit > 0 ? '+' + fmt(t.deposit) : '$0.00');
+        opt.textContent = chequeLabel + '  |  ' + t.details + '  |  ' + amtLabel;
+        sel.appendChild(opt);
+    });
+
+    // Update void count badge
+    const voidedCount = transactions.filter(t => t.category === 'Cancelled').length;
+    const badge = document.getElementById('voidCountBadge');
+    if (badge) badge.textContent = voidedCount + ' voided';
+
+    // Reset preview and button
+    document.getElementById('voidPreview').classList.remove('show');
+    document.getElementById('voidBtn').disabled = true;
+}
+
+function filterVoidDropdown() {
+    populateVoidDropdown();
+}
+
+function previewVoidCheque() {
+    const sel = document.getElementById('voidChequeSelect');
+    const id = parseInt(sel.value);
+    const t = transactions.find(tx => tx.id === id);
+    const preview = document.getElementById('voidPreview');
+    const btn = document.getElementById('voidBtn');
+
+    if (!t) {
+        preview.classList.remove('show');
+        btn.disabled = true;
+        return;
+    }
+
+    document.getElementById('voidPreviewDate').textContent = t.date || '-';
+    document.getElementById('voidPreviewCheque').textContent = t.cheque || 'N/A';
+    document.getElementById('voidPreviewDetails').textContent = t.details;
+    document.getElementById('voidPreviewAmount').textContent = t.payment > 0 ? fmt(t.payment) : (t.deposit > 0 ? fmt(t.deposit) : '$0.00');
+    document.getElementById('voidPreviewCategory').textContent = t.category;
+
+    preview.classList.add('show');
+    btn.disabled = false;
+}
+
+function voidSelectedCheque() {
+    const sel = document.getElementById('voidChequeSelect');
+    const id = parseInt(sel.value);
+    const t = transactions.find(tx => tx.id === id);
+
+    if (!t) { alert('Please select a transaction to void.'); return; }
+
+    const label = t.cheque ? 'Cheque #' + t.cheque : t.details;
+    if (!confirm('Void "' + label + '"?\n\nThis will mark it as Cancelled Cheque. The payment amount will be zeroed out and the category will change to Cancelled.\n\nThis action can be seen across all dashboards and in the reconciliation cheque register.')) {
+        return;
+    }
+
+    // Void the cheque: set to cancelled, zero out amounts, update details
+    t.details = 'Cancelled Cheque' + (t.cheque ? '' : ' (' + t.details + ')');
+    t.category = 'Cancelled';
+    t.payment = 0;
+    t.deposit = 0;
+
+    saveToStorage();
+    refreshAll();
+
+    // Clear the search and reset
+    document.getElementById('voidChequeSearch').value = '';
+}
+
+// ============================================================
 // FILTERS & NAVIGATION
 // ============================================================
 function showPage(page) {
@@ -1298,6 +1499,7 @@ function refreshAll() {
     renderFinancialForm();
     renderReconciliation();
     renderBudgetLinesPage();
+    populateVoidDropdown();
 }
 
 // ============================================================
