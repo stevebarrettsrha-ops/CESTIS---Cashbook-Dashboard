@@ -495,6 +495,52 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     font-size:.875rem;
     color:var(--green);
 }
+.quarter-subvention-row {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.75rem;
+    margin-top:.5rem;
+    padding-top:.5rem;
+    border-top:1px dashed var(--border);
+    flex-wrap:wrap;
+}
+.quarter-subvention-row label {
+    font-size:.75rem;
+    font-weight:600;
+    color:var(--green);
+}
+.quarter-subvention-row input {
+    padding:.375rem .625rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+    font-size:.8125rem;
+    font-family:var(--mono);
+    text-align:right;
+}
+.quarter-subvention-row input[type="date"] {
+    width:150px;
+    text-align:center;
+}
+.quarter-subvention-row input[type="number"] {
+    width:160px;
+}
+.quarter-subvention-row input:focus {
+    outline:none;
+    border-color:var(--green);
+    box-shadow:0 0 0 2px rgba(34,197,94,.15);
+}
+.subvention-status {
+    font-size:.7rem;
+    font-family:var(--mono);
+    padding:.25rem .5rem;
+    border-radius:4px;
+    background:var(--green-bg);
+    color:var(--green);
+    font-weight:600;
+}
 .btn-nav {
     background:var(--surface2);
     color:var(--text2);
@@ -763,6 +809,12 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <label>Balance B/F:</label>
                     <input type="number" id="quarterBF" step="0.01" placeholder="0.00" onchange="updateQuarterBF()">
                     <button class="btn btn-ghost btn-sm" onclick="carryForwardBalance()">Carry from Prev Qtr</button>
+                </div>
+                <div class="quarter-subvention-row">
+                    <label>Subvention:</label>
+                    <input type="date" id="subventionDate" onchange="updateSubvention()">
+                    <input type="number" id="subventionAmount" step="0.01" placeholder="Amount (0.00)" onchange="updateSubvention()">
+                    <span class="subvention-status" id="subventionStatus">No subvention</span>
                 </div>
             </div>
 
@@ -1679,6 +1731,7 @@ function refreshAll() {
     renderReconciliation();
     renderBudgetLinesPage();
     populateVoidDropdown();
+    populateSubventionFields();
     renderMonthTabs();
 }
 
@@ -2004,6 +2057,8 @@ function updateQuarterUI() {
     // Update B/F input
     const bfInput = document.getElementById('quarterBF');
     if (bfInput) bfInput.value = OPENING_BALANCE.toFixed(2);
+    // Update subvention fields
+    populateSubventionFields();
     // Update month tabs
     renderMonthTabs();
 }
@@ -2083,6 +2138,93 @@ function carryForwardBalance() {
         }
     } catch(e) {
         alert('Could not load previous quarter data.');
+    }
+}
+
+// ============================================================
+// SUBVENTION MANAGEMENT
+// ============================================================
+function getSubventionTransaction() {
+    return transactions.find(t => t.category === 'Subvention' && t.deposit > 0);
+}
+
+function updateSubvention() {
+    const dateInput = document.getElementById('subventionDate');
+    const amountInput = document.getElementById('subventionAmount');
+    const date = dateInput.value;
+    const amount = parseFloat(amountInput.value);
+
+    // If both fields cleared, remove subvention transaction
+    if (!date && (!amount || isNaN(amount) || amount <= 0)) {
+        const existing = getSubventionTransaction();
+        if (existing) {
+            transactions = transactions.filter(t => t !== existing);
+        }
+        updateSubventionStatus(0);
+        saveToStorage();
+        refreshAll();
+        return;
+    }
+
+    // Need at least amount > 0 to create/update
+    if (isNaN(amount) || amount <= 0) {
+        updateSubventionStatus(0);
+        return;
+    }
+
+    const existing = getSubventionTransaction();
+    if (existing) {
+        // Update existing subvention transaction
+        if (date) existing.date = date;
+        existing.deposit = amount;
+        existing.details = 'SUBVENTION';
+    } else {
+        // Create new subvention transaction
+        const subDate = date || new Date().toISOString().slice(0, 10);
+        transactions.push({
+            id: nextId++,
+            date: subDate,
+            cheque: '',
+            details: 'SUBVENTION',
+            deposit: amount,
+            payment: 0,
+            category: 'Subvention'
+        });
+    }
+
+    updateSubventionStatus(amount);
+    saveToStorage();
+    refreshAll();
+}
+
+function updateSubventionStatus(amount) {
+    const el = document.getElementById('subventionStatus');
+    if (!el) return;
+    if (amount > 0) {
+        el.textContent = '✓ ' + fmt(amount);
+        el.style.background = 'var(--green-bg)';
+        el.style.color = 'var(--green)';
+    } else {
+        el.textContent = 'No subvention';
+        el.style.background = 'var(--surface2)';
+        el.style.color = 'var(--text3)';
+    }
+}
+
+function populateSubventionFields() {
+    const sub = getSubventionTransaction();
+    const dateInput = document.getElementById('subventionDate');
+    const amountInput = document.getElementById('subventionAmount');
+    if (!dateInput || !amountInput) return;
+
+    if (sub) {
+        dateInput.value = sub.date || '';
+        amountInput.value = sub.deposit > 0 ? sub.deposit.toFixed(2) : '';
+        updateSubventionStatus(sub.deposit);
+    } else {
+        dateInput.value = '';
+        amountInput.value = '';
+        updateSubventionStatus(0);
     }
 }
 
