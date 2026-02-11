@@ -1439,8 +1439,8 @@ function renderMonthlyPage() {
 
     // Monthly detail table
     let detail = `<div class="card-title">📅 Monthly Category Breakdown</div><div class="table-wrap"><table><thead><tr><th>Category</th>`;
-    qm.monthNames.forEach(mn => { detail += `<th>${mn}</th>`; });
-    detail += `<th>Total</th></tr></thead><tbody>`;
+    qm.monthNames.forEach(mn => { detail += `<th class="amount">${mn}</th>`; });
+    detail += `<th class="amount">Total</th></tr></thead><tbody>`;
     const allCats = [...new Set(transactions.filter(t=>t.category!=='Cancelled'&&t.category!=='Subvention'&&t.payment>0).map(t=>t.category))];
     allCats.sort().forEach(cat => {
         const mAmts = qm.months.map(m => transactions.filter(t=>getMonth(t.date)===m&&t.category===cat).reduce((s,t)=>s+t.payment,0));
