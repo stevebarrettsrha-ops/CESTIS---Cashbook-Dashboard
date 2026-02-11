@@ -643,6 +643,22 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     color:var(--red);
     margin-left:.5rem;
 }
+.unvoid-divider {
+    border-top:1px solid var(--border);
+    margin:1rem 0;
+}
+.btn-unvoid {
+    background:var(--green);
+    color:#fff;
+    padding:.5rem 1rem;
+    border:none;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+    font-size:.8125rem;
+}
+.btn-unvoid:hover { background:#16a34a; }
+.btn-unvoid:disabled { opacity:.5; cursor:not-allowed; }
 
 /* Budget Line Edit Modal */
 .budget-edit-modal .form-grid {
@@ -838,6 +854,29 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="preview-row"><span class="preview-label">Payee / Details</span><span class="preview-value" id="voidPreviewDetails">-</span></div>
                     <div class="preview-row"><span class="preview-label">Amount</span><span class="preview-value" id="voidPreviewAmount">-</span></div>
                     <div class="preview-row"><span class="preview-label">Category</span><span class="preview-value" id="voidPreviewCategory">-</span></div>
+                </div>
+
+                <div class="unvoid-divider"></div>
+
+                <div class="card-title">↩ Unvoid Cheque</div>
+                <div class="void-cheque-grid">
+                    <div class="form-group">
+                        <label>Select voided transaction to restore</label>
+                        <div class="void-cheque-select-wrap">
+                            <input type="text" class="void-cheque-search" id="unvoidChequeSearch" placeholder="Search voided cheques..." oninput="filterUnvoidDropdown()">
+                            <select id="unvoidChequeSelect" class="void-cheque-select" size="6" onchange="previewUnvoidCheque()"></select>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-unvoid" onclick="unvoidSelectedCheque()" id="unvoidBtn" disabled>↩ Unvoid Cheque</button>
+                    </div>
+                </div>
+                <div class="void-cheque-preview" id="unvoidPreview">
+                    <div class="preview-row"><span class="preview-label">Date</span><span class="preview-value" id="unvoidPreviewDate">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Cheque #</span><span class="preview-value" id="unvoidPreviewCheque">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Original Details</span><span class="preview-value" id="unvoidPreviewDetails">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Original Amount</span><span class="preview-value" id="unvoidPreviewAmount">-</span></div>
+                    <div class="preview-row"><span class="preview-label">Original Category</span><span class="preview-value" id="unvoidPreviewCategory">-</span></div>
                 </div>
             </div>
 
@@ -1683,6 +1722,12 @@ function voidSelectedCheque() {
         return;
     }
 
+    // Store original values for potential unvoid
+    t._origDetails = t.details;
+    t._origCategory = t.category;
+    t._origPayment = t.payment;
+    t._origDeposit = t.deposit;
+
     // Void the cheque: set to cancelled, zero out amounts, update details
     t.details = 'Cancelled Cheque' + (t.cheque ? '' : ' (' + t.details + ')');
     t.category = 'Cancelled';
@@ -1694,6 +1739,114 @@ function voidSelectedCheque() {
 
     // Clear the search and reset
     document.getElementById('voidChequeSearch').value = '';
+}
+
+// ============================================================
+// UNVOID CHEQUE
+// ============================================================
+function populateUnvoidDropdown() {
+    const sel = document.getElementById('unvoidChequeSelect');
+    const search = (document.getElementById('unvoidChequeSearch')?.value || '').toLowerCase();
+    if (!sel) return;
+
+    sel.innerHTML = '';
+    const voided = transactions.filter(t => t.category === 'Cancelled');
+
+    const filtered = search
+        ? voided.filter(t =>
+            (t.cheque||'').toLowerCase().includes(search) ||
+            t.details.toLowerCase().includes(search) ||
+            (t._origDetails||'').toLowerCase().includes(search) ||
+            (t._origCategory||'').toLowerCase().includes(search))
+        : voided;
+
+    filtered.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        const chequeLabel = t.cheque ? 'Chq #' + t.cheque : 'No Chq#';
+        const origInfo = t._origDetails ? t._origDetails : t.details;
+        const restorable = t._origPayment != null ? ' [restorable]' : ' [manual void]';
+        opt.textContent = chequeLabel + '  |  ' + origInfo + restorable;
+        sel.appendChild(opt);
+    });
+
+    // Reset preview and button
+    const preview = document.getElementById('unvoidPreview');
+    if (preview) preview.classList.remove('show');
+    const btn = document.getElementById('unvoidBtn');
+    if (btn) btn.disabled = true;
+}
+
+function filterUnvoidDropdown() {
+    populateUnvoidDropdown();
+}
+
+function previewUnvoidCheque() {
+    const sel = document.getElementById('unvoidChequeSelect');
+    const id = parseInt(sel.value);
+    const t = transactions.find(tx => tx.id === id);
+    const preview = document.getElementById('unvoidPreview');
+    const btn = document.getElementById('unvoidBtn');
+
+    if (!t) {
+        preview.classList.remove('show');
+        btn.disabled = true;
+        return;
+    }
+
+    document.getElementById('unvoidPreviewDate').textContent = t.date || '-';
+    document.getElementById('unvoidPreviewCheque').textContent = t.cheque || 'N/A';
+
+    if (t._origDetails != null) {
+        document.getElementById('unvoidPreviewDetails').textContent = t._origDetails;
+        const origAmt = t._origPayment > 0 ? fmt(t._origPayment) : (t._origDeposit > 0 ? fmt(t._origDeposit) : '$0.00');
+        document.getElementById('unvoidPreviewAmount').textContent = origAmt;
+        document.getElementById('unvoidPreviewCategory').textContent = t._origCategory;
+        btn.disabled = false;
+    } else {
+        document.getElementById('unvoidPreviewDetails').textContent = t.details + ' (no original data stored)';
+        document.getElementById('unvoidPreviewAmount').textContent = 'N/A';
+        document.getElementById('unvoidPreviewCategory').textContent = 'N/A';
+        btn.disabled = true;
+    }
+
+    preview.classList.add('show');
+}
+
+function unvoidSelectedCheque() {
+    const sel = document.getElementById('unvoidChequeSelect');
+    const id = parseInt(sel.value);
+    const t = transactions.find(tx => tx.id === id);
+
+    if (!t) { alert('Please select a voided transaction to restore.'); return; }
+
+    if (t._origPayment == null) {
+        alert('This transaction was voided before unvoid support was added. Original data is not available for automatic restoration.\n\nYou can manually re-create this transaction using the Add Entry button.');
+        return;
+    }
+
+    const label = t.cheque ? 'Cheque #' + t.cheque : t._origDetails;
+    if (!confirm('Unvoid "' + label + '"?\n\nThis will restore the original details, category, and amount.\n\nOriginal: ' + t._origDetails + ' | ' + t._origCategory + ' | ' + fmt(t._origPayment > 0 ? t._origPayment : t._origDeposit))) {
+        return;
+    }
+
+    // Restore original values
+    t.details = t._origDetails;
+    t.category = t._origCategory;
+    t.payment = t._origPayment;
+    t.deposit = t._origDeposit;
+
+    // Clean up stored originals
+    delete t._origDetails;
+    delete t._origCategory;
+    delete t._origPayment;
+    delete t._origDeposit;
+
+    saveToStorage();
+    refreshAll();
+
+    // Clear the search and reset
+    document.getElementById('unvoidChequeSearch').value = '';
 }
 
 // ============================================================
@@ -1733,6 +1886,7 @@ function refreshAll() {
     renderReconciliation();
     renderBudgetLinesPage();
     populateVoidDropdown();
+    populateUnvoidDropdown();
     populateSubventionFields();
     renderMonthTabs();
 }
