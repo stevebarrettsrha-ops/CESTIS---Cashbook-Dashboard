@@ -766,7 +766,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="chart-container"><canvas id="chartBalance"></canvas></div>
                 </div>
                 <div class="card">
-                    <div class="card-title">🎯 Budget vs Actual (Top 10)</div>
+                    <div class="card-title">🎯 Budget vs Actual (All Line Items)</div>
                     <div class="chart-container"><canvas id="chartBudgetVsActual"></canvas></div>
                 </div>
             </div>
@@ -1531,7 +1531,9 @@ function renderCharts(d) {
 
     // Budget vs Actual Horizontal Bar
     destroyChart('chartBudgetVsActual');
-    const topBudget = Object.entries(BUDGET).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const topBudget = Object.entries(BUDGET).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const budgetChartContainer = document.getElementById('chartBudgetVsActual').parentElement;
+    budgetChartContainer.style.height = Math.max(280, topBudget.length * 32) + 'px';
     chartInstances['chartBudgetVsActual'] = new Chart(document.getElementById('chartBudgetVsActual'), {
         type:'bar',
         data:{labels:topBudget.map(e=>e[0].length>18?e[0].substring(0,18)+'…':e[0]),
