@@ -293,82 +293,74 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     align-items:end;
 }
 .budget-list {
-    display:flex;
-    flex-direction:column;
-    gap:0;
+    overflow-x:auto;
 }
-.budget-item {
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
-    padding:1rem 1.25rem;
-    display:grid;
-    grid-template-columns:1fr 140px 140px 140px 80px auto;
-    gap:.75rem;
-    align-items:center;
-    transition:all 0.15s;
+.budget-table {
+    width:100%;
+    border-collapse:collapse;
     font-size:.8125rem;
 }
-.budget-item:last-child { border-bottom:none; }
-.budget-item:hover {
+.budget-table thead th {
     background:var(--surface2);
-}
-.budget-item.header-row {
-    font-weight:700;
     color:var(--text2);
+    font-weight:600;
     font-size:.6875rem;
     text-transform:uppercase;
     letter-spacing:.5px;
-    background:var(--surface2);
-    border-radius:6px 6px 0 0;
+    padding:.625rem .75rem;
+    text-align:left;
     border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:2;
+    white-space:nowrap;
 }
-.budget-item-info {
-    display:flex;
-    flex-direction:column;
-    gap:2px;
+.budget-table thead th.col-right { text-align:right; }
+.budget-table tbody td {
+    padding:.5rem .75rem;
+    border-bottom:1px solid var(--border);
+    vertical-align:middle;
 }
+.budget-table tbody tr:hover { background:var(--surface2); }
+.budget-table tbody tr.total-row {
+    font-weight:700;
+    background:var(--surface2);
+}
+.budget-table tbody tr.total-row td { border-bottom:none; }
 .budget-item-name {
     font-weight:600;
-    font-size:.8125rem;
     color:var(--text);
+    white-space:nowrap;
 }
-.budget-item-source {
-    font-size:.625rem;
-    color:var(--text3);
-    text-transform:uppercase;
-    letter-spacing:.5px;
-}
-.budget-item-amount {
+.budget-table .amount {
     font-family:var(--mono);
     font-weight:500;
     text-align:right;
     white-space:nowrap;
 }
-.budget-item-amount.positive { color:var(--green); }
-.budget-item-amount.negative { color:var(--red); }
-.budget-item-amount.accent { color:var(--accent2); }
+.budget-table .amount.positive { color:var(--green); }
+.budget-table .amount.negative { color:var(--red); }
+.budget-table .amount.accent { color:var(--accent2); }
+.budget-table .amount.muted { color:var(--text3); }
 .budget-item-actions {
     display:flex;
     gap:6px;
     justify-content:flex-end;
+    white-space:nowrap;
 }
-.budget-item-bar {
+.budget-usage-cell {
     display:flex;
     align-items:center;
     gap:.5rem;
+    min-width:100px;
 }
-.budget-item-bar .mini-bar { flex:1; }
-.budget-item-bar .pct-label {
+.budget-usage-cell .mini-bar { flex:1; min-width:50px; }
+.budget-usage-cell .pct-label {
     font-size:.7rem;
     color:var(--text3);
-    min-width:35px;
+    min-width:38px;
     text-align:right;
-}
-.budget-item.total-row {
-    font-weight:700;
-    background:var(--surface2);
-    border-radius:0 0 6px 6px;
-    border-bottom:none;
+    white-space:nowrap;
 }
 .empty-state {
     text-align:center;
@@ -418,16 +410,6 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .fin-connector { display:none; }
     .budget-form-grid {
         grid-template-columns:1fr;
-    }
-    .budget-item {
-        grid-template-columns:1fr;
-        gap:.5rem;
-    }
-    .budget-item.header-row {
-        display:none;
-    }
-    .budget-item-amount {
-        text-align:left;
     }
     .budget-lines-grid {
         grid-template-columns:repeat(2, 1fr);
@@ -1451,39 +1433,55 @@ function renderBudgetLinesPage() {
         return;
     }
 
-    // Header row
-    let html = '<div class="budget-item header-row"><div>Category</div><div style="text-align:right;">Budgeted</div><div style="text-align:right;">Actual Spend</div><div style="text-align:right;">Variance</div><div>Usage</div><div style="text-align:right;">Actions</div></div>';
+    // Build table
+    let html = '<table class="budget-table"><thead><tr>' +
+        '<th>Category</th>' +
+        '<th class="col-right">Budgeted</th>' +
+        '<th class="col-right">Actual Spend</th>' +
+        '<th class="col-right">Variance</th>' +
+        '<th>Usage</th>' +
+        '<th class="col-right">Actions</th>' +
+        '</tr></thead><tbody>';
+
+    // Helper for percentage display
+    function fmtPct(budgeted, actual) {
+        if (budgeted <= 0 && actual <= 0) return { label: '-', barWidth: 0, barClass: 'under' };
+        if (budgeted <= 0 && actual > 0) return { label: 'N/B', barWidth: 100, barClass: 'over' };
+        var pct = actual / budgeted * 100;
+        var barClass = pct > 110 ? 'over' : pct > 90 ? 'warning' : 'under';
+        return { label: pct.toFixed(0) + '%', barWidth: Math.min(pct, 100), barClass: barClass };
+    }
 
     // Data rows
-    filtered.forEach(e => {
-        const barClass = e.pct > 110 ? 'over' : e.pct > 90 ? 'warning' : 'under';
-        const varClass = e.variance < 0 ? 'negative' : 'positive';
-        const safeKey = escapeHtml(e.key);
-        html += '<div class="budget-item">' +
-            '<div class="budget-item-info"><div class="budget-item-name">' + safeKey + '</div></div>' +
-            '<div class="budget-item-amount accent">' + fmt(e.budgeted) + '</div>' +
-            '<div class="budget-item-amount">' + (e.actual > 0 ? fmt(e.actual) : '<span style="color:var(--text3)">-</span>') + '</div>' +
-            '<div class="budget-item-amount ' + varClass + '">' + (e.variance < 0 ? '-' : '') + fmt(Math.abs(e.variance)) + '</div>' +
-            '<div class="budget-item-bar"><div class="mini-bar"><div class="mini-bar-fill ' + barClass + '" style="width:' + Math.min(e.pct, 100) + '%"></div></div><span class="pct-label">' + e.pct.toFixed(0) + '%</span></div>' +
-            '<div class="budget-item-actions">' +
+    filtered.forEach(function(e) {
+        var p = fmtPct(e.budgeted, e.actual);
+        var varClass = e.variance < 0 ? 'negative' : 'positive';
+        var safeKey = escapeHtml(e.key);
+        html += '<tr>' +
+            '<td><span class="budget-item-name">' + safeKey + '</span></td>' +
+            '<td class="amount accent">' + fmt(e.budgeted) + '</td>' +
+            '<td class="amount">' + (e.actual > 0 ? fmt(e.actual) : '<span class="muted">-</span>') + '</td>' +
+            '<td class="amount ' + varClass + '">' + (e.variance < 0 ? '-' : '') + fmt(Math.abs(e.variance)) + '</td>' +
+            '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + p.barClass + '" style="width:' + p.barWidth + '%"></div></div><span class="pct-label">' + p.label + '</span></div></td>' +
+            '<td><div class="budget-item-actions">' +
                 '<button class="btn btn-ghost btn-sm" onclick="openBudgetLineModal(\'' + safeKey.replace(/'/g, "\\'") + '\')">Edit</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="deleteBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Delete</button>' +
-            '</div>' +
-        '</div>';
+            '</div></td>' +
+        '</tr>';
     });
 
     // Total row
-    const tPct = totalBudget > 0 ? (totalSpent / totalBudget * 100) : 0;
-    const tBarClass = tPct > 110 ? 'over' : tPct > 90 ? 'warning' : 'under';
-    html += '<div class="budget-item total-row">' +
-        '<div>TOTAL</div>' +
-        '<div class="budget-item-amount accent">' + fmt(totalBudget) + '</div>' +
-        '<div class="budget-item-amount">' + fmt(totalSpent) + '</div>' +
-        '<div class="budget-item-amount ' + (totalVariance < 0 ? 'negative' : 'positive') + '">' + (totalVariance < 0 ? '-' : '') + fmt(Math.abs(totalVariance)) + '</div>' +
-        '<div class="budget-item-bar"><div class="mini-bar"><div class="mini-bar-fill ' + tBarClass + '" style="width:' + Math.min(tPct, 100) + '%"></div></div><span class="pct-label">' + tPct.toFixed(0) + '%</span></div>' +
-        '<div></div>' +
-    '</div>';
+    var tp = fmtPct(totalBudget, totalSpent);
+    html += '<tr class="total-row">' +
+        '<td><strong>TOTAL</strong></td>' +
+        '<td class="amount accent">' + fmt(totalBudget) + '</td>' +
+        '<td class="amount">' + fmt(totalSpent) + '</td>' +
+        '<td class="amount ' + (totalVariance < 0 ? 'negative' : 'positive') + '">' + (totalVariance < 0 ? '-' : '') + fmt(Math.abs(totalVariance)) + '</td>' +
+        '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + tp.barClass + '" style="width:' + tp.barWidth + '%"></div></div><span class="pct-label">' + tp.label + '</span></div></td>' +
+        '<td></td>' +
+    '</tr>';
 
+    html += '</tbody></table>';
     listEl.innerHTML = html;
 }
 
