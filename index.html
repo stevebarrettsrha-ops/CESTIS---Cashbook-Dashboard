@@ -171,9 +171,19 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .chart-container { position:relative; height:280px; }
 
 /* Budget Table */
-.budget-row { display:grid; grid-template-columns: 1fr 120px 120px 120px 80px; gap:.5rem; align-items:center; padding:.5rem .75rem; border-bottom:1px solid var(--border); font-size:.8125rem; }
-.budget-row.header { font-weight:700; color:var(--text2); font-size:.6875rem; text-transform:uppercase; letter-spacing:.5px; background:var(--surface2); border-radius:6px 6px 0 0; }
-.budget-row .bar-cell { display:flex; align-items:center; gap:.5rem; }
+.budget-vs-actual-wrap { overflow-x:auto; }
+.budget-vs-actual-table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+.budget-vs-actual-table thead th {
+    background:var(--surface2); color:var(--text2); font-weight:600; font-size:.6875rem;
+    text-transform:uppercase; letter-spacing:.5px; padding:.625rem .75rem;
+    text-align:left; border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.budget-vs-actual-table thead th.col-right { text-align:right; }
+.budget-vs-actual-table tbody td { padding:.5rem .75rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+.budget-vs-actual-table tbody tr:hover { background:var(--surface2); }
+.budget-vs-actual-table tbody tr.total-row { font-weight:700; background:var(--surface2); }
+.budget-vs-actual-table tbody tr.total-row td { border-bottom:none; }
+.budget-vs-actual-table .bar-cell { display:flex; align-items:center; gap:.5rem; min-width:100px; }
 .mini-bar { height:6px; border-radius:3px; background:var(--surface3); flex:1; overflow:hidden; }
 .mini-bar-fill { height:100%; border-radius:3px; transition:width .3s; }
 .mini-bar-fill.under { background:var(--green); }
@@ -962,36 +972,48 @@ function renderTransactions() {
     tbody.innerHTML = html;
 }
 
+function budgetPct(budgeted, actual) {
+    if (budgeted <= 0 && actual <= 0) return { label: '-', barWidth: 0, barClass: 'under' };
+    if (budgeted <= 0 && actual > 0) return { label: 'N/B', barWidth: 100, barClass: 'over' };
+    var pct = actual / budgeted * 100;
+    var barClass = pct > 110 ? 'over' : pct > 90 ? 'warning' : 'under';
+    return { label: pct.toFixed(0) + '%', barWidth: Math.min(pct, 100), barClass: barClass };
+}
+
 function renderBudgetPage() {
     const d = calcTotals();
     let html = `<div class="card-title">📊 Budget Line Comparison <span class="badge">${Object.keys(BUDGET).length} line items</span></div>`;
-    html += `<div class="budget-row header"><div>Category</div><div>Budgeted</div><div>Actual</div><div>Variance</div><div>%</div></div>`;
+    html += `<div class="budget-vs-actual-wrap"><table class="budget-vs-actual-table"><thead><tr>
+        <th>Category</th><th class="col-right">Budgeted</th><th class="col-right">Actual</th><th class="col-right">Variance</th><th>%</th>
+    </tr></thead><tbody>`;
 
     let totalBudget = 0, totalActual = 0;
     Object.keys(BUDGET).forEach(cat => {
         const budgeted = BUDGET[cat];
         const actual = d.catSpend[cat] || 0;
         const variance = budgeted - actual;
-        const pct = budgeted > 0 ? (actual/budgeted*100) : (actual > 0 ? 999 : 0);
+        const p = budgetPct(budgeted, actual);
         totalBudget += budgeted;
         totalActual += actual;
 
-        const barClass = pct > 110 ? 'over' : pct > 90 ? 'warning' : 'under';
-        html += `<div class="budget-row">
-            <div>${cat}</div>
-            <div class="amount">${fmt(budgeted)}</div>
-            <div class="amount">${fmt(actual)}</div>
-            <div class="amount ${variance<0?'negative':'positive'}">${variance<0?'-':''}${fmt(Math.abs(variance))}</div>
-            <div class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill ${barClass}" style="width:${Math.min(pct,100)}%"></div></div><span style="font-size:.7rem;color:var(--text3)">${pct.toFixed(0)}%</span></div>
-        </div>`;
+        html += `<tr>
+            <td>${cat}</td>
+            <td class="amount">${fmt(budgeted)}</td>
+            <td class="amount">${actual > 0 ? fmt(actual) : '<span style="color:var(--text3)">-</span>'}</td>
+            <td class="amount ${variance<0?'negative':'positive'}">${variance<0?'-':''}${fmt(Math.abs(variance))}</td>
+            <td><div class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill ${p.barClass}" style="width:${p.barWidth}%"></div></div><span style="font-size:.7rem;color:var(--text3)">${p.label}</span></div></td>
+        </tr>`;
     });
 
     const tVar = totalBudget - totalActual;
-    html += `<div class="budget-row" style="font-weight:700;background:var(--surface2);border-radius:0 0 6px 6px;">
-        <div>TOTAL</div><div class="amount">${fmt(totalBudget)}</div><div class="amount">${fmt(totalActual)}</div>
-        <div class="amount ${tVar<0?'negative':'positive'}">${tVar<0?'-':''}${fmt(Math.abs(tVar))}</div><div>${(totalActual/totalBudget*100).toFixed(1)}%</div>
-    </div>`;
+    const tp = budgetPct(totalBudget, totalActual);
+    html += `<tr class="total-row">
+        <td><strong>TOTAL</strong></td><td class="amount">${fmt(totalBudget)}</td><td class="amount">${fmt(totalActual)}</td>
+        <td class="amount ${tVar<0?'negative':'positive'}">${tVar<0?'-':''}${fmt(Math.abs(tVar))}</td>
+        <td><div class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill ${tp.barClass}" style="width:${tp.barWidth}%"></div></div><span style="font-size:.7rem;color:var(--text3)">${tp.label}</span></div></td>
+    </tr>`;
 
+    html += `</tbody></table></div>`;
     document.getElementById('budgetCard').innerHTML = html;
 }
 
@@ -1055,20 +1077,35 @@ function renderMonthlyPage() {
 function renderFinancialForm() {
     const d = calcTotals();
     document.getElementById('fin-opening').textContent = fmt(OPENING_BALANCE);
-    document.getElementById('fin-subvention').textContent = fmt(SUBVENTION);
+    document.getElementById('fin-subvention').textContent = fmt(d.totalDeposits);
     document.getElementById('fin-total').textContent = fmt(d.totalAvailable);
     document.getElementById('fin-spent').textContent = fmt(d.totalPayments);
     document.getElementById('fin-bank').textContent = fmt(d.catSpend['Bank Charges']||0);
     document.getElementById('fin-closing').textContent = fmt(d.closingBalance);
 
-    // Items table
-    const items = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]);
+    // Items table - show all BUDGET categories with their actual spending
     let html = '';
     let total = 0;
-    items.forEach(([cat,amt]) => {
-        html += `<tr><td>${cat.toUpperCase()}</td><td class="amount">${fmt(amt)}</td></tr>`;
+    const shownCats = new Set();
+
+    // First show all BUDGET categories (sorted by actual spend descending, then alphabetically)
+    const budgetEntries = Object.keys(BUDGET).map(cat => {
+        const amt = d.catSpend[cat] || 0;
+        return [cat, amt];
+    }).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+    budgetEntries.forEach(([cat, amt]) => {
+        shownCats.add(cat);
+        html += `<tr><td>${cat.toUpperCase()}</td><td class="amount">${amt > 0 ? fmt(amt) : '<span style="color:var(--text3)">$0.00</span>'}</td></tr>`;
         total += amt;
     });
+
+    // Then show any transaction categories not in BUDGET (unbudgeted spending)
+    Object.entries(d.catSpend).filter(([k]) => k !== 'Subvention' && !shownCats.has(k)).sort((a,b) => b[1] - a[1]).forEach(([cat, amt]) => {
+        html += `<tr><td>${cat.toUpperCase()} <span style="font-size:.65rem;color:var(--amber);">(UNBUDGETED)</span></td><td class="amount negative">${fmt(amt)}</td></tr>`;
+        total += amt;
+    });
+
     html += `<tr style="font-weight:700;background:var(--surface2);"><td>TOTAL</td><td class="amount">${fmt(total)}</td></tr>`;
     document.getElementById('finItemsBody').innerHTML = html;
 }
@@ -1076,6 +1113,9 @@ function renderFinancialForm() {
 function renderReconciliation() {
     const d = calcTotals();
     document.getElementById('recon-cashbook').value = d.closingBalance.toFixed(2);
+
+    // Auto-recalculate difference if bank balance was previously entered
+    calcRecon();
 
     // Cheque register
     const cheques = transactions.filter(t => t.cheque);
@@ -1443,18 +1483,9 @@ function renderBudgetLinesPage() {
         '<th class="col-right">Actions</th>' +
         '</tr></thead><tbody>';
 
-    // Helper for percentage display
-    function fmtPct(budgeted, actual) {
-        if (budgeted <= 0 && actual <= 0) return { label: '-', barWidth: 0, barClass: 'under' };
-        if (budgeted <= 0 && actual > 0) return { label: 'N/B', barWidth: 100, barClass: 'over' };
-        var pct = actual / budgeted * 100;
-        var barClass = pct > 110 ? 'over' : pct > 90 ? 'warning' : 'under';
-        return { label: pct.toFixed(0) + '%', barWidth: Math.min(pct, 100), barClass: barClass };
-    }
-
     // Data rows
     filtered.forEach(function(e) {
-        var p = fmtPct(e.budgeted, e.actual);
+        var p = budgetPct(e.budgeted, e.actual);
         var varClass = e.variance < 0 ? 'negative' : 'positive';
         var safeKey = escapeHtml(e.key);
         html += '<tr>' +
@@ -1471,7 +1502,7 @@ function renderBudgetLinesPage() {
     });
 
     // Total row
-    var tp = fmtPct(totalBudget, totalSpent);
+    var tp = budgetPct(totalBudget, totalSpent);
     html += '<tr class="total-row">' +
         '<td><strong>TOTAL</strong></td>' +
         '<td class="amount accent">' + fmt(totalBudget) + '</td>' +
