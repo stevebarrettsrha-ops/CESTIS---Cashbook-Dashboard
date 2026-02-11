@@ -1397,7 +1397,7 @@ function renderCategoriesPage() {
     const sorted = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]);
     const total = sorted.reduce((s,e)=>s+e[1],0);
 
-    let html = `<div class="card-title">🏷️ Category Ranking</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Category</th><th>Amount</th><th>Share</th><th>Visual</th></tr></thead><tbody>`;
+    let html = `<div class="card-title">🏷️ Category Ranking</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Category</th><th class="amount">Amount</th><th class="amount">Share</th><th>Visual</th></tr></thead><tbody>`;
     sorted.forEach(([cat,amt],i) => {
         const pct = (amt/total*100);
         html += `<tr><td style="color:var(--text3)">${i+1}</td><td><span class="tag ${getCategoryTag(cat)}">${cat}</span></td>
