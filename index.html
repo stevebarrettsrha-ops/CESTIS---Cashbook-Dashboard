@@ -270,6 +270,72 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .recon-summary-item .label { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.375rem; }
 .recon-summary-item .value { font-size:1.25rem; font-weight:700; font-family:var(--mono); }
 
+/* Monthly Reconciliation Cards */
+.recon-months-grid {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:1rem; margin-bottom:1.25rem;
+}
+.recon-month-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.25rem; position:relative; overflow:hidden; transition:box-shadow .2s;
+}
+.recon-month-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.25); }
+.recon-month-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.recon-month-card.month-1::before { background:var(--accent); }
+.recon-month-card.month-2::before { background:var(--green); }
+.recon-month-card.month-3::before { background:var(--amber); }
+.recon-month-card-header {
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;
+    padding-bottom:.75rem; border-bottom:1px solid var(--border);
+}
+.recon-month-card-header h4 { font-size:1rem; font-weight:700; color:var(--text); }
+.recon-month-card-header .month-year { font-size:.75rem; color:var(--text3); font-family:var(--mono); }
+.recon-card-rows { display:flex; flex-direction:column; gap:.375rem; }
+.recon-card-row {
+    display:flex; justify-content:space-between; align-items:center; padding:.25rem 0;
+    font-size:.8125rem;
+}
+.recon-card-row.separator { border-top:1px dashed var(--border); padding-top:.5rem; margin-top:.25rem; }
+.recon-card-row.total-row { border-top:2px solid var(--border); padding-top:.625rem; margin-top:.375rem; font-weight:700; }
+.recon-card-row .row-label { color:var(--text2); }
+.recon-card-row .row-value { font-family:var(--mono); font-weight:600; }
+.recon-card-row .row-value.positive { color:var(--green); }
+.recon-card-row .row-value.negative { color:var(--red); }
+.recon-card-row .row-value.accent { color:var(--accent2); }
+.recon-card-bank-input {
+    width:100%; margin-top:.75rem; padding-top:.75rem; border-top:1px solid var(--border);
+}
+.recon-card-bank-input label { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:.375rem; }
+.recon-card-bank-input input {
+    width:100%; padding:.5rem .75rem; background:var(--surface3); border:1px solid var(--border);
+    border-radius:6px; color:var(--text); font-family:var(--mono); font-size:.875rem; text-align:right;
+}
+.recon-card-bank-input input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,.15); }
+.recon-card-variance {
+    margin-top:.75rem; padding:.625rem; border-radius:6px; text-align:center;
+}
+.recon-card-variance.matched { background:var(--green-bg); border:1px solid rgba(34,197,94,.2); }
+.recon-card-variance.unmatched { background:var(--red-bg); border:1px solid rgba(239,68,68,.2); }
+.recon-card-variance.pending { background:var(--amber-bg); border:1px solid rgba(245,158,11,.2); }
+.recon-card-variance .variance-label { font-size:.6875rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.recon-card-variance .variance-value { font-size:1.125rem; font-weight:700; font-family:var(--mono); margin-top:.125rem; }
+.recon-card-variance.matched .variance-label, .recon-card-variance.matched .variance-value { color:var(--green); }
+.recon-card-variance.unmatched .variance-label, .recon-card-variance.unmatched .variance-value { color:var(--red); }
+.recon-card-variance.pending .variance-label, .recon-card-variance.pending .variance-value { color:var(--amber); }
+.recon-cheques-toggle {
+    margin-top:.5rem; background:none; border:none; color:var(--accent2); font-size:.75rem;
+    cursor:pointer; padding:.25rem 0; font-weight:600;
+}
+.recon-cheques-toggle:hover { text-decoration:underline; }
+.recon-cheques-list {
+    margin-top:.5rem; max-height:0; overflow:hidden; transition:max-height .3s ease;
+}
+.recon-cheques-list.open { max-height:300px; overflow-y:auto; }
+.recon-cheques-list table { font-size:.75rem; }
+.recon-cheques-list th { background:var(--surface2); color:var(--text3); font-size:.625rem; padding:.375rem .5rem; }
+.recon-cheques-list td { padding:.25rem .5rem; border-bottom:1px solid var(--border); }
+
 /* Print */
 @media print {
     .sidebar, .header-actions, .btn, .nav-item, .search-bar { display:none !important; }
@@ -1043,7 +1109,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <!-- ====== MONTHLY BANK RECONCILIATION ====== -->
         <div id="page-monthly-recon" class="page">
             <div class="page-header">
-                <div><h2>Monthly Bank Reconciliation</h2><div class="subtitle">Month-by-month reconciliation across fiscal year quarters</div></div>
+                <div><h2>Monthly Bank Reconciliation</h2><div class="subtitle">Auto-calculated from transactions · Month-by-month cards</div></div>
                 <div class="header-actions">
                     <button class="btn btn-ghost" onclick="showPageDirect('reconciliation')">← Back to Reconciliation</button>
                 </div>
@@ -1059,70 +1125,25 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <!-- Q1: April - June -->
             <div class="card recon-quarter-card">
                 <div class="card-title">📗 Quarter 1 · April – June <span class="badge" id="reconQ1Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ1Body"></tbody>
-                        <tfoot id="reconQ1Foot"></tfoot>
-                    </table>
-                </div>
+                <div class="recon-months-grid" id="reconQ1Cards"></div>
             </div>
 
             <!-- Q2: July - September -->
             <div class="card recon-quarter-card">
                 <div class="card-title">📘 Quarter 2 · July – September <span class="badge" id="reconQ2Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ2Body"></tbody>
-                        <tfoot id="reconQ2Foot"></tfoot>
-                    </table>
-                </div>
+                <div class="recon-months-grid" id="reconQ2Cards"></div>
             </div>
 
             <!-- Q3: October - December -->
             <div class="card recon-quarter-card">
                 <div class="card-title">📙 Quarter 3 · October – December <span class="badge" id="reconQ3Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ3Body"></tbody>
-                        <tfoot id="reconQ3Foot"></tfoot>
-                    </table>
-                </div>
+                <div class="recon-months-grid" id="reconQ3Cards"></div>
+            </div>
+
+            <!-- Q4: January - March -->
+            <div class="card recon-quarter-card">
+                <div class="card-title">📕 Quarter 4 · January – March <span class="badge" id="reconQ4Year"></span></div>
+                <div class="recon-months-grid" id="reconQ4Cards"></div>
             </div>
 
             <!-- Annual Summary -->
@@ -2574,19 +2595,20 @@ function renderMonthlyRecon() {
     document.getElementById('reconFYSummaryLabel').textContent = reconFY;
 
     let fyTotalDeposits = 0, fyTotalPayments = 0, fyOpeningBalance = 0, fyClosingBalance = 0;
+    let fyTotalBankCharges = 0, fyTotalOutstanding = 0;
     let fyReconciled = 0, fyTotal = 0;
 
-    // Only render Q1-Q3 (Apr-Jun, Jul-Sep, Oct-Dec) as specified
-    [1, 2, 3].forEach((q, qi) => {
+    // Render all 4 quarters as cards
+    [1, 2, 3, 4].forEach((q, qi) => {
         const qm = getQuarterMeta(q);
         const calYear = getQuarterCalendarYear(reconFY, q);
         const data = loadQuarterDataForRecon(reconFY, q);
-        const activeTxns = data.transactions.filter(t => t.category !== 'Cancelled');
+        const allTxns = data.transactions;
+        const activeTxns = allTxns.filter(t => t.category !== 'Cancelled');
 
         document.getElementById('reconQ' + q + 'Year').textContent = calYear;
 
-        let rowsHtml = '';
-        let footHtml = '';
+        let cardsHtml = '';
         let qDeposits = 0, qPayments = 0;
         let runningBalance = data.openingBalance;
 
@@ -2595,82 +2617,142 @@ function renderMonthlyRecon() {
         qm.months.forEach((mKey, mi) => {
             const monthName = qm.monthNames[mi];
             const monthNum = qm.monthNums[mi];
+            const cardColorClass = 'month-' + (mi + 1);
 
             // Filter transactions for this month
             const monthTxns = activeTxns.filter(t => {
                 if (!t.date) return false;
-                const parts = t.date.split('-');
-                return parseInt(parts[1]) === monthNum;
+                return parseInt(t.date.split('-')[1]) === monthNum;
             });
 
+            // Auto-calculate from transaction data
             const monthDeposits = monthTxns.reduce((sum, t) => sum + (t.deposit || 0), 0);
             const monthPayments = monthTxns.reduce((sum, t) => sum + (t.payment || 0), 0);
+            const monthBankCharges = monthTxns.filter(t => t.category === 'Bank Charges').reduce((sum, t) => sum + (t.payment || 0), 0);
+            const monthPaymentsExCharges = monthPayments - monthBankCharges;
+
+            // Outstanding cheques: cheques issued this month (have cheque numbers, not cancelled)
+            const monthCheques = monthTxns.filter(t => t.cheque && t.payment > 0);
+            const chequeCount = monthCheques.length;
+
             const openBal = runningBalance;
             const closeBal = openBal + monthDeposits - monthPayments;
             runningBalance = closeBal;
 
             qDeposits += monthDeposits;
             qPayments += monthPayments;
+            fyTotalBankCharges += monthBankCharges;
 
+            // Bank statement balance
             const savedBank = loadReconBankBalance(reconFY, q, mKey);
             const bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
-            const diff = !isNaN(bankVal) ? bankVal - closeBal : NaN;
-            const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
-            const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
 
-            let statusHtml;
+            // Variance: difference between bank statement and cash book closing balance
+            const diff = !isNaN(bankVal) ? bankVal - closeBal : NaN;
+            const outstandingAmt = !isNaN(diff) && diff < 0 ? Math.abs(diff) : 0;
+            fyTotalOutstanding += outstandingAmt;
+
+            let varianceClass, varianceLabel, varianceDisplay;
             if (isNaN(bankVal) || savedBank === '') {
-                statusHtml = '<span class="recon-status pending">Pending</span>';
+                varianceClass = 'pending';
+                varianceLabel = 'Awaiting Bank Statement';
+                varianceDisplay = '—';
             } else if (Math.abs(diff) < 1) {
-                statusHtml = '<span class="recon-status matched">Matched</span>';
+                varianceClass = 'matched';
+                varianceLabel = 'Reconciled';
+                varianceDisplay = fmt(0);
                 fyReconciled++;
             } else {
-                statusHtml = '<span class="recon-status unmatched">Unmatched</span>';
+                varianceClass = 'unmatched';
+                varianceLabel = diff > 0 ? 'Bank Exceeds Book' : 'Book Exceeds Bank';
+                varianceDisplay = (diff >= 0 ? '' : '-') + fmt(Math.abs(diff));
             }
             fyTotal++;
 
-            rowsHtml += '<tr>' +
-                '<td style="text-align:left;font-weight:600;">' + monthName + '</td>' +
-                '<td class="amount">' + fmt(openBal) + '</td>' +
-                '<td class="amount positive">' + fmt(monthDeposits) + '</td>' +
-                '<td class="amount negative">' + fmt(monthPayments) + '</td>' +
-                '<td class="amount" style="font-weight:700;">' + fmt(closeBal) + '</td>' +
-                '<td><input type="number" step="0.01" value="' + (savedBank !== '' ? savedBank : '') + '" ' +
-                    'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
-                    'placeholder="Enter balance"></td>' +
-                '<td class="amount" style="color:' + diffColor + ';">' + diffDisplay + '</td>' +
-                '<td>' + statusHtml + '</td>' +
-                '</tr>';
+            // Build card HTML
+            cardsHtml += '<div class="recon-month-card ' + cardColorClass + '">' +
+                '<div class="recon-month-card-header">' +
+                    '<h4>' + monthName + '</h4>' +
+                    '<span class="month-year">' + calYear + '</span>' +
+                '</div>' +
+                '<div class="recon-card-rows">' +
+                    '<div class="recon-card-row">' +
+                        '<span class="row-label">Opening Balance</span>' +
+                        '<span class="row-value accent">' + fmt(openBal) + '</span>' +
+                    '</div>' +
+                    '<div class="recon-card-row">' +
+                        '<span class="row-label">Add: Deposits</span>' +
+                        '<span class="row-value positive">+ ' + fmt(monthDeposits) + '</span>' +
+                    '</div>' +
+                    '<div class="recon-card-row">' +
+                        '<span class="row-label">Less: Payments (' + chequeCount + ' cheques)</span>' +
+                        '<span class="row-value negative">- ' + fmt(monthPaymentsExCharges) + '</span>' +
+                    '</div>' +
+                    '<div class="recon-card-row">' +
+                        '<span class="row-label">Less: Bank Charges</span>' +
+                        '<span class="row-value negative">- ' + fmt(monthBankCharges) + '</span>' +
+                    '</div>' +
+                    '<div class="recon-card-row total-row">' +
+                        '<span class="row-label">Cash Book Balance</span>' +
+                        '<span class="row-value" style="font-size:.9375rem;">' + fmt(closeBal) + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="recon-card-bank-input">' +
+                    '<label>Bank Statement Balance</label>' +
+                    '<input type="number" step="0.01" value="' + (savedBank !== '' ? savedBank : '') + '" ' +
+                        'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
+                        'placeholder="Enter bank statement balance">' +
+                '</div>' +
+                '<div class="recon-card-variance ' + varianceClass + '">' +
+                    '<div class="variance-label">' + varianceLabel + '</div>' +
+                    '<div class="variance-value">' + varianceDisplay + '</div>' +
+                '</div>';
+
+            // Outstanding cheques toggle
+            if (chequeCount > 0) {
+                var chequesId = 'recon-cheques-' + q + '-' + mKey;
+                cardsHtml += '<button class="recon-cheques-toggle" onclick="toggleReconCheques(\'' + chequesId + '\')">' +
+                    '▸ View ' + chequeCount + ' cheque(s) issued</button>' +
+                    '<div class="recon-cheques-list" id="' + chequesId + '">' +
+                        '<table><thead><tr><th>Chq #</th><th>Payee</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+                monthCheques.forEach(function(chq) {
+                    cardsHtml += '<tr><td class="cheque-num">' + chq.cheque + '</td>' +
+                        '<td>' + chq.details + '</td>' +
+                        '<td class="amount negative">' + fmt(chq.payment) + '</td></tr>';
+                });
+                cardsHtml += '</tbody></table></div>';
+            }
+
+            cardsHtml += '</div>';
         });
 
         fyTotalDeposits += qDeposits;
         fyTotalPayments += qPayments;
 
-        const qClose = runningBalance;
-        footHtml = '<tr>' +
-            '<td style="text-align:left;font-weight:700;">Quarter Total</td>' +
-            '<td class="amount">' + fmt(data.openingBalance) + '</td>' +
-            '<td class="amount positive">' + fmt(qDeposits) + '</td>' +
-            '<td class="amount negative">' + fmt(qPayments) + '</td>' +
-            '<td class="amount" style="font-weight:700;">' + fmt(qClose) + '</td>' +
-            '<td></td><td></td><td></td>' +
-            '</tr>';
+        if (q === 4) fyClosingBalance = runningBalance;
+        else if (q === 3 && loadQuarterDataForRecon(reconFY, 4).transactions.length === 0) fyClosingBalance = runningBalance;
 
-        if (q === 3) fyClosingBalance = qClose;
-
-        document.getElementById('reconQ' + q + 'Body').innerHTML = rowsHtml;
-        document.getElementById('reconQ' + q + 'Foot').innerHTML = footHtml;
+        document.getElementById('reconQ' + q + 'Cards').innerHTML = cardsHtml;
     });
 
-    // Fiscal year summary
+    // Fiscal year summary with enhanced data
     const summaryHtml =
         '<div class="recon-summary-item"><div class="label">Opening Balance</div><div class="value" style="color:var(--accent2);">' + fmt(fyOpeningBalance) + '</div></div>' +
         '<div class="recon-summary-item"><div class="label">Total Deposits</div><div class="value" style="color:var(--green);">' + fmt(fyTotalDeposits) + '</div></div>' +
         '<div class="recon-summary-item"><div class="label">Total Payments</div><div class="value" style="color:var(--red);">' + fmt(fyTotalPayments) + '</div></div>' +
+        '<div class="recon-summary-item"><div class="label">Total Bank Charges</div><div class="value" style="color:var(--amber);">' + fmt(fyTotalBankCharges) + '</div></div>' +
         '<div class="recon-summary-item"><div class="label">Closing Balance</div><div class="value" style="color:var(--accent2);">' + fmt(fyClosingBalance) + '</div></div>' +
         '<div class="recon-summary-item"><div class="label">Months Reconciled</div><div class="value" style="color:' + (fyReconciled === fyTotal ? 'var(--green)' : 'var(--amber)') + ';">' + fyReconciled + ' / ' + fyTotal + '</div></div>';
 
     document.getElementById('reconFYSummary').innerHTML = summaryHtml;
+}
+
+function toggleReconCheques(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    var btn = el.previousElementSibling;
+    if (btn) btn.textContent = el.classList.contains('open') ? btn.textContent.replace('▸', '▾') : btn.textContent.replace('▾', '▸');
 }
 
 function onReconBankInput(fy, q, monthKey, value) {
