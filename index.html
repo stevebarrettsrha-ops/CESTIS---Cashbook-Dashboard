@@ -247,16 +247,42 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-radius:var(--radius);
 }
 .recon-fy-label { font-size:1.125rem; font-weight:700; color:var(--accent2); font-family:var(--mono); }
-.recon-quarter-card { margin-bottom:1.25rem; }
-.recon-table th, .recon-table td { text-align:right; padding:.625rem .75rem; }
-.recon-table th:first-child, .recon-table td:first-child { text-align:left; }
-.recon-table tfoot td { font-weight:700; border-top:2px solid var(--border); background:var(--surface2); }
-.recon-table input[type="number"] {
-    width:120px; background:var(--surface3); border:1px solid var(--border); border-radius:4px;
-    color:var(--text); font-family:var(--mono); font-size:.8125rem; padding:.25rem .5rem; text-align:right;
+.recon-quarter-label {
+    font-size:.75rem; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:1.5px;
+    margin:1.5rem 0 .75rem; padding-bottom:.5rem; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:.5rem;
 }
-.recon-table input[type="number"]:focus { outline:none; border-color:var(--accent); }
-.recon-status { display:inline-block; padding:.125rem .5rem; border-radius:4px; font-size:.6875rem; font-weight:600; }
+.recon-quarter-label .badge { font-size:.625rem; letter-spacing:0; text-transform:none; }
+.recon-month-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    margin-bottom:1rem; overflow:hidden;
+}
+.recon-month-card.matched { border-left:3px solid var(--green); }
+.recon-month-card.unmatched { border-left:3px solid var(--red); }
+.recon-month-card.pending { border-left:3px solid var(--amber); }
+.recon-month-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:1rem 1.25rem; border-bottom:1px solid var(--border); background:var(--surface2);
+}
+.recon-month-header h3 { font-size:.9375rem; font-weight:700; display:flex; align-items:center; gap:.5rem; }
+.recon-month-body { padding:1.25rem; }
+.recon-month-stats {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem; margin-bottom:1.25rem;
+}
+.recon-month-stat .stat-label { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.25rem; }
+.recon-month-stat .stat-value { font-size:1.125rem; font-weight:700; font-family:var(--mono); }
+.recon-month-bank {
+    display:flex; align-items:center; gap:1rem; padding:1rem; background:var(--surface2);
+    border:1px solid var(--border); border-radius:8px; flex-wrap:wrap;
+}
+.recon-month-bank label { font-size:.75rem; font-weight:600; color:var(--text2); white-space:nowrap; }
+.recon-month-bank input[type="number"] {
+    width:160px; background:var(--surface3); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-family:var(--mono); font-size:.875rem; padding:.5rem .75rem; text-align:right;
+}
+.recon-month-bank input[type="number"]:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,0.2); }
+.recon-month-bank .recon-diff { font-family:var(--mono); font-weight:700; font-size:.875rem; margin-left:auto; }
+.recon-status { display:inline-block; padding:.25rem .625rem; border-radius:4px; font-size:.6875rem; font-weight:600; }
 .recon-status.matched { background:var(--green-bg); color:var(--green); }
 .recon-status.unmatched { background:var(--red-bg); color:var(--red); }
 .recon-status.pending { background:var(--amber-bg); color:var(--amber); }
@@ -1056,74 +1082,8 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 <button class="btn btn-ghost btn-sm" onclick="changeReconFY(1)">Next FY ▶</button>
             </div>
 
-            <!-- Q1: April - June -->
-            <div class="card recon-quarter-card">
-                <div class="card-title">📗 Quarter 1 · April – June <span class="badge" id="reconQ1Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ1Body"></tbody>
-                        <tfoot id="reconQ1Foot"></tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Q2: July - September -->
-            <div class="card recon-quarter-card">
-                <div class="card-title">📘 Quarter 2 · July – September <span class="badge" id="reconQ2Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ2Body"></tbody>
-                        <tfoot id="reconQ2Foot"></tfoot>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Q3: October - December -->
-            <div class="card recon-quarter-card">
-                <div class="card-title">📙 Quarter 3 · October – December <span class="badge" id="reconQ3Year"></span></div>
-                <div class="table-wrap">
-                    <table class="recon-table">
-                        <thead>
-                            <tr>
-                                <th>Month</th>
-                                <th>Opening Balance</th>
-                                <th>Deposits</th>
-                                <th>Payments</th>
-                                <th>Closing Balance</th>
-                                <th>Bank Statement</th>
-                                <th>Difference</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reconQ3Body"></tbody>
-                        <tfoot id="reconQ3Foot"></tfoot>
-                    </table>
-                </div>
-            </div>
+            <!-- Month cards rendered dynamically by JS -->
+            <div id="reconMonthCards"></div>
 
             <!-- Annual Summary -->
             <div class="card">
@@ -2573,34 +2533,31 @@ function renderMonthlyRecon() {
     document.getElementById('reconFYLabel').textContent = fyLabel(reconFY);
     document.getElementById('reconFYSummaryLabel').textContent = reconFY;
 
+    const quarterIcons = { 1: '📗', 2: '📘', 3: '📙' };
+    const quarterLabels = { 1: 'Quarter 1 · April – June', 2: 'Quarter 2 · July – September', 3: 'Quarter 3 · October – December' };
+    let cardsHtml = '';
     let fyTotalDeposits = 0, fyTotalPayments = 0, fyOpeningBalance = 0, fyClosingBalance = 0;
     let fyReconciled = 0, fyTotal = 0;
 
-    // Only render Q1-Q3 (Apr-Jun, Jul-Sep, Oct-Dec) as specified
     [1, 2, 3].forEach((q, qi) => {
         const qm = getQuarterMeta(q);
         const calYear = getQuarterCalendarYear(reconFY, q);
         const data = loadQuarterDataForRecon(reconFY, q);
         const activeTxns = data.transactions.filter(t => t.category !== 'Cancelled');
-
-        document.getElementById('reconQ' + q + 'Year').textContent = calYear;
-
-        let rowsHtml = '';
-        let footHtml = '';
-        let qDeposits = 0, qPayments = 0;
         let runningBalance = data.openingBalance;
 
         if (qi === 0) fyOpeningBalance = data.openingBalance;
+
+        // Quarter section label
+        cardsHtml += '<div class="recon-quarter-label">' + quarterIcons[q] + ' ' + quarterLabels[q] + ' <span class="badge">' + calYear + '</span></div>';
 
         qm.months.forEach((mKey, mi) => {
             const monthName = qm.monthNames[mi];
             const monthNum = qm.monthNums[mi];
 
-            // Filter transactions for this month
             const monthTxns = activeTxns.filter(t => {
                 if (!t.date) return false;
-                const parts = t.date.split('-');
-                return parseInt(parts[1]) === monthNum;
+                return parseInt(t.date.split('-')[1]) === monthNum;
             });
 
             const monthDeposits = monthTxns.reduce((sum, t) => sum + (t.deposit || 0), 0);
@@ -2609,8 +2566,8 @@ function renderMonthlyRecon() {
             const closeBal = openBal + monthDeposits - monthPayments;
             runningBalance = closeBal;
 
-            qDeposits += monthDeposits;
-            qPayments += monthPayments;
+            fyTotalDeposits += monthDeposits;
+            fyTotalPayments += monthPayments;
 
             const savedBank = loadReconBankBalance(reconFY, q, mKey);
             const bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
@@ -2618,49 +2575,47 @@ function renderMonthlyRecon() {
             const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
             const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
 
-            let statusHtml;
+            let statusClass, statusText;
             if (isNaN(bankVal) || savedBank === '') {
-                statusHtml = '<span class="recon-status pending">Pending</span>';
+                statusClass = 'pending'; statusText = 'Pending';
             } else if (Math.abs(diff) < 1) {
-                statusHtml = '<span class="recon-status matched">Matched</span>';
+                statusClass = 'matched'; statusText = 'Matched';
                 fyReconciled++;
             } else {
-                statusHtml = '<span class="recon-status unmatched">Unmatched</span>';
+                statusClass = 'unmatched'; statusText = 'Unmatched';
             }
             fyTotal++;
 
-            rowsHtml += '<tr>' +
-                '<td style="text-align:left;font-weight:600;">' + monthName + '</td>' +
-                '<td class="amount">' + fmt(openBal) + '</td>' +
-                '<td class="amount positive">' + fmt(monthDeposits) + '</td>' +
-                '<td class="amount negative">' + fmt(monthPayments) + '</td>' +
-                '<td class="amount" style="font-weight:700;">' + fmt(closeBal) + '</td>' +
-                '<td><input type="number" step="0.01" value="' + (savedBank !== '' ? savedBank : '') + '" ' +
-                    'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
-                    'placeholder="Enter balance"></td>' +
-                '<td class="amount" style="color:' + diffColor + ';">' + diffDisplay + '</td>' +
-                '<td>' + statusHtml + '</td>' +
-                '</tr>';
+            const txnCount = monthTxns.length;
+
+            cardsHtml += '<div class="recon-month-card ' + statusClass + '">' +
+                '<div class="recon-month-header">' +
+                    '<h3>📅 ' + monthName + ' ' + calYear + '</h3>' +
+                    '<span class="recon-status ' + statusClass + '">' + statusText + '</span>' +
+                '</div>' +
+                '<div class="recon-month-body">' +
+                    '<div class="recon-month-stats">' +
+                        '<div class="recon-month-stat"><div class="stat-label">Opening Balance</div><div class="stat-value" style="color:var(--accent2);">' + fmt(openBal) + '</div></div>' +
+                        '<div class="recon-month-stat"><div class="stat-label">Deposits</div><div class="stat-value" style="color:var(--green);">' + fmt(monthDeposits) + '</div></div>' +
+                        '<div class="recon-month-stat"><div class="stat-label">Payments</div><div class="stat-value" style="color:var(--red);">' + fmt(monthPayments) + '</div></div>' +
+                        '<div class="recon-month-stat"><div class="stat-label">Closing Balance</div><div class="stat-value">' + fmt(closeBal) + '</div></div>' +
+                        '<div class="recon-month-stat"><div class="stat-label">Transactions</div><div class="stat-value" style="color:var(--text2);">' + txnCount + '</div></div>' +
+                    '</div>' +
+                    '<div class="recon-month-bank">' +
+                        '<label>Bank Statement Balance:</label>' +
+                        '<input type="number" step="0.01" value="' + (savedBank !== '' ? savedBank : '') + '" ' +
+                            'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
+                            'placeholder="Enter bank balance">' +
+                        '<span class="recon-diff" style="color:' + diffColor + ';">Diff: ' + diffDisplay + '</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
         });
 
-        fyTotalDeposits += qDeposits;
-        fyTotalPayments += qPayments;
-
-        const qClose = runningBalance;
-        footHtml = '<tr>' +
-            '<td style="text-align:left;font-weight:700;">Quarter Total</td>' +
-            '<td class="amount">' + fmt(data.openingBalance) + '</td>' +
-            '<td class="amount positive">' + fmt(qDeposits) + '</td>' +
-            '<td class="amount negative">' + fmt(qPayments) + '</td>' +
-            '<td class="amount" style="font-weight:700;">' + fmt(qClose) + '</td>' +
-            '<td></td><td></td><td></td>' +
-            '</tr>';
-
-        if (q === 3) fyClosingBalance = qClose;
-
-        document.getElementById('reconQ' + q + 'Body').innerHTML = rowsHtml;
-        document.getElementById('reconQ' + q + 'Foot').innerHTML = footHtml;
+        if (q === 3) fyClosingBalance = runningBalance;
     });
+
+    document.getElementById('reconMonthCards').innerHTML = cardsHtml;
 
     // Fiscal year summary
     const summaryHtml =
