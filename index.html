@@ -240,6 +240,36 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 }
 .search-bar input { border:none; background:none; color:var(--text); font-size:.8125rem; flex:1; outline:none; }
 
+/* Monthly Bank Reconciliation */
+.recon-fy-nav {
+    display:flex; align-items:center; justify-content:center; gap:1rem;
+    margin-bottom:1.5rem; padding:.75rem; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius);
+}
+.recon-fy-label { font-size:1.125rem; font-weight:700; color:var(--accent2); font-family:var(--mono); }
+.recon-quarter-card { margin-bottom:1.25rem; }
+.recon-table th, .recon-table td { text-align:right; padding:.625rem .75rem; }
+.recon-table th:first-child, .recon-table td:first-child { text-align:left; }
+.recon-table tfoot td { font-weight:700; border-top:2px solid var(--border); background:var(--surface2); }
+.recon-table input[type="number"] {
+    width:120px; background:var(--surface3); border:1px solid var(--border); border-radius:4px;
+    color:var(--text); font-family:var(--mono); font-size:.8125rem; padding:.25rem .5rem; text-align:right;
+}
+.recon-table input[type="number"]:focus { outline:none; border-color:var(--accent); }
+.recon-status { display:inline-block; padding:.125rem .5rem; border-radius:4px; font-size:.6875rem; font-weight:600; }
+.recon-status.matched { background:var(--green-bg); color:var(--green); }
+.recon-status.unmatched { background:var(--red-bg); color:var(--red); }
+.recon-status.pending { background:var(--amber-bg); color:var(--amber); }
+.recon-summary-grid {
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem;
+}
+.recon-summary-item {
+    background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+    padding:1rem; text-align:center;
+}
+.recon-summary-item .label { font-size:.6875rem; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.375rem; }
+.recon-summary-item .value { font-size:1.25rem; font-weight:700; font-family:var(--mono); }
+
 /* Print */
 @media print {
     .sidebar, .header-actions, .btn, .nav-item, .search-bar { display:none !important; }
@@ -708,8 +738,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         </div>
         <div class="nav-section">
             <div class="nav-label">Reporting</div>
-            <div class="nav-item" onclick="showPage('financial')"><span class="icon">📄</span> Financial Data Form</div>
-            <div class="nav-item" onclick="showPage('reconciliation')"><span class="icon">🏦</span> Reconciliation</div>
+            <div class="nav-item" data-page="financial" onclick="showPage('financial')"><span class="icon">📄</span> Financial Data Form</div>
+            <div class="nav-item" data-page="reconciliation" onclick="showPage('reconciliation')"><span class="icon">🏦</span> Reconciliation</div>
+            <div class="nav-item" data-page="monthly-recon" onclick="showPageDirect('monthly-recon')"><span class="icon">📅</span> Monthly Recon</div>
         </div>
         <div class="nav-section">
             <div class="nav-label">External Links</div>
@@ -975,6 +1006,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <div id="page-reconciliation" class="page">
             <div class="page-header">
                 <div><h2>Bank Reconciliation</h2><div class="subtitle">Cash book vs bank statement</div></div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="showPageDirect('monthly-recon')">📅 Monthly Bank Reconciliation</button>
+                </div>
             </div>
             <div class="card">
                 <div class="card-title">🏦 Quick Reconciliation View</div>
@@ -1003,6 +1037,98 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                         <tbody id="chequeRegBody"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ====== MONTHLY BANK RECONCILIATION ====== -->
+        <div id="page-monthly-recon" class="page">
+            <div class="page-header">
+                <div><h2>Monthly Bank Reconciliation</h2><div class="subtitle">Month-by-month reconciliation across fiscal year quarters</div></div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" onclick="showPageDirect('reconciliation')">← Back to Reconciliation</button>
+                </div>
+            </div>
+
+            <!-- FY Navigation -->
+            <div class="recon-fy-nav">
+                <button class="btn btn-ghost btn-sm" onclick="changeReconFY(-1)">◀ Prev FY</button>
+                <span class="recon-fy-label" id="reconFYLabel">FY 2025/2026</span>
+                <button class="btn btn-ghost btn-sm" onclick="changeReconFY(1)">Next FY ▶</button>
+            </div>
+
+            <!-- Q1: April - June -->
+            <div class="card recon-quarter-card">
+                <div class="card-title">📗 Quarter 1 · April – June <span class="badge" id="reconQ1Year"></span></div>
+                <div class="table-wrap">
+                    <table class="recon-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Opening Balance</th>
+                                <th>Deposits</th>
+                                <th>Payments</th>
+                                <th>Closing Balance</th>
+                                <th>Bank Statement</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reconQ1Body"></tbody>
+                        <tfoot id="reconQ1Foot"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Q2: July - September -->
+            <div class="card recon-quarter-card">
+                <div class="card-title">📘 Quarter 2 · July – September <span class="badge" id="reconQ2Year"></span></div>
+                <div class="table-wrap">
+                    <table class="recon-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Opening Balance</th>
+                                <th>Deposits</th>
+                                <th>Payments</th>
+                                <th>Closing Balance</th>
+                                <th>Bank Statement</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reconQ2Body"></tbody>
+                        <tfoot id="reconQ2Foot"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Q3: October - December -->
+            <div class="card recon-quarter-card">
+                <div class="card-title">📙 Quarter 3 · October – December <span class="badge" id="reconQ3Year"></span></div>
+                <div class="table-wrap">
+                    <table class="recon-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Opening Balance</th>
+                                <th>Deposits</th>
+                                <th>Payments</th>
+                                <th>Closing Balance</th>
+                                <th>Bank Statement</th>
+                                <th>Difference</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reconQ3Body"></tbody>
+                        <tfoot id="reconQ3Foot"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Annual Summary -->
+            <div class="card">
+                <div class="card-title">📊 Fiscal Year Summary <span class="badge" id="reconFYSummaryLabel"></span></div>
+                <div class="recon-summary-grid" id="reconFYSummary"></div>
             </div>
         </div>
 
@@ -2382,6 +2508,174 @@ function populateSubventionFields() {
         amountInput.value = '';
         updateSubventionStatus(0);
     }
+}
+
+// ============================================================
+// MONTHLY BANK RECONCILIATION
+// ============================================================
+let reconFY = '2025/2026';
+
+function showPageDirect(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    // Highlight matching nav item if any
+    document.querySelectorAll('.nav-item').forEach(n => {
+        if (n.getAttribute('data-page') === page) n.classList.add('active');
+    });
+    if (page === 'monthly-recon') {
+        reconFY = activeFY;
+        renderMonthlyRecon();
+    } else {
+        refreshAll();
+    }
+}
+
+function changeReconFY(dir) {
+    const parts = reconFY.split('/');
+    const y1 = parseInt(parts[0]) + dir;
+    const y2 = y1 + 1;
+    reconFY = y1 + '/' + y2;
+    renderMonthlyRecon();
+}
+
+function getReconStorageKey(fy, q, monthKey) {
+    return 'cestis_recon_bank_' + fy + '_Q' + q + '_' + monthKey;
+}
+
+function saveReconBankBalance(fy, q, monthKey, value) {
+    try { localStorage.setItem(getReconStorageKey(fy, q, monthKey), value); } catch(e) {}
+}
+
+function loadReconBankBalance(fy, q, monthKey) {
+    try { return localStorage.getItem(getReconStorageKey(fy, q, monthKey)) || ''; } catch(e) { return ''; }
+}
+
+function loadQuarterDataForRecon(fy, q) {
+    const key = 'cestis_quarter_' + fy + '_Q' + q;
+    try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const data = JSON.parse(saved);
+            return { openingBalance: data.openingBalance || 0, transactions: data.transactions || [] };
+        } else if (fy === '2025/2026' && q === 3) {
+            const oldData = localStorage.getItem('cesti_cashbook_data');
+            if (oldData) {
+                return { openingBalance: 237948.69, transactions: JSON.parse(oldData) };
+            }
+            return { openingBalance: 237948.69, transactions: JSON.parse(JSON.stringify(DEFAULT_TRANSACTIONS_Q3)) };
+        }
+    } catch(e) {}
+    return { openingBalance: 0, transactions: [] };
+}
+
+function renderMonthlyRecon() {
+    document.getElementById('reconFYLabel').textContent = fyLabel(reconFY);
+    document.getElementById('reconFYSummaryLabel').textContent = reconFY;
+
+    let fyTotalDeposits = 0, fyTotalPayments = 0, fyOpeningBalance = 0, fyClosingBalance = 0;
+    let fyReconciled = 0, fyTotal = 0;
+
+    // Only render Q1-Q3 (Apr-Jun, Jul-Sep, Oct-Dec) as specified
+    [1, 2, 3].forEach((q, qi) => {
+        const qm = getQuarterMeta(q);
+        const calYear = getQuarterCalendarYear(reconFY, q);
+        const data = loadQuarterDataForRecon(reconFY, q);
+        const activeTxns = data.transactions.filter(t => t.category !== 'Cancelled');
+
+        document.getElementById('reconQ' + q + 'Year').textContent = calYear;
+
+        let rowsHtml = '';
+        let footHtml = '';
+        let qDeposits = 0, qPayments = 0;
+        let runningBalance = data.openingBalance;
+
+        if (qi === 0) fyOpeningBalance = data.openingBalance;
+
+        qm.months.forEach((mKey, mi) => {
+            const monthName = qm.monthNames[mi];
+            const monthNum = qm.monthNums[mi];
+
+            // Filter transactions for this month
+            const monthTxns = activeTxns.filter(t => {
+                if (!t.date) return false;
+                const parts = t.date.split('-');
+                return parseInt(parts[1]) === monthNum;
+            });
+
+            const monthDeposits = monthTxns.reduce((sum, t) => sum + (t.deposit || 0), 0);
+            const monthPayments = monthTxns.reduce((sum, t) => sum + (t.payment || 0), 0);
+            const openBal = runningBalance;
+            const closeBal = openBal + monthDeposits - monthPayments;
+            runningBalance = closeBal;
+
+            qDeposits += monthDeposits;
+            qPayments += monthPayments;
+
+            const savedBank = loadReconBankBalance(reconFY, q, mKey);
+            const bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+            const diff = !isNaN(bankVal) ? bankVal - closeBal : NaN;
+            const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
+            const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
+
+            let statusHtml;
+            if (isNaN(bankVal) || savedBank === '') {
+                statusHtml = '<span class="recon-status pending">Pending</span>';
+            } else if (Math.abs(diff) < 1) {
+                statusHtml = '<span class="recon-status matched">Matched</span>';
+                fyReconciled++;
+            } else {
+                statusHtml = '<span class="recon-status unmatched">Unmatched</span>';
+            }
+            fyTotal++;
+
+            rowsHtml += '<tr>' +
+                '<td style="text-align:left;font-weight:600;">' + monthName + '</td>' +
+                '<td class="amount">' + fmt(openBal) + '</td>' +
+                '<td class="amount positive">' + fmt(monthDeposits) + '</td>' +
+                '<td class="amount negative">' + fmt(monthPayments) + '</td>' +
+                '<td class="amount" style="font-weight:700;">' + fmt(closeBal) + '</td>' +
+                '<td><input type="number" step="0.01" value="' + (savedBank !== '' ? savedBank : '') + '" ' +
+                    'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
+                    'placeholder="Enter balance"></td>' +
+                '<td class="amount" style="color:' + diffColor + ';">' + diffDisplay + '</td>' +
+                '<td>' + statusHtml + '</td>' +
+                '</tr>';
+        });
+
+        fyTotalDeposits += qDeposits;
+        fyTotalPayments += qPayments;
+
+        const qClose = runningBalance;
+        footHtml = '<tr>' +
+            '<td style="text-align:left;font-weight:700;">Quarter Total</td>' +
+            '<td class="amount">' + fmt(data.openingBalance) + '</td>' +
+            '<td class="amount positive">' + fmt(qDeposits) + '</td>' +
+            '<td class="amount negative">' + fmt(qPayments) + '</td>' +
+            '<td class="amount" style="font-weight:700;">' + fmt(qClose) + '</td>' +
+            '<td></td><td></td><td></td>' +
+            '</tr>';
+
+        if (q === 3) fyClosingBalance = qClose;
+
+        document.getElementById('reconQ' + q + 'Body').innerHTML = rowsHtml;
+        document.getElementById('reconQ' + q + 'Foot').innerHTML = footHtml;
+    });
+
+    // Fiscal year summary
+    const summaryHtml =
+        '<div class="recon-summary-item"><div class="label">Opening Balance</div><div class="value" style="color:var(--accent2);">' + fmt(fyOpeningBalance) + '</div></div>' +
+        '<div class="recon-summary-item"><div class="label">Total Deposits</div><div class="value" style="color:var(--green);">' + fmt(fyTotalDeposits) + '</div></div>' +
+        '<div class="recon-summary-item"><div class="label">Total Payments</div><div class="value" style="color:var(--red);">' + fmt(fyTotalPayments) + '</div></div>' +
+        '<div class="recon-summary-item"><div class="label">Closing Balance</div><div class="value" style="color:var(--accent2);">' + fmt(fyClosingBalance) + '</div></div>' +
+        '<div class="recon-summary-item"><div class="label">Months Reconciled</div><div class="value" style="color:' + (fyReconciled === fyTotal ? 'var(--green)' : 'var(--amber)') + ';">' + fyReconciled + ' / ' + fyTotal + '</div></div>';
+
+    document.getElementById('reconFYSummary').innerHTML = summaryHtml;
+}
+
+function onReconBankInput(fy, q, monthKey, value) {
+    saveReconBankBalance(fy, q, monthKey, value);
+    renderMonthlyRecon();
 }
 
 // ============================================================
