@@ -786,6 +786,171 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     gap:.5rem;
 }
 
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+.login-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    opacity:1; transition:opacity .5s ease, visibility .5s ease;
+}
+.login-overlay.hidden {
+    opacity:0; visibility:hidden; pointer-events:none;
+}
+.login-container {
+    width:100%; max-width:420px; padding:2rem;
+}
+.login-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:2.5rem 2rem 2rem;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 8px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.08);
+}
+.login-card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--purple), var(--teal));
+}
+.login-glow {
+    position:absolute; top:-80px; left:50%; transform:translateX(-50%);
+    width:300px; height:160px;
+    background:radial-gradient(ellipse, rgba(59,130,246,0.12) 0%, transparent 70%);
+    pointer-events:none;
+}
+.login-brand {
+    text-align:center; margin-bottom:2rem;
+}
+.login-brand-icon {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:56px; height:56px; border-radius:14px;
+    background:linear-gradient(135deg, rgba(59,130,246,0.15), rgba(168,85,247,0.15));
+    border:1px solid rgba(59,130,246,0.2);
+    font-size:1.5rem; margin-bottom:1rem;
+}
+.login-brand h1 {
+    font-size:1.25rem; font-weight:700; color:var(--accent2);
+    letter-spacing:1.5px; text-transform:uppercase;
+}
+.login-brand p {
+    font-size:.75rem; color:var(--text3); margin-top:.25rem;
+}
+.login-form { display:flex; flex-direction:column; gap:1.25rem; }
+.login-field { position:relative; }
+.login-field label {
+    display:block; font-size:.6875rem; font-weight:600;
+    color:var(--text3); text-transform:uppercase; letter-spacing:.75px;
+    margin-bottom:.5rem;
+}
+.login-field .input-wrapper {
+    position:relative; display:flex; align-items:center;
+}
+.login-field .input-icon {
+    position:absolute; left:.875rem; font-size:.9rem;
+    color:var(--text3); pointer-events:none; transition:color .2s;
+}
+.login-field input {
+    width:100%; padding:.75rem .875rem .75rem 2.5rem;
+    background:var(--surface2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--text); font-size:.875rem;
+    transition:all .2s;
+}
+.login-field input::placeholder { color:var(--text3); }
+.login-field input:focus {
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(59,130,246,0.12);
+    background:var(--surface3);
+}
+.login-field input:focus ~ .input-icon,
+.login-field input:focus + .input-icon { color:var(--accent2); }
+.login-field .toggle-password {
+    position:absolute; right:.75rem;
+    background:none; border:none; color:var(--text3);
+    cursor:pointer; font-size:.85rem; padding:.25rem;
+    transition:color .2s;
+}
+.login-field .toggle-password:hover { color:var(--text); }
+.login-btn {
+    width:100%; padding:.8rem;
+    background:linear-gradient(135deg, var(--accent), #6366f1);
+    border:none; border-radius:10px;
+    color:#fff; font-size:.875rem; font-weight:700;
+    cursor:pointer; transition:all .2s;
+    letter-spacing:.5px; position:relative; overflow:hidden;
+}
+.login-btn:hover {
+    box-shadow:0 4px 20px rgba(59,130,246,0.4);
+    transform:translateY(-1px);
+}
+.login-btn:active { transform:translateY(0); }
+.login-btn:disabled {
+    opacity:.6; cursor:not-allowed; transform:none;
+    box-shadow:none;
+}
+.login-btn .spinner {
+    display:inline-block; width:16px; height:16px;
+    border:2px solid rgba(255,255,255,0.3);
+    border-top-color:#fff; border-radius:50%;
+    animation:spin .6s linear infinite;
+    vertical-align:middle; margin-right:.5rem;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.login-error {
+    background:var(--red-bg);
+    border:1px solid rgba(239,68,68,0.25);
+    border-radius:8px;
+    padding:.625rem .875rem;
+    font-size:.8rem; color:var(--red);
+    display:none; align-items:center; gap:.5rem;
+    animation:shakeX .4s;
+}
+.login-error.visible { display:flex; }
+@keyframes shakeX {
+    0%,100% { transform:translateX(0); }
+    20%,60% { transform:translateX(-6px); }
+    40%,80% { transform:translateX(6px); }
+}
+.login-footer {
+    text-align:center; margin-top:1.5rem;
+    font-size:.65rem; color:var(--text3);
+    line-height:1.6;
+}
+.login-footer span { color:var(--accent); }
+.login-session-info {
+    display:flex; align-items:center; justify-content:center;
+    gap:.375rem; margin-top:.75rem;
+    font-size:.65rem; color:var(--text3);
+}
+.login-session-info .dot {
+    width:5px; height:5px; border-radius:50%;
+    background:var(--green); animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+    0%,100% { opacity:1; } 50% { opacity:.4; }
+}
+
+/* Logout button in sidebar */
+.sidebar-logout {
+    padding:0 .75rem; margin-top:.5rem;
+}
+.sidebar-logout .nav-item {
+    color:var(--red); opacity:.8;
+}
+.sidebar-logout .nav-item:hover {
+    background:var(--red-bg); color:var(--red); opacity:1;
+}
+
+/* App hidden state */
+.app.app-hidden {
+    display:none;
+}
+
 /* Responsive */
 @media (max-width:900px) {
     .app { grid-template-columns:1fr; }
@@ -799,11 +964,61 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .budget-lines-grid {
         grid-template-columns:repeat(2, 1fr);
     }
+    .login-container { padding:1rem; }
+    .login-card { padding:2rem 1.5rem 1.5rem; }
 }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN                                                  -->
+<!-- ============================================================ -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-glow"></div>
+            <div class="login-brand">
+                <div class="login-brand-icon">&#x1f4bc;</div>
+                <h1>CESTIS</h1>
+                <p>Cash Book Management System</p>
+            </div>
+            <form id="loginForm" class="login-form" autocomplete="off" onsubmit="handleLogin(event)">
+                <div id="loginError" class="login-error">
+                    <span>&#x26A0;</span>
+                    <span id="loginErrorMsg">Invalid username or password</span>
+                </div>
+                <div class="login-field">
+                    <label for="loginUser">Username</label>
+                    <div class="input-wrapper">
+                        <input id="loginUser" type="text" placeholder="Enter your username" required autofocus>
+                        <span class="input-icon">&#x1f464;</span>
+                    </div>
+                </div>
+                <div class="login-field">
+                    <label for="loginPass">Password</label>
+                    <div class="input-wrapper">
+                        <input id="loginPass" type="password" placeholder="Enter your password" required>
+                        <span class="input-icon">&#x1f512;</span>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility()" title="Toggle password visibility">&#x1f441;</button>
+                    </div>
+                </div>
+                <button type="submit" id="loginBtn" class="login-btn">Sign In</button>
+            </form>
+            <div class="login-footer">
+                <p>HEART/NSTA Trust &middot; <span>CTI Hazard STC</span></p>
+                <div class="login-session-info">
+                    <span class="dot"></span> Secure local session
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- APP (hidden until authenticated)                              -->
+<!-- ============================================================ -->
+<div class="app app-hidden" id="appContainer">
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
@@ -832,6 +1047,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="nav-label">External Links</div>
             <div class="nav-item" onclick="openExternalLink('staffPayslip')"><span class="icon">💳</span> Staff Payslip</div>
             <div class="nav-item" onclick="openExternalLink('virementRequest')"><span class="icon">📤</span> Virement Request</div>
+        </div>
+        <div class="sidebar-logout">
+            <div class="nav-item" onclick="handleLogout()"><span class="icon">&#x1F6AA;</span> Sign Out</div>
         </div>
         <div class="sidebar-footer">
             <p>HEART/NSTA Trust · CTI</p>
@@ -2834,14 +3052,116 @@ function toggleUnclearedCheque(fy, q, monthKey, chequeId) {
 }
 
 // ============================================================
-// INIT
+// AUTHENTICATION
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
+const AUTH_CREDENTIALS = {
+    username: 'cestisadmin',
+    password: 'cestisadmin123$'
+};
+const AUTH_SESSION_KEY = 'cestis_auth_session';
+
+function isAuthenticated() {
+    try {
+        const session = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY));
+        if (!session || !session.loggedIn) return false;
+        // Session expires after 8 hours
+        if (Date.now() - session.timestamp > 8 * 60 * 60 * 1000) {
+            localStorage.removeItem(AUTH_SESSION_KEY);
+            return false;
+        }
+        return true;
+    } catch(e) { return false; }
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const errorEl = document.getElementById('loginError');
+    const errorMsg = document.getElementById('loginErrorMsg');
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+
+    // Hide previous error
+    errorEl.classList.remove('visible');
+
+    // Validate
+    if (!user || !pass) {
+        errorMsg.textContent = 'Please enter both username and password';
+        errorEl.classList.add('visible');
+        return;
+    }
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Signing in...';
+
+    // Simulate brief network delay for realistic feel
+    setTimeout(function() {
+        if (user === AUTH_CREDENTIALS.username && pass === AUTH_CREDENTIALS.password) {
+            // Success - store session
+            localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({
+                loggedIn: true,
+                user: user,
+                timestamp: Date.now()
+            }));
+            showApp();
+        } else {
+            // Failure
+            errorMsg.textContent = 'Invalid username or password';
+            errorEl.classList.add('visible');
+            btn.disabled = false;
+            btn.innerHTML = 'Sign In';
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginPass').focus();
+        }
+    }, 600);
+}
+
+function handleLogout() {
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    // Reset form
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginError').classList.remove('visible');
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginBtn').innerHTML = 'Sign In';
+    // Show login, hide app
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('appContainer').classList.add('app-hidden');
+}
+
+function showApp() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('appContainer').classList.remove('app-hidden');
+    // Initialize app data if not already loaded
     loadFromStorage();
     loadDeletedBudgetKeys();
     loadBudgetOverrides();
     refreshAll();
     updateQuarterUI();
+}
+
+function togglePasswordVisibility() {
+    const input = document.getElementById('loginPass');
+    const btn = input.parentElement.querySelector('.toggle-password');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '&#x1f648;';
+    } else {
+        input.type = 'password';
+        btn.innerHTML = '&#x1f441;';
+    }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    if (isAuthenticated()) {
+        showApp();
+    }
+    // If not authenticated, the login overlay is already visible
+    // and the app is hidden by default
 });
 </script>
 </body>
