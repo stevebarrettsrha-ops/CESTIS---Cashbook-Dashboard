@@ -6,6 +6,7 @@
 <title>CESTIS Cash Book Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
     --bg: #0c0f1a;
@@ -1820,41 +1821,45 @@ function updateCloudUI() {
     updateLastSyncDisplay();
 }
 
-// Google Drive connection
-async function connectToGoogleDrive() {
+// Google Identity Services token client
+let gisTokenClient = null;
+
+// Google Drive connection using GIS popup (no redirect needed)
+function connectToGoogleDrive() {
     if (!GOOGLE_DRIVE_CONFIG.CLIENT_ID) {
-        alert('Google Drive Client ID is not configured. Please set GOOGLE_DRIVE_CONFIG.CLIENT_ID in the source code.');
+        alert('Google Drive Client ID is not configured.');
         return;
     }
 
-    try {
-        // Use Google OAuth2 popup flow
-        const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' +
-            'client_id=' + encodeURIComponent(GOOGLE_DRIVE_CONFIG.CLIENT_ID) +
-            '&redirect_uri=' + encodeURIComponent(window.location.origin + window.location.pathname) +
-            '&response_type=token' +
-            '&scope=' + encodeURIComponent(GOOGLE_DRIVE_CONFIG.SCOPES);
-
-        // Check if we already have a token from URL hash (redirect flow)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-
-        if (accessToken) {
-            googleAccessToken = accessToken;
-            isCloudConnected = true;
-            // Clear the hash
-            history.replaceState(null, '', window.location.pathname);
-            updateCloudUI();
-            await findExistingBackupFile();
-            return;
-        }
-
-        // Redirect to Google OAuth
-        window.location.href = authUrl;
-    } catch (error) {
-        console.error('Google Drive connection error:', error);
-        alert('Failed to connect to Google Drive: ' + error.message);
+    if (typeof google === 'undefined' || !google.accounts) {
+        alert('Google Identity Services is still loading. Please try again in a moment.');
+        return;
     }
+
+    if (!gisTokenClient) {
+        gisTokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+            scope: GOOGLE_DRIVE_CONFIG.SCOPES,
+            callback: handleGoogleAuthResponse
+        });
+    }
+
+    gisTokenClient.requestAccessToken();
+}
+
+// Handle the OAuth token response from GIS popup
+async function handleGoogleAuthResponse(response) {
+    if (response.error) {
+        console.error('Google Auth error:', response.error);
+        alert('Failed to connect to Google Drive: ' + (response.error_description || response.error));
+        return;
+    }
+
+    googleAccessToken = response.access_token;
+    isCloudConnected = true;
+    updateCloudUI();
+    await findExistingBackupFile();
+    console.log('Connected to Google Drive successfully');
 }
 
 function disconnectFromGoogleDrive() {
@@ -4699,16 +4704,6 @@ function closeSmartMergeModal() {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Check for Google OAuth callback token in URL hash
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    if (accessToken) {
-        googleAccessToken = accessToken;
-        isCloudConnected = true;
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-        findExistingBackupFile();
-    }
-
     if (isAuthenticated()) {
         initCurrentUser();
         showApp();
