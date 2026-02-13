@@ -4738,7 +4738,7 @@ async function handleLoginPageSyncCallback() {
         if (cloudFileId) {
             updateLoginSyncStatus('Downloading user data...', true);
             const syncSuccess = await performLoginPageSync();
-            if (syncSuccess) { sessionStorage.setItem('postLoginSyncCompleted', 'true'); updateLoginSyncStatus('Sync complete! You can now log in.', false, false, true); setTimeout(() => hideFirstTimeSyncPrompt(), 2000); }
+            if (syncSuccess) { updateLoginSyncStatus('Sync complete! You can now log in.', false, false, true); setTimeout(() => hideFirstTimeSyncPrompt(), 2000); }
             else { updateLoginSyncStatus('Sync failed. Please try again.', false, true); resetLoginSyncButton(); }
         } else { updateLoginSyncStatus('No backup found. Please contact your administrator.', false, true); resetLoginSyncButton(); }
     } catch (error) { updateLoginSyncStatus('Sync failed: ' + error.message, false, true); resetLoginSyncButton(); }
