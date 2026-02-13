@@ -1297,6 +1297,82 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
 @keyframes pulse-icon { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+/* Mandatory Post-Login Sync Overlay */
+.mandatory-sync-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.mandatory-sync-overlay.hidden { display: none; }
+
+.mandatory-sync-card {
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+}
+.mandatory-sync-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+}
+
+.mandatory-sync-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+.mandatory-sync-card h2 {
+    font-size: 1.25rem; font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+}
+
+.mandatory-sync-card p {
+    font-size: 0.9rem; color: #94a3b8;
+    line-height: 1.6; margin-bottom: 1.5rem;
+}
+
+.mandatory-sync-btn {
+    width: 100%; padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white; border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+.mandatory-sync-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.5); }
+.mandatory-sync-btn:active { transform: translateY(0); }
+.mandatory-sync-btn:disabled { background: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.mandatory-sync-status {
+    margin-top: 1rem; padding: 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-size: 0.9rem; color: #94a3b8;
+}
+.mandatory-sync-status.hidden { display: none; }
+.mandatory-sync-status.success { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.mandatory-sync-status.error { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+.mandatory-sync-warning {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-style: italic;
+}
+
 </style>
 </head>
 <body>
@@ -1412,6 +1488,22 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 <!-- APP (hidden until authenticated)                              -->
 <!-- ============================================================ -->
 <div class="app app-hidden" id="appContainer">
+    <!-- Mandatory Post-Login Sync Overlay -->
+    <div class="mandatory-sync-overlay hidden" id="mandatorySyncOverlay">
+        <div class="mandatory-sync-card">
+            <div class="mandatory-sync-icon">☁️</div>
+            <h2>Cloud Sync Required</h2>
+            <p>Before you can use the dashboard, you must sync your data with Google Cloud. This ensures you have the latest account data and settings.</p>
+            <button type="button" class="mandatory-sync-btn" id="mandatorySyncBtn" onclick="initiateMandatorySync()">
+                <span>🔄</span> Connect & Sync with Google
+            </button>
+            <div class="mandatory-sync-status hidden" id="mandatorySyncStatus">
+                <span class="sync-status-icon">⏳</span>
+                <span id="mandatorySyncStatusText">Connecting...</span>
+            </div>
+            <div class="mandatory-sync-warning">You cannot access the dashboard until sync is complete.</div>
+        </div>
+    </div>
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
@@ -2269,12 +2361,31 @@ async function handleGoogleAuthCallback(tokenResponse) {
         return;
     }
 
+    if (isMandatorySync) {
+        await handleMandatorySyncCallback();
+        return;
+    }
+
     updateCloudUI(true);
     await findExistingBackupFile();
 }
 
 function handleGoogleAuthError(error) {
     console.error('Google auth error:', error);
+    if (isLoginPageSync) {
+        isLoginPageSync = false;
+        if (error.type === 'popup_closed') { resetLoginSyncButton(); updateLoginSyncStatus(null); return; }
+        updateLoginSyncStatus('Authentication failed. Please try again.', false, true);
+        resetLoginSyncButton();
+        return;
+    }
+    if (isMandatorySync) {
+        isMandatorySync = false;
+        if (error.type === 'popup_closed') { resetMandatorySyncButton(); updateMandatorySyncStatus(null); return; }
+        updateMandatorySyncStatus('Authentication failed. Please try again.', false, true);
+        resetMandatorySyncButton();
+        return;
+    }
     if (error.type === 'popup_closed') return;
     alert('Failed to authenticate with Google. Please try the manual token method.');
     showGoogleAuthModal();
@@ -4575,6 +4686,10 @@ function showApp() {
     // Initialize cloud sync UI
     initCurrentUser();
     updateCloudUI();
+    // Show mandatory sync overlay if not yet synced this session
+    if (sessionStorage.getItem('postLoginSyncCompleted') !== 'true') {
+        showMandatorySyncOverlay();
+    }
 }
 
 function togglePasswordVisibility() {
@@ -4623,7 +4738,7 @@ async function handleLoginPageSyncCallback() {
         if (cloudFileId) {
             updateLoginSyncStatus('Downloading user data...', true);
             const syncSuccess = await performLoginPageSync();
-            if (syncSuccess) { updateLoginSyncStatus('Sync complete! You can now log in.', false, false, true); setTimeout(() => hideFirstTimeSyncPrompt(), 2000); }
+            if (syncSuccess) { sessionStorage.setItem('postLoginSyncCompleted', 'true'); updateLoginSyncStatus('Sync complete! You can now log in.', false, false, true); setTimeout(() => hideFirstTimeSyncPrompt(), 2000); }
             else { updateLoginSyncStatus('Sync failed. Please try again.', false, true); resetLoginSyncButton(); }
         } else { updateLoginSyncStatus('No backup found. Please contact your administrator.', false, true); resetLoginSyncButton(); }
     } catch (error) { updateLoginSyncStatus('Sync failed: ' + error.message, false, true); resetLoginSyncButton(); }
@@ -4674,6 +4789,95 @@ function checkFirstTimeSyncPrompt() {
     if (sessionStorage.getItem('firstTimeSyncDismissed') === 'true') { hideFirstTimeSyncPrompt(); return; }
     if (sessionStorage.getItem('isLoggedIn') === 'true') { hideFirstTimeSyncPrompt(); return; }
     showFirstTimeSyncPrompt();
+}
+
+// =========================================
+// Mandatory Post-Login Sync Functions
+// =========================================
+
+let isMandatorySync = false;
+
+function showMandatorySyncOverlay() {
+    const overlay = document.getElementById('mandatorySyncOverlay');
+    if (overlay) overlay.classList.remove('hidden');
+}
+
+function hideMandatorySyncOverlay() {
+    const overlay = document.getElementById('mandatorySyncOverlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function initiateMandatorySync() {
+    isMandatorySync = true;
+    updateMandatorySyncStatus('Connecting to Google...', true);
+    const syncBtn = document.getElementById('mandatorySyncBtn');
+    if (syncBtn) { syncBtn.disabled = true; syncBtn.innerHTML = '<span>⏳</span> Connecting...'; }
+    if (googleTokenClient) { googleTokenClient.requestAccessToken(); }
+    else {
+        initGoogleAuth();
+        setTimeout(() => {
+            if (googleTokenClient) { googleTokenClient.requestAccessToken(); }
+            else { isMandatorySync = false; updateMandatorySyncStatus('Google Sign-In not available. Please try again.', false, true); resetMandatorySyncButton(); }
+        }, 500);
+    }
+}
+
+async function handleMandatorySyncCallback() {
+    updateMandatorySyncStatus('Finding backup file...', true);
+    try {
+        await findExistingBackupFile();
+        if (cloudFileId) {
+            updateMandatorySyncStatus('Downloading data...', true);
+            const syncSuccess = await performMandatorySync();
+            if (syncSuccess) {
+                updateMandatorySyncStatus('Sync complete! Loading dashboard...', false, false, true);
+                sessionStorage.setItem('postLoginSyncCompleted', 'true');
+                setTimeout(() => {
+                    hideMandatorySyncOverlay();
+                    loadFromStorage();
+                    refreshAll();
+                }, 1500);
+            } else { updateMandatorySyncStatus('Sync failed. Please try again.', false, true); resetMandatorySyncButton(); }
+        } else { updateMandatorySyncStatus('No backup found. Please contact your administrator.', false, true); resetMandatorySyncButton(); }
+    } catch (error) { updateMandatorySyncStatus('Sync failed: ' + error.message, false, true); resetMandatorySyncButton(); }
+    isMandatorySync = false;
+}
+
+async function performMandatorySync() {
+    try {
+        if (!cloudFileId || !googleAccessToken) return false;
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${cloudFileId}?alt=media`, { headers: { 'Authorization': `Bearer ${googleAccessToken}` } });
+        if (!response.ok) throw new Error('Failed to download backup');
+        const backup = await response.json();
+        if (!backup.version || !backup.data) throw new Error('Invalid backup format');
+        if (backup.data.users) { users = backup.data.users; localStorage.setItem('dashboardUsers', JSON.stringify(users)); }
+        if (backup.data.quickLinks) { quickLinks = backup.data.quickLinks; localStorage.setItem('quickLinks', JSON.stringify(quickLinks)); }
+        if (backup.data.mainLinks) { mainLinks = backup.data.mainLinks; localStorage.setItem('mainLinks', JSON.stringify(mainLinks)); }
+        if (backup.data.schoolSettings) { schoolSettings = backup.data.schoolSettings; localStorage.setItem('schoolSettings', JSON.stringify(schoolSettings)); }
+        lastSyncTime = new Date(); lastSavedBy = backup.savedBy || 'Unknown';
+        localStorage.setItem('schoolDashboardLastSyncTime', lastSyncTime.toISOString());
+        updateCloudUI(true);
+        return true;
+    } catch (error) { console.error('Perform mandatory sync error:', error); return false; }
+}
+
+function updateMandatorySyncStatus(message, isLoading, isError = false, isSuccess = false) {
+    const statusDiv = document.getElementById('mandatorySyncStatus');
+    const statusText = document.getElementById('mandatorySyncStatusText');
+    const statusIcon = statusDiv?.querySelector('.sync-status-icon');
+    if (!statusDiv || !statusText) return;
+    if (message) {
+        statusDiv.classList.remove('hidden', 'success', 'error');
+        statusText.textContent = message;
+        if (isSuccess) { statusDiv.classList.add('success'); if (statusIcon) statusIcon.textContent = '✅'; }
+        else if (isError) { statusDiv.classList.add('error'); if (statusIcon) statusIcon.textContent = '❌'; }
+        else { if (statusIcon) statusIcon.textContent = '⏳'; }
+    } else { statusDiv.classList.add('hidden'); }
+}
+
+function resetMandatorySyncButton() {
+    const syncBtn = document.getElementById('mandatorySyncBtn');
+    if (syncBtn) { syncBtn.disabled = false; syncBtn.innerHTML = '<span>🔄</span> Connect & Sync with Google'; }
 }
 
 // ==================== END CLOUD SYNC ====================
