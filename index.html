@@ -804,33 +804,50 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 }
 /* Claude Code Crab */
 .crab-wrapper {
-    position:absolute; left:50%; top:0;
-    transform:translate(-50%, -100%);
+    position:absolute; left:50%; bottom:100%;
+    transform:translateX(-50%);
+    margin-bottom:-26px; /* half the crab peeking above the card */
     pointer-events:none; z-index:10001;
-    transition:none;
-}
-.crab-wrapper.resting {
-    transition:left .6s ease, top .6s ease, transform .6s ease;
 }
 .crab-svg { width:64px; height:52px; image-rendering:pixelated; }
 
-/* Default green palette */
-.crab-svg .body       { fill:#4ade80; transition:fill .25s; }
-.crab-svg .body-shade { fill:#22c55e; transition:fill .25s; }
+/* Default BLUE palette (resting) */
+.crab-svg .body       { fill:#60a5fa; transition:fill .25s; }
+.crab-svg .body-shade { fill:#3b82f6; transition:fill .25s; }
 .crab-svg .eye-white  { fill:#ffffff; }
-.crab-svg .eye-pupil  { fill:#1a1a2e; }
-.crab-svg .claw       { fill:#4ade80; transition:fill .25s; }
-.crab-svg .claw-shade { fill:#22c55e; transition:fill .25s; }
-.crab-svg .leg        { fill:#22c55e; transition:fill .25s; }
+.crab-svg .eye-pupil  { fill:#1a1a2e; transition:cx .15s ease, cy .15s ease; }
+.crab-svg .eye-shine  { fill:#ffffff; transition:cx .15s ease, cy .15s ease; }
+.crab-svg .claw       { fill:#60a5fa; transition:fill .25s; }
+.crab-svg .claw-shade { fill:#3b82f6; transition:fill .25s; }
+.crab-svg .leg        { fill:#3b82f6; transition:fill .25s; }
+.crab-svg .mouth-happy { stroke:#1a1a2e; transition:opacity .2s; }
+.crab-svg .mouth-sad   { stroke:#1a1a2e; opacity:0; transition:opacity .2s; }
+.crab-svg .eye-closed-l, .crab-svg .eye-closed-r { stroke:#1a1a2e; opacity:0; transition:opacity .15s; }
 
-/* Fleeing = blue palette */
-.crab-wrapper.fleeing .crab-svg .body       { fill:#60a5fa; }
-.crab-wrapper.fleeing .crab-svg .body-shade { fill:#3b82f6; }
-.crab-wrapper.fleeing .crab-svg .claw       { fill:#60a5fa; }
-.crab-wrapper.fleeing .crab-svg .claw-shade { fill:#3b82f6; }
-.crab-wrapper.fleeing .crab-svg .leg        { fill:#3b82f6; }
+/* Fleeing = RED palette */
+.crab-wrapper.fleeing .crab-svg .body       { fill:#f87171; }
+.crab-wrapper.fleeing .crab-svg .body-shade { fill:#ef4444; }
+.crab-wrapper.fleeing .crab-svg .claw       { fill:#f87171; }
+.crab-wrapper.fleeing .crab-svg .claw-shade { fill:#ef4444; }
+.crab-wrapper.fleeing .crab-svg .leg        { fill:#ef4444; }
+
+/* Fleeing face: closed eyes + sad mouth */
+.crab-wrapper.fleeing .crab-svg .eye-white  { opacity:0; }
+.crab-wrapper.fleeing .crab-svg .eye-pupil  { opacity:0; }
+.crab-wrapper.fleeing .crab-svg .eye-shine  { opacity:0; }
+.crab-wrapper.fleeing .crab-svg .eye-closed-l,
+.crab-wrapper.fleeing .crab-svg .eye-closed-r { opacity:1; }
+.crab-wrapper.fleeing .crab-svg .mouth-happy { opacity:0; }
+.crab-wrapper.fleeing .crab-svg .mouth-sad   { opacity:1; }
 
 .crab-wrapper.flipped .crab-svg { transform:scaleX(-1); }
+
+/* Blink animation while resting */
+@keyframes blink {
+    0%,42%,46%,100% { transform:scaleY(1); }
+    44% { transform:scaleY(0.08); }
+}
+.crab-svg .eye-group { transform-origin:center; animation:blink 3.5s ease-in-out infinite; }
 
 /* Leg scuttle animation */
 @keyframes scuttleLeft {
@@ -859,6 +876,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 }
 .crab-wrapper.fleeing .claw-group-l { animation:snipLeft  .22s ease-in-out infinite; transform-origin:right center; }
 .crab-wrapper.fleeing .claw-group-r { animation:snipRight .22s ease-in-out infinite; transform-origin:left center; }
+.login-card-wrap {
+    position:relative;
+}
 .login-card {
     background:var(--surface);
     border:1px solid var(--border);
@@ -1034,8 +1054,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 <!-- ============================================================ -->
 <div id="loginOverlay" class="login-overlay">
     <div class="login-container">
+        <div class="login-card-wrap">
         <!-- Claude Code Crab mascot -->
-        <div class="crab-wrapper resting" id="crabWrapper">
+        <div class="crab-wrapper" id="crabWrapper">
             <svg class="crab-svg" viewBox="0 0 64 52" xmlns="http://www.w3.org/2000/svg">
                 <!-- Left claw (grouped for animation) -->
                 <g class="claw-group-l">
@@ -1052,21 +1073,27 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 <!-- Body -->
                 <ellipse class="body" cx="32" cy="28" rx="18" ry="14"/>
                 <ellipse class="body-shade" cx="32" cy="34" rx="14" ry="7"/>
-                <!-- Eyes -->
-                <ellipse class="eye-white" cx="25" cy="23" rx="5" ry="6"/>
-                <ellipse class="eye-white" cx="39" cy="23" rx="5" ry="6"/>
-                <circle class="eye-pupil" cx="26" cy="24" r="2.5"/>
-                <circle class="eye-pupil" cx="40" cy="24" r="2.5"/>
-                <!-- Eye shine -->
-                <circle fill="#fff" cx="24.5" cy="22" r="1"/>
-                <circle fill="#fff" cx="38.5" cy="22" r="1"/>
+                <!-- Eyes (grouped for blink) -->
+                <g class="eye-group">
+                    <ellipse class="eye-white" cx="25" cy="23" rx="5" ry="6"/>
+                    <ellipse class="eye-white" cx="39" cy="23" rx="5" ry="6"/>
+                    <circle class="eye-pupil" id="pupilL" cx="26" cy="24" r="2.5"/>
+                    <circle class="eye-pupil" id="pupilR" cx="40" cy="24" r="2.5"/>
+                    <circle class="eye-shine" id="shineL" cx="24.5" cy="22" r="1"/>
+                    <circle class="eye-shine" id="shineR" cx="38.5" cy="22" r="1"/>
+                </g>
+                <!-- Closed eyes (shown when fleeing) -->
+                <line class="eye-closed-l" x1="21" y1="23" x2="29" y2="23" stroke-width="2" stroke-linecap="round"/>
+                <line class="eye-closed-r" x1="35" y1="23" x2="43" y2="23" stroke-width="2" stroke-linecap="round"/>
                 <!-- Legs (individual for alternating scuttle) -->
                 <rect class="leg leg-l1" x="16" y="40" width="3" height="8" rx="1"/>
                 <rect class="leg leg-l2" x="22" y="41" width="3" height="9" rx="1"/>
                 <rect class="leg leg-r1" x="39" y="41" width="3" height="9" rx="1"/>
                 <rect class="leg leg-r2" x="45" y="40" width="3" height="8" rx="1"/>
-                <!-- Mouth -->
-                <path d="M28 32 Q32 35 36 32" stroke="#1a1a2e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                <!-- Happy mouth (resting) -->
+                <path class="mouth-happy" d="M28 32 Q32 35 36 32" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+                <!-- Sad mouth (fleeing) -->
+                <path class="mouth-sad" d="M28 34 Q32 31 36 34" stroke-width="1.2" fill="none" stroke-linecap="round"/>
             </svg>
         </div>
         <div class="login-card">
@@ -1105,6 +1132,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 </div>
             </div>
         </div>
+        </div><!-- /.login-card-wrap -->
     </div>
 </div>
 
@@ -3167,102 +3195,142 @@ function isAuthenticated() {
 }
 
 /* ============================================================
-   CLAUDE CODE CRAB — runs away from cursor, rests above card
+   CLAUDE CODE CRAB — eyes follow cursor, flees when close
    ============================================================ */
 (function initCrab() {
     var crab = document.getElementById('crabWrapper');
     if (!crab) return;
-    var container = crab.parentElement;
-    var fleeRadius = 120;   // px – how close cursor must be to trigger flee
-    var fleeSpeed  = 180;   // px – how far crab jumps
-    var restTimeout = null;
-    var isResting = true;
+    var overlay = document.getElementById('loginOverlay');
+    var card = crab.parentElement.querySelector('.login-card');
 
-    function getRestPos() {
-        // Center horizontally, ~96px (≈1 inch) above the login card
-        var card = container.querySelector('.login-card');
-        var cRect = container.getBoundingClientRect();
-        var kRect = card.getBoundingClientRect();
-        return {
-            x: cRect.width / 2,
-            y: kRect.top - cRect.top - 96
-        };
+    var pupilL = document.getElementById('pupilL');
+    var pupilR = document.getElementById('pupilR');
+    var shineL = document.getElementById('shineL');
+    var shineR = document.getElementById('shineR');
+
+    // Resting pupil centers
+    var PL = { cx:26, cy:24 }, PR = { cx:40, cy:24 };
+    var SL = { cx:24.5, cy:22 }, SR = { cx:38.5, cy:22 };
+    var maxPupilShift = 2.5; // px inside eye socket
+
+    var fleeRadius = 120;
+    var fleeSpeed  = 180;
+    var restTimeout = null;
+    var isFleeing = false;
+
+    /* ---- position helpers ---- */
+    // Crab starts CSS-positioned (bottom:100%, margin-bottom:-26px on .login-card parent)
+    // When fleeing we switch to absolute top/left on the overlay
+    function resetToRest() {
+        crab.style.position = '';
+        crab.style.left = '';
+        crab.style.top = '';
+        crab.style.bottom = '';
+        crab.style.transform = '';
     }
 
-    function setCrabPos(x, y, animate) {
-        if (animate) {
-            crab.classList.add('resting');
-        } else {
-            crab.classList.remove('resting');
-        }
+    function setCrabAbsolute(x, y) {
+        // Position relative to the overlay
+        crab.style.position = 'fixed';
+        crab.style.bottom = 'auto';
         crab.style.left = x + 'px';
         crab.style.top  = y + 'px';
         crab.style.transform = 'translate(-50%, -50%)';
     }
 
-    // Start at rest position
-    var rp = getRestPos();
-    setCrabPos(rp.x, rp.y, false);
+    function getCrabCenter() {
+        var r = crab.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
 
+    /* ---- eye tracking ---- */
+    function trackEyes(clientX, clientY) {
+        if (isFleeing) return;
+        var cc = getCrabCenter();
+        var dx = clientX - cc.x;
+        var dy = clientY - cc.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        var ratio = Math.min(1, 60 / dist); // stronger when closer
+        var shiftX = (dx / dist) * maxPupilShift * ratio;
+        var shiftY = (dy / dist) * maxPupilShift * ratio;
+
+        pupilL.setAttribute('cx', PL.cx + shiftX);
+        pupilL.setAttribute('cy', PL.cy + shiftY);
+        pupilR.setAttribute('cx', PR.cx + shiftX);
+        pupilR.setAttribute('cy', PR.cy + shiftY);
+        shineL.setAttribute('cx', SL.cx + shiftX * 0.6);
+        shineL.setAttribute('cy', SL.cy + shiftY * 0.6);
+        shineR.setAttribute('cx', SR.cx + shiftX * 0.6);
+        shineR.setAttribute('cy', SR.cy + shiftY * 0.6);
+    }
+
+    function resetEyes() {
+        pupilL.setAttribute('cx', PL.cx);
+        pupilL.setAttribute('cy', PL.cy);
+        pupilR.setAttribute('cx', PR.cx);
+        pupilR.setAttribute('cy', PR.cy);
+        shineL.setAttribute('cx', SL.cx);
+        shineL.setAttribute('cy', SL.cy);
+        shineR.setAttribute('cx', SR.cx);
+        shineR.setAttribute('cy', SR.cy);
+    }
+
+    /* ---- flee logic ---- */
     function onMove(e) {
-        var cRect = container.getBoundingClientRect();
-        // Mouse position relative to container
-        var mx = e.clientX - cRect.left;
-        var my = e.clientY - cRect.top;
+        trackEyes(e.clientX, e.clientY);
 
-        // Current crab center
-        var cx = parseFloat(crab.style.left) || rp.x;
-        var cy = parseFloat(crab.style.top)  || rp.y;
-
-        var dx = cx - mx;
-        var dy = cy - my;
+        var cc = getCrabCenter();
+        var dx = cc.x - e.clientX;
+        var dy = cc.y - e.clientY;
         var dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < fleeRadius && dist > 0) {
-            isResting = false;
-            // Activate fleeing state (blue + leg/claw animations)
+            isFleeing = true;
             crab.classList.add('fleeing');
+            crab.classList.remove('resting');
 
-            // Flee direction = away from cursor
             var angle = Math.atan2(dy, dx);
-            var nx = cx + Math.cos(angle) * fleeSpeed;
-            var ny = cy + Math.sin(angle) * fleeSpeed;
+            var nx = cc.x + Math.cos(angle) * fleeSpeed;
+            var ny = cc.y + Math.sin(angle) * fleeSpeed;
 
-            // Clamp inside container with some padding
-            var pad = 40;
-            nx = Math.max(pad, Math.min(cRect.width - pad, nx));
-            ny = Math.max(pad, Math.min(cRect.height - pad, ny));
+            // Clamp inside viewport
+            var pad = 50;
+            nx = Math.max(pad, Math.min(window.innerWidth - pad, nx));
+            ny = Math.max(pad, Math.min(window.innerHeight - pad, ny));
 
-            // Flip crab to face away from movement direction
-            if (mx < cx) {
+            // Flip to face away from cursor
+            if (e.clientX < cc.x) {
                 crab.classList.add('flipped');
             } else {
                 crab.classList.remove('flipped');
             }
 
-            setCrabPos(nx, ny, false);
+            setCrabAbsolute(nx, ny);
 
-            // Schedule return to rest
+            // Return home after 1.2s
             clearTimeout(restTimeout);
             restTimeout = setTimeout(function() {
-                var rest = getRestPos();
-                isResting = true;
+                isFleeing = false;
                 crab.classList.remove('fleeing');
-                setCrabPos(rest.x, rest.y, true);
+                crab.classList.add('resting');
                 crab.classList.remove('flipped');
+                // Animate back: briefly keep fixed at rest position then reset
+                var cardR = card.getBoundingClientRect();
+                var homeX = cardR.left + cardR.width / 2;
+                var homeY = cardR.top - 26; // half-in above card
+                crab.style.transition = 'left .6s ease, top .6s ease';
+                crab.style.left = homeX + 'px';
+                crab.style.top  = homeY + 'px';
+                setTimeout(function() {
+                    crab.style.transition = '';
+                    resetToRest();
+                    resetEyes();
+                }, 650);
             }, 1200);
         }
     }
 
-    document.getElementById('loginOverlay').addEventListener('mousemove', onMove);
-
-    // Re-center on resize
-    window.addEventListener('resize', function() {
-        if (isResting) {
-            var rest = getRestPos();
-            setCrabPos(rest.x, rest.y, false);
-        }
-    });
+    overlay.addEventListener('mousemove', onMove);
 })();
 
 function handleLogin(e) {
