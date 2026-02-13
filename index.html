@@ -813,14 +813,52 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     transition:left .6s ease, top .6s ease, transform .6s ease;
 }
 .crab-svg { width:64px; height:52px; image-rendering:pixelated; }
-.crab-svg .body { fill:#e8734a; }
-.crab-svg .body-shade { fill:#c95a33; }
-.crab-svg .eye-white { fill:#ffffff; }
-.crab-svg .eye-pupil { fill:#1a1a2e; }
-.crab-svg .claw { fill:#e8734a; }
-.crab-svg .claw-shade { fill:#c95a33; }
-.crab-svg .leg { fill:#c95a33; }
+
+/* Default green palette */
+.crab-svg .body       { fill:#4ade80; transition:fill .25s; }
+.crab-svg .body-shade { fill:#22c55e; transition:fill .25s; }
+.crab-svg .eye-white  { fill:#ffffff; }
+.crab-svg .eye-pupil  { fill:#1a1a2e; }
+.crab-svg .claw       { fill:#4ade80; transition:fill .25s; }
+.crab-svg .claw-shade { fill:#22c55e; transition:fill .25s; }
+.crab-svg .leg        { fill:#22c55e; transition:fill .25s; }
+
+/* Fleeing = blue palette */
+.crab-wrapper.fleeing .crab-svg .body       { fill:#60a5fa; }
+.crab-wrapper.fleeing .crab-svg .body-shade { fill:#3b82f6; }
+.crab-wrapper.fleeing .crab-svg .claw       { fill:#60a5fa; }
+.crab-wrapper.fleeing .crab-svg .claw-shade { fill:#3b82f6; }
+.crab-wrapper.fleeing .crab-svg .leg        { fill:#3b82f6; }
+
 .crab-wrapper.flipped .crab-svg { transform:scaleX(-1); }
+
+/* Leg scuttle animation */
+@keyframes scuttleLeft {
+    0%,100% { transform:rotate(0deg); }
+    25%     { transform:rotate(-18deg); }
+    75%     { transform:rotate(18deg); }
+}
+@keyframes scuttleRight {
+    0%,100% { transform:rotate(0deg); }
+    25%     { transform:rotate(18deg); }
+    75%     { transform:rotate(-18deg); }
+}
+.crab-wrapper.fleeing .leg-l1 { animation:scuttleLeft  .18s ease-in-out infinite; transform-origin:top center; }
+.crab-wrapper.fleeing .leg-l2 { animation:scuttleRight .18s ease-in-out infinite; transform-origin:top center; }
+.crab-wrapper.fleeing .leg-r1 { animation:scuttleRight .18s ease-in-out infinite; transform-origin:top center; }
+.crab-wrapper.fleeing .leg-r2 { animation:scuttleLeft  .18s ease-in-out infinite; transform-origin:top center; }
+
+/* Claw snip animation */
+@keyframes snipLeft {
+    0%,100% { transform:rotate(0deg) translateY(0); }
+    50%     { transform:rotate(-20deg) translateY(-3px); }
+}
+@keyframes snipRight {
+    0%,100% { transform:rotate(0deg) translateY(0); }
+    50%     { transform:rotate(20deg) translateY(-3px); }
+}
+.crab-wrapper.fleeing .claw-group-l { animation:snipLeft  .22s ease-in-out infinite; transform-origin:right center; }
+.crab-wrapper.fleeing .claw-group-r { animation:snipRight .22s ease-in-out infinite; transform-origin:left center; }
 .login-card {
     background:var(--surface);
     border:1px solid var(--border);
@@ -999,13 +1037,18 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <!-- Claude Code Crab mascot -->
         <div class="crab-wrapper resting" id="crabWrapper">
             <svg class="crab-svg" viewBox="0 0 64 52" xmlns="http://www.w3.org/2000/svg">
-                <!-- Claws -->
-                <rect class="claw" x="2" y="16" width="8" height="6" rx="1"/>
-                <rect class="claw" x="4" y="12" width="6" height="6" rx="1"/>
-                <rect class="claw-shade" x="2" y="20" width="4" height="3" rx="1"/>
-                <rect class="claw" x="54" y="16" width="8" height="6" rx="1"/>
-                <rect class="claw" x="54" y="12" width="6" height="6" rx="1"/>
-                <rect class="claw-shade" x="58" y="20" width="4" height="3" rx="1"/>
+                <!-- Left claw (grouped for animation) -->
+                <g class="claw-group-l">
+                    <rect class="claw" x="2" y="16" width="8" height="6" rx="1"/>
+                    <rect class="claw" x="4" y="12" width="6" height="6" rx="1"/>
+                    <rect class="claw-shade" x="2" y="20" width="4" height="3" rx="1"/>
+                </g>
+                <!-- Right claw (grouped for animation) -->
+                <g class="claw-group-r">
+                    <rect class="claw" x="54" y="16" width="8" height="6" rx="1"/>
+                    <rect class="claw" x="54" y="12" width="6" height="6" rx="1"/>
+                    <rect class="claw-shade" x="58" y="20" width="4" height="3" rx="1"/>
+                </g>
                 <!-- Body -->
                 <ellipse class="body" cx="32" cy="28" rx="18" ry="14"/>
                 <ellipse class="body-shade" cx="32" cy="34" rx="14" ry="7"/>
@@ -1017,11 +1060,11 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 <!-- Eye shine -->
                 <circle fill="#fff" cx="24.5" cy="22" r="1"/>
                 <circle fill="#fff" cx="38.5" cy="22" r="1"/>
-                <!-- Legs -->
-                <rect class="leg" x="16" y="40" width="3" height="8" rx="1"/>
-                <rect class="leg" x="22" y="41" width="3" height="9" rx="1"/>
-                <rect class="leg" x="39" y="41" width="3" height="9" rx="1"/>
-                <rect class="leg" x="45" y="40" width="3" height="8" rx="1"/>
+                <!-- Legs (individual for alternating scuttle) -->
+                <rect class="leg leg-l1" x="16" y="40" width="3" height="8" rx="1"/>
+                <rect class="leg leg-l2" x="22" y="41" width="3" height="9" rx="1"/>
+                <rect class="leg leg-r1" x="39" y="41" width="3" height="9" rx="1"/>
+                <rect class="leg leg-r2" x="45" y="40" width="3" height="8" rx="1"/>
                 <!-- Mouth -->
                 <path d="M28 32 Q32 35 36 32" stroke="#1a1a2e" stroke-width="1.2" fill="none" stroke-linecap="round"/>
             </svg>
@@ -3177,6 +3220,9 @@ function isAuthenticated() {
 
         if (dist < fleeRadius && dist > 0) {
             isResting = false;
+            // Activate fleeing state (blue + leg/claw animations)
+            crab.classList.add('fleeing');
+
             // Flee direction = away from cursor
             var angle = Math.atan2(dy, dx);
             var nx = cx + Math.cos(angle) * fleeSpeed;
@@ -3201,6 +3247,7 @@ function isAuthenticated() {
             restTimeout = setTimeout(function() {
                 var rest = getRestPos();
                 isResting = true;
+                crab.classList.remove('fleeing');
                 setCrabPos(rest.x, rest.y, true);
                 crab.classList.remove('flipped');
             }, 1200);
