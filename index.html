@@ -4533,6 +4533,9 @@ function togglePasswordVisibility() {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Always require login on page load/refresh
+    localStorage.removeItem(AUTH_SESSION_KEY);
+
     // Check for Google OAuth callback token in URL hash (redirect flow fallback)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
@@ -4556,13 +4559,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Google Identity Services after a brief delay
     setTimeout(() => { initGoogleAuth(); }, 500);
 
-    if (isAuthenticated()) {
-        initCurrentUser();
-        showApp();
-        updateCloudUI();
-    }
-    // If not authenticated, the login overlay is already visible
-    // and the app is hidden by default
+    // Login overlay is visible and app is hidden by default;
+    // user must always sign in after a page refresh
 });
 </script>
 
