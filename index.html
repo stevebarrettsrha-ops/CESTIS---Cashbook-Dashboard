@@ -820,8 +820,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .crab-svg .claw       { fill:#60a5fa; transition:fill .25s; }
 .crab-svg .claw-shade { fill:#3b82f6; transition:fill .25s; }
 .crab-svg .leg        { fill:#3b82f6; transition:fill .25s; }
-.crab-svg .mouth-happy { stroke:#1a1a2e; transition:opacity .2s; }
-.crab-svg .mouth-sad   { stroke:#1a1a2e; opacity:0; transition:opacity .2s; }
+.crab-svg .mouth-happy { stroke:#1a1a2e; }
 .crab-svg .eye-closed-l, .crab-svg .eye-closed-r { stroke:#1a1a2e; opacity:0; transition:opacity .15s; }
 
 /* Fleeing = RED palette */
@@ -831,14 +830,12 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .crab-wrapper.fleeing .crab-svg .claw-shade { fill:#ef4444; }
 .crab-wrapper.fleeing .crab-svg .leg        { fill:#ef4444; }
 
-/* Fleeing face: closed eyes + sad mouth */
+/* Fleeing face: closed eyes */
 .crab-wrapper.fleeing .crab-svg .eye-white  { opacity:0; }
 .crab-wrapper.fleeing .crab-svg .eye-pupil  { opacity:0; }
 .crab-wrapper.fleeing .crab-svg .eye-shine  { opacity:0; }
 .crab-wrapper.fleeing .crab-svg .eye-closed-l,
 .crab-wrapper.fleeing .crab-svg .eye-closed-r { opacity:1; }
-.crab-wrapper.fleeing .crab-svg .mouth-happy { opacity:0; }
-.crab-wrapper.fleeing .crab-svg .mouth-sad   { opacity:1; }
 
 .crab-wrapper.flipped .crab-svg { transform:scaleX(-1); }
 
@@ -1082,18 +1079,22 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <circle class="eye-shine" id="shineL" cx="24.5" cy="22" r="1"/>
                     <circle class="eye-shine" id="shineR" cx="38.5" cy="22" r="1"/>
                 </g>
-                <!-- Closed eyes (shown when fleeing) -->
-                <line class="eye-closed-l" x1="21" y1="23" x2="29" y2="23" stroke-width="2" stroke-linecap="round"/>
-                <line class="eye-closed-r" x1="35" y1="23" x2="43" y2="23" stroke-width="2" stroke-linecap="round"/>
+                <!-- Closed eyes  >  <  (shown when fleeing) -->
+                <g class="eye-closed-l">
+                    <line x1="22" y1="20" x2="27" y2="23" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="27" y1="23" x2="22" y2="26" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <g class="eye-closed-r">
+                    <line x1="42" y1="20" x2="37" y2="23" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="37" y1="23" x2="42" y2="26" stroke-width="2" stroke-linecap="round"/>
+                </g>
                 <!-- Legs (individual for alternating scuttle) -->
                 <rect class="leg leg-l1" x="16" y="40" width="3" height="8" rx="1"/>
                 <rect class="leg leg-l2" x="22" y="41" width="3" height="9" rx="1"/>
                 <rect class="leg leg-r1" x="39" y="41" width="3" height="9" rx="1"/>
                 <rect class="leg leg-r2" x="45" y="40" width="3" height="8" rx="1"/>
-                <!-- Happy mouth (resting) -->
+                <!-- Mouth (always happy) -->
                 <path class="mouth-happy" d="M28 32 Q32 35 36 32" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-                <!-- Sad mouth (fleeing) -->
-                <path class="mouth-sad" d="M28 34 Q32 31 36 34" stroke-width="1.2" fill="none" stroke-linecap="round"/>
             </svg>
         </div>
         <div class="login-card">
