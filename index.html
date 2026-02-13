@@ -1485,25 +1485,28 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 </div>
 
 <!-- ============================================================ -->
+<!-- MANDATORY POST-LOGIN SYNC OVERLAY                             -->
+<!-- ============================================================ -->
+<div class="mandatory-sync-overlay hidden" id="mandatorySyncOverlay">
+    <div class="mandatory-sync-card">
+        <div class="mandatory-sync-icon">☁️</div>
+        <h2>Cloud Sync Required</h2>
+        <p>Before you can use the dashboard, you must sync your data with Google Cloud. This ensures you have the latest account data and settings.</p>
+        <button type="button" class="mandatory-sync-btn" id="mandatorySyncBtn" onclick="initiateMandatorySync()">
+            <span>🔄</span> Connect & Sync with Google
+        </button>
+        <div class="mandatory-sync-status hidden" id="mandatorySyncStatus">
+            <span class="sync-status-icon">⏳</span>
+            <span id="mandatorySyncStatusText">Connecting...</span>
+        </div>
+        <div class="mandatory-sync-warning">You cannot access the dashboard until sync is complete.</div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- APP (hidden until authenticated)                              -->
 <!-- ============================================================ -->
 <div class="app app-hidden" id="appContainer">
-    <!-- Mandatory Post-Login Sync Overlay -->
-    <div class="mandatory-sync-overlay hidden" id="mandatorySyncOverlay">
-        <div class="mandatory-sync-card">
-            <div class="mandatory-sync-icon">☁️</div>
-            <h2>Cloud Sync Required</h2>
-            <p>Before you can use the dashboard, you must sync your data with Google Cloud. This ensures you have the latest account data and settings.</p>
-            <button type="button" class="mandatory-sync-btn" id="mandatorySyncBtn" onclick="initiateMandatorySync()">
-                <span>🔄</span> Connect & Sync with Google
-            </button>
-            <div class="mandatory-sync-status hidden" id="mandatorySyncStatus">
-                <span class="sync-status-icon">⏳</span>
-                <span id="mandatorySyncStatusText">Connecting...</span>
-            </div>
-            <div class="mandatory-sync-warning">You cannot access the dashboard until sync is complete.</div>
-        </div>
-    </div>
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
@@ -4686,10 +4689,8 @@ function showApp() {
     // Initialize cloud sync UI
     initCurrentUser();
     updateCloudUI();
-    // Show mandatory sync overlay if not yet synced this session
-    if (sessionStorage.getItem('postLoginSyncCompleted') !== 'true') {
-        showMandatorySyncOverlay();
-    }
+    // Always require cloud sync after login
+    showMandatorySyncOverlay();
 }
 
 function togglePasswordVisibility() {
