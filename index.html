@@ -5776,10 +5776,8 @@ async function performLoginPageSync() {
         if (!response.ok) throw new Error('Failed to download backup');
         const backup = await response.json();
         if (!backup.version || !backup.data) throw new Error('Invalid backup format');
-        if (backup.data.users) { users = backup.data.users; localStorage.setItem('dashboardUsers', JSON.stringify(users)); }
-        if (backup.data.quickLinks) { quickLinks = backup.data.quickLinks; localStorage.setItem('quickLinks', JSON.stringify(quickLinks)); }
-        if (backup.data.mainLinks) { mainLinks = backup.data.mainLinks; localStorage.setItem('mainLinks', JSON.stringify(mainLinks)); }
-        if (backup.data.schoolSettings) { schoolSettings = backup.data.schoolSettings; localStorage.setItem('schoolSettings', JSON.stringify(schoolSettings)); }
+        // Restore all data from backup (transactions, budgets, quarterly data, staff, etc.)
+        restoreBackupData(backup);
         lastSyncTime = new Date(); lastSavedBy = backup.savedBy || 'Unknown';
         localStorage.setItem('schoolDashboardLastSyncTime', lastSyncTime.toISOString());
         return true;
@@ -5874,10 +5872,8 @@ async function performMandatorySync() {
         if (!response.ok) throw new Error('Failed to download backup');
         const backup = await response.json();
         if (!backup.version || !backup.data) throw new Error('Invalid backup format');
-        if (backup.data.users) { users = backup.data.users; localStorage.setItem('dashboardUsers', JSON.stringify(users)); }
-        if (backup.data.quickLinks) { quickLinks = backup.data.quickLinks; localStorage.setItem('quickLinks', JSON.stringify(quickLinks)); }
-        if (backup.data.mainLinks) { mainLinks = backup.data.mainLinks; localStorage.setItem('mainLinks', JSON.stringify(mainLinks)); }
-        if (backup.data.schoolSettings) { schoolSettings = backup.data.schoolSettings; localStorage.setItem('schoolSettings', JSON.stringify(schoolSettings)); }
+        // Restore all data from backup (transactions, budgets, quarterly data, staff, etc.)
+        restoreBackupData(backup);
         lastSyncTime = new Date(); lastSavedBy = backup.savedBy || 'Unknown';
         localStorage.setItem('schoolDashboardLastSyncTime', lastSyncTime.toISOString());
         updateCloudUI(true);
