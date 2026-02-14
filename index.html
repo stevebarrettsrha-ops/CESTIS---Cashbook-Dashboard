@@ -3508,6 +3508,12 @@ function calcTotals() {
         if (m && monthSpend.hasOwnProperty(m)) {
             monthSpend[m] += t.payment;
             monthDeposit[m] += t.deposit;
+        } else if (m) {
+            // Transaction date falls outside quarter's months (e.g. Dec transaction in Q4 Jan-Mar)
+            // Assign to the first month of the quarter so totals stay in sync
+            var firstMonth = qm.months[0];
+            monthSpend[firstMonth] += t.payment;
+            monthDeposit[firstMonth] += t.deposit;
         }
     });
 
@@ -3682,10 +3688,19 @@ function renderMonthlyPage() {
     qm.monthNames.forEach(mn => { detail += `<th class="amount">${mn}</th>`; });
     detail += `<th class="amount">Total</th><th class="amount">Budgeted</th><th class="amount">Variance</th></tr></thead><tbody>`;
     const activeTxns = d.activeTxns;
+    const quarterMonthKeys = new Set(qm.months);
     const allCats = [...new Set(activeTxns.filter(t=>t.category!=='Subvention'&&t.payment>0).map(t=>t.category))];
     let grandTotal = 0, grandBudgeted = 0;
     allCats.sort().forEach(cat => {
-        const mAmts = qm.months.map(m => activeTxns.filter(t=>getMonth(t.date)===m&&t.category===cat).reduce((s,t)=>s+t.payment,0));
+        // For each quarter month, sum payments; for the first month, also include out-of-quarter-dated transactions
+        const mAmts = qm.months.map((m, mi) => {
+            var sum = activeTxns.filter(t=>getMonth(t.date)===m&&t.category===cat).reduce((s,t)=>s+t.payment,0);
+            if (mi === 0) {
+                // Add payments from transactions with dates outside this quarter's months
+                sum += activeTxns.filter(t=>t.category===cat && t.payment>0 && !quarterMonthKeys.has(getMonth(t.date))).reduce((s,t)=>s+t.payment,0);
+            }
+            return sum;
+        });
         const tot = mAmts.reduce((s,a)=>s+a,0);
         const budgeted = BUDGET[cat] || 0;
         const variance = budgeted - tot;
@@ -5120,14 +5135,36 @@ function renderMonthlyRecon() {
         // Quarter section label
         cardsHtml += '<div class="recon-quarter-label">' + quarterIcons[q] + ' ' + quarterLabels[q] + ' <span class="badge">' + calYear + '</span></div>';
 
+        // Track which transactions have been assigned to a month within this quarter
+        var assignedTxnIds = new Set();
+
         qm.months.forEach((mKey, mi) => {
             const monthName = qm.monthNames[mi];
             const monthNum = qm.monthNums[mi];
+            const isFirstMonth = (mi === 0);
 
-            const monthTxns = activeTxns.filter(t => {
+            // Match transactions by month number
+            var monthTxns = activeTxns.filter(t => {
                 if (!t.date) return false;
                 return parseInt(t.date.split('-')[1]) === monthNum;
             });
+
+            // For the first month of the quarter, also include any transactions whose dates
+            // fall outside the quarter's month range (e.g. Dec transaction in Q4 Jan-Mar).
+            // This prevents "orphan" transactions from silently vanishing from the recon.
+            if (isFirstMonth) {
+                var quarterMonthNums = qm.monthNums;
+                activeTxns.forEach(function(t) {
+                    if (!t.date) return;
+                    var txnMonth = parseInt(t.date.split('-')[1]);
+                    if (quarterMonthNums.indexOf(txnMonth) === -1) {
+                        monthTxns.push(t);
+                    }
+                });
+            }
+
+            // Mark all as assigned
+            monthTxns.forEach(function(t) { assignedTxnIds.add(t.id); });
 
             // Auto-calculate from transaction data
             const monthDeposits = monthTxns.reduce((sum, t) => sum + (t.deposit || 0), 0);
