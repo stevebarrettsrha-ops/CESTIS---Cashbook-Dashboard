@@ -1638,8 +1638,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <div class="nav-section">
             <div class="nav-label">Overview</div>
             <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
-            <div class="nav-item" onclick="showPage('budgetlines')"><span class="icon">💰</span> Budget Amounts</div>
+            <div class="nav-item" onclick="showPage('addbudgetlines')"><span class="icon">✏️</span> Add Budget Lines</div>
             <div class="nav-item" onclick="showPage('transactions')"><span class="icon">📋</span> Transactions</div>
+            <div class="nav-item" onclick="showPage('budgetlines')"><span class="icon">💰</span> Budget Amounts</div>
         </div>
         <div class="nav-section">
             <div class="nav-label">Analysis</div>
@@ -2030,20 +2031,90 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             </div>
         </div>
 
-        <!-- ====== BUDGET AMOUNTS ====== -->
+        <!-- ====== ADD BUDGET LINES (Control Center) ====== -->
+        <div id="page-addbudgetlines" class="page">
+            <div class="page-header">
+                <div>
+                    <h2>Add Budget Lines</h2>
+                    <div class="subtitle" id="ablSubtitle">Control center for managing budget lines across all quarters</div>
+                </div>
+                <div class="header-actions">
+                    <div class="budget-search-bar">
+                        <span>🔍</span>
+                        <input type="text" id="ablSearch" placeholder="Search budget lines..." oninput="renderAddBudgetLinesPage()">
+                    </div>
+                    <button class="btn btn-ghost" onclick="copyBudgetFromQuarter()">📋 Copy from Quarter</button>
+                    <button class="btn btn-ghost" onclick="openCopyBudgetLineModal()">📄 Copy Budget Line</button>
+                    <button class="btn btn-success" onclick="openBudgetLineModal()">+ Add Budget Line</button>
+                </div>
+            </div>
+
+            <div class="bl-quarter-nav">
+                <div class="bl-quarter-fy-row">
+                    <button class="btn-nav" onclick="ablChangeFY(-1)">◀</button>
+                    <span class="bl-quarter-fy-label" id="ablFyLabel">FY 2025/2026</span>
+                    <button class="btn-nav" onclick="ablChangeFY(1)">▶</button>
+                </div>
+                <div class="bl-quarter-tabs-row">
+                    <div class="bl-quarter-tab abl-quarter-tab" onclick="ablSwitchQuarter(1)">Q1 · Apr–Jun</div>
+                    <div class="bl-quarter-tab abl-quarter-tab" onclick="ablSwitchQuarter(2)">Q2 · Jul–Sep</div>
+                    <div class="bl-quarter-tab abl-quarter-tab active" onclick="ablSwitchQuarter(3)">Q3 · Oct–Dec</div>
+                    <div class="bl-quarter-tab abl-quarter-tab" onclick="ablSwitchQuarter(4)">Q4 · Jan–Mar</div>
+                    <div class="bl-quarter-arrows">
+                        <button class="btn-nav" onclick="ablChangeQuarter(-1)">◀ Prev Qtr</button>
+                        <button class="btn-nav" onclick="ablChangeQuarter(1)">Next Qtr ▶</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ablSectionFilter" class="section-filter-row"></div>
+
+            <div class="budget-lines-grid">
+                <div class="budget-summary-card card-blue">
+                    <div class="budget-summary-label">Total Budget Lines</div>
+                    <div class="budget-summary-value" id="ablTotalItems">0</div>
+                    <div class="budget-summary-sub">Active budget lines</div>
+                </div>
+                <div class="budget-summary-card card-purple">
+                    <div class="budget-summary-label">Total Budgeted</div>
+                    <div class="budget-summary-value" id="ablTotalAmount">$0</div>
+                    <div class="budget-summary-sub">Allocated this quarter</div>
+                </div>
+                <div class="budget-summary-card card-red">
+                    <div class="budget-summary-label">Total Spent</div>
+                    <div class="budget-summary-value" id="ablTotalSpent">$0</div>
+                    <div class="budget-summary-sub">Actual expenditure</div>
+                </div>
+                <div class="budget-summary-card card-green">
+                    <div class="budget-summary-label">Total Variance</div>
+                    <div class="budget-summary-value" id="ablTotalVariance">$0</div>
+                    <div class="budget-summary-sub">Remaining budget</div>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0;">
+                <div id="ablList" class="budget-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Loading budget lines...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== BUDGET AMOUNTS (Read-Only View) ====== -->
         <div id="page-budgetlines" class="page">
             <div class="page-header">
                 <div>
-                    <h2>Budget Amounts Manager</h2>
-                    <div class="subtitle" id="blSubtitle">Quarterly budget allocations</div>
+                    <h2>Budget Amounts</h2>
+                    <div class="subtitle" id="blSubtitle">Quarterly budget allocations (view only)</div>
                 </div>
                 <div class="header-actions">
                     <div class="budget-search-bar">
                         <span>🔍</span>
                         <input type="text" id="budgetLineSearch" placeholder="Search budget amounts..." oninput="renderBudgetLinesPage()">
                     </div>
-                    <button class="btn btn-ghost" onclick="copyBudgetFromQuarter()">📋 Copy from Quarter</button>
-                    <button class="btn btn-success" onclick="openBudgetLineModal()">+ Add Amount</button>
+                    <button class="btn btn-ghost btn-sm" onclick="navigateToPage('addbudgetlines')">✏️ Edit in Add Budget Lines</button>
                 </div>
             </div>
 
@@ -2151,6 +2222,44 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <div class="modal-actions">
             <button class="btn btn-ghost" onclick="closeBudgetLineModal()">Cancel</button>
             <button class="btn btn-success" onclick="saveBudgetLine()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Copy Budget Line Modal -->
+<div class="modal-overlay" id="copyBudgetLineModal">
+    <div class="modal">
+        <h3>Copy Budget Line</h3>
+        <p style="margin-bottom:1rem;color:var(--text-secondary);font-size:0.875rem;">Select a budget line to copy. The copy will be created with a new name in the current quarter.</p>
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Source Budget Line</label>
+                <select id="copy-bl-source" onchange="prefillCopyBudgetLine()">
+                    <option value="">-- Select a budget line --</option>
+                </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>New Name</label>
+                <input type="text" id="copy-bl-name" placeholder="e.g., Admin Expenses (Copy)">
+            </div>
+            <div class="form-group">
+                <label>Budgeted Amount ($)</label>
+                <input type="number" id="copy-bl-amount" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Section</label>
+                <select id="copy-bl-section">
+                    <option value="Salaries">Salaries</option>
+                    <option value="Statutory">Statutory</option>
+                    <option value="Admin & Operations">Admin & Operations</option>
+                    <option value="Instructors">Instructors</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeCopyBudgetLineModal()">Cancel</button>
+            <button class="btn btn-success" onclick="saveCopyBudgetLine()">Copy</button>
         </div>
     </div>
 </div>
@@ -3940,6 +4049,15 @@ function showPage(page) {
     refreshAll();
 }
 
+function navigateToPage(page) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    var navItem = document.querySelector('.nav-item[onclick*="' + page + '"]');
+    if (navItem) navItem.classList.add('active');
+    refreshAll();
+}
+
 function openExternalLink(linkKey) {
     const url = EXTERNAL_LINKS[linkKey];
     if (url) {
@@ -3966,6 +4084,7 @@ function refreshAll() {
     renderFinancialForm();
     renderReconciliation();
     renderBudgetLinesPage();
+    renderAddBudgetLinesPage();
     populateVoidDropdown();
     populateUnvoidDropdown();
     populateSubventionFields();
@@ -4194,15 +4313,36 @@ function blChangeQuarter(dir) {
 function updateBLQuarterUI() {
     var fyLabel = document.getElementById('blFyLabel');
     if (fyLabel) fyLabel.textContent = 'FY ' + activeFY;
-    document.querySelectorAll('.bl-quarter-tab').forEach(function(tab, i) {
+    // Only update Budget Amounts page tabs (not ABL tabs)
+    document.querySelectorAll('#page-budgetlines .bl-quarter-tab').forEach(function(tab, i) {
         tab.classList.toggle('active', i + 1 === activeQ);
     });
     var subtitle = document.getElementById('blSubtitle');
     if (subtitle) {
         var period = quarterPeriodLabel(activeFY, activeQ);
-        subtitle.textContent = 'Budget allocations for ' + period;
+        subtitle.textContent = 'Budget allocations for ' + period + ' (view only)';
+    }
+    // Also update ABL page
+    updateABLQuarterUI();
+}
+
+function updateABLQuarterUI() {
+    var fyLabel = document.getElementById('ablFyLabel');
+    if (fyLabel) fyLabel.textContent = 'FY ' + activeFY;
+    document.querySelectorAll('.abl-quarter-tab').forEach(function(tab, i) {
+        tab.classList.toggle('active', i + 1 === activeQ);
+    });
+    var subtitle = document.getElementById('ablSubtitle');
+    if (subtitle) {
+        var period = quarterPeriodLabel(activeFY, activeQ);
+        subtitle.textContent = 'Managing budget lines for ' + period;
     }
 }
+
+// Add Budget Lines quarter navigation (delegates to same global state)
+function ablSwitchQuarter(q) { blSwitchQuarter(q); }
+function ablChangeFY(dir) { blChangeFY(dir); }
+function ablChangeQuarter(dir) { blChangeQuarter(dir); }
 
 function filterBudgetSection(section) {
     currentBudgetSection = section;
@@ -4211,6 +4351,7 @@ function filterBudgetSection(section) {
         tab.classList.toggle('active', tab.getAttribute('data-section') === section);
     });
     renderBudgetLinesPage();
+    renderAddBudgetLinesPage();
 }
 
 function renderSectionFilter() {
@@ -4233,6 +4374,9 @@ function renderSectionFilter() {
         html += '<div class="section-filter-tab' + (currentBudgetSection === s ? ' active' : '') + '" data-section="' + escapeHtml(s) + '" onclick="filterBudgetSection(\'' + safeS + '\')">' + escapeHtml(s) + '<span class="section-count">' + c + '</span></div>';
     });
     container.innerHTML = html;
+    // Also populate ABL section filter
+    var ablContainer = document.getElementById('ablSectionFilter');
+    if (ablContainer) ablContainer.innerHTML = html;
 }
 
 function renderBudgetLinesPage() {
@@ -4303,11 +4447,128 @@ function renderBudgetLinesPage() {
     }
 
     if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No budget amounts for this quarter. Click "+ Add Amount" to create one, or "Copy from Quarter" to import from another quarter.</p></div>';
+        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No budget amounts for this quarter. Use "Add Budget Lines" to create budget lines.</p></div>';
         return;
     }
 
-    // Build table
+    // Build table (READ-ONLY - no Actions column)
+    var html = '<table class="budget-table"><thead><tr>' +
+        '<th>Category</th>' +
+        '<th>Section</th>' +
+        '<th class="col-right">Budgeted</th>' +
+        '<th class="col-right">Actual Spend</th>' +
+        '<th class="col-right">Variance</th>' +
+        '<th>Usage</th>' +
+        '</tr></thead><tbody>';
+
+    // Data rows (read-only, no edit/delete buttons)
+    filtered.forEach(function(e) {
+        var p = budgetPct(e.budgeted, e.actual);
+        var varClass = e.variance < 0 ? 'negative' : 'positive';
+        var safeKey = escapeHtml(e.key);
+        var sectionClass = getSectionCssClass(e.section);
+        html += '<tr>' +
+            '<td><span class="budget-item-name">' + safeKey + '</span></td>' +
+            '<td><span class="budget-section-badge ' + sectionClass + '">' + escapeHtml(e.section) + '</span></td>' +
+            '<td class="amount accent">' + fmt(e.budgeted) + '</td>' +
+            '<td class="amount">' + (e.actual > 0 ? fmt(e.actual) : '<span class="muted">-</span>') + '</td>' +
+            '<td class="amount ' + varClass + '">' + (e.variance < 0 ? '-' : '') + fmt(Math.abs(e.variance)) + '</td>' +
+            '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + p.barClass + '" style="width:' + p.barWidth + '%"></div></div><span class="pct-label">' + p.label + '</span></div></td>' +
+        '</tr>';
+    });
+
+    // Total row
+    var filteredBudget = filtered.reduce(function(s, e) { return s + e.budgeted; }, 0);
+    var filteredSpent = filtered.reduce(function(s, e) { return s + e.actual; }, 0);
+    var filteredVariance = filteredBudget - filteredSpent;
+    var tp = budgetPct(filteredBudget, filteredSpent);
+    html += '<tr class="total-row">' +
+        '<td><strong>TOTAL' + (currentBudgetSection !== 'all' ? ' (' + escapeHtml(currentBudgetSection) + ')' : '') + '</strong></td>' +
+        '<td></td>' +
+        '<td class="amount accent">' + fmt(filteredBudget) + '</td>' +
+        '<td class="amount">' + fmt(filteredSpent) + '</td>' +
+        '<td class="amount ' + (filteredVariance < 0 ? 'negative' : 'positive') + '">' + (filteredVariance < 0 ? '-' : '') + fmt(Math.abs(filteredVariance)) + '</td>' +
+        '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + tp.barClass + '" style="width:' + tp.barWidth + '%"></div></div><span class="pct-label">' + tp.label + '</span></div></td>' +
+    '</tr>';
+
+    html += '</tbody></table>';
+    listEl.innerHTML = html;
+}
+
+// ============================================================
+// ADD BUDGET LINES PAGE (Control Center with full CRUD)
+// ============================================================
+
+function renderAddBudgetLinesPage() {
+    var listEl = document.getElementById('ablList');
+    if (!listEl) return;
+
+    // Update quarter UI
+    updateABLQuarterUI();
+
+    var d = calcTotals();
+    var search = (document.getElementById('ablSearch')?.value || '').toLowerCase();
+
+    // Build combined list from BUDGET object with sections
+    var entries = Object.keys(BUDGET).map(function(key) {
+        var budgeted = BUDGET[key];
+        var actual = d.catSpend[key] || 0;
+        var variance = budgeted - actual;
+        var section = getBudgetLineSection(key);
+        return { key: key, budgeted: budgeted, actual: actual, variance: variance, section: section };
+    });
+
+    // Filter by search
+    var filtered = entries;
+    if (search) {
+        filtered = filtered.filter(function(e) { return e.key.toLowerCase().includes(search); });
+    }
+
+    // Filter by section
+    if (currentBudgetSection !== 'all') {
+        filtered = filtered.filter(function(e) { return e.section === currentBudgetSection; });
+    }
+
+    // Sort: group by section, then alphabetically within section
+    var sectionOrder = ['Salaries', 'Statutory', 'Admin & Operations', 'Instructors', 'Other'];
+    filtered.sort(function(a, b) {
+        var sa = sectionOrder.indexOf(a.section);
+        var sb = sectionOrder.indexOf(b.section);
+        if (sa === -1) sa = 99;
+        if (sb === -1) sb = 99;
+        if (sa !== sb) return sa - sb;
+        return a.key.localeCompare(b.key);
+    });
+
+    // Update ABL summary cards
+    var totalItems = Object.keys(BUDGET).length;
+    var totalBudget = entries.reduce(function(s, e) { return s + e.budgeted; }, 0);
+    var totalSpent = entries.reduce(function(s, e) { return s + e.actual; }, 0);
+    var totalVariance = totalBudget - totalSpent;
+
+    var el = function(id) { return document.getElementById(id); };
+    if (el('ablTotalItems')) el('ablTotalItems').textContent = totalItems;
+    if (el('ablTotalAmount')) el('ablTotalAmount').textContent = fmt(totalBudget);
+    if (el('ablTotalSpent')) {
+        el('ablTotalSpent').textContent = fmt(totalSpent);
+        el('ablTotalSpent').style.color = 'var(--red)';
+    }
+    if (el('ablTotalVariance')) {
+        el('ablTotalVariance').textContent = (totalVariance < 0 ? '-' : '') + fmt(Math.abs(totalVariance));
+        el('ablTotalVariance').style.color = totalVariance >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+
+    if (filtered.length === 0 && (search || currentBudgetSection !== 'all')) {
+        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No budget lines match your filter.</p></div>';
+        return;
+    }
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No budget lines for this quarter. Click "+ Add Budget Line" to create one, or "Copy from Quarter" to import from another quarter.</p></div>';
+        return;
+    }
+
+    // Build table with full CRUD actions
     var html = '<table class="budget-table"><thead><tr>' +
         '<th>Category</th>' +
         '<th>Section</th>' +
@@ -4318,7 +4579,7 @@ function renderBudgetLinesPage() {
         '<th class="col-right">Actions</th>' +
         '</tr></thead><tbody>';
 
-    // Data rows
+    // Data rows with edit/delete/copy actions
     filtered.forEach(function(e) {
         var p = budgetPct(e.budgeted, e.actual);
         var varClass = e.variance < 0 ? 'negative' : 'positive';
@@ -4333,6 +4594,7 @@ function renderBudgetLinesPage() {
             '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + p.barClass + '" style="width:' + p.barWidth + '%"></div></div><span class="pct-label">' + p.label + '</span></div></td>' +
             '<td><div class="budget-item-actions">' +
                 '<button class="btn btn-ghost btn-sm" onclick="openBudgetLineModal(\'' + safeKey.replace(/'/g, "\\'") + '\')">Edit</button>' +
+                '<button class="btn btn-ghost btn-sm" onclick="quickCopyBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Copy</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="deleteBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Delete</button>' +
             '</div></td>' +
         '</tr>';
@@ -4355,6 +4617,74 @@ function renderBudgetLinesPage() {
 
     html += '</tbody></table>';
     listEl.innerHTML = html;
+}
+
+// Copy Budget Line modal functions
+function openCopyBudgetLineModal() {
+    var modal = document.getElementById('copyBudgetLineModal');
+    var sourceSelect = document.getElementById('copy-bl-source');
+
+    // Populate source dropdown with current budget lines
+    var html = '<option value="">-- Select a budget line --</option>';
+    Object.keys(BUDGET).sort().forEach(function(key) {
+        html += '<option value="' + escapeHtml(key) + '">' + escapeHtml(key) + ' (' + fmt(BUDGET[key]) + ')</option>';
+    });
+    sourceSelect.innerHTML = html;
+
+    // Clear form
+    document.getElementById('copy-bl-name').value = '';
+    document.getElementById('copy-bl-amount').value = '';
+    document.getElementById('copy-bl-section').value = 'Other';
+
+    modal.classList.add('show');
+}
+
+function closeCopyBudgetLineModal() {
+    document.getElementById('copyBudgetLineModal').classList.remove('show');
+}
+
+function prefillCopyBudgetLine() {
+    var sourceKey = document.getElementById('copy-bl-source').value;
+    if (!sourceKey) return;
+
+    document.getElementById('copy-bl-name').value = sourceKey + ' (Copy)';
+    document.getElementById('copy-bl-amount').value = BUDGET[sourceKey] || 0;
+    document.getElementById('copy-bl-section').value = getBudgetLineSection(sourceKey);
+}
+
+function saveCopyBudgetLine() {
+    var name = document.getElementById('copy-bl-name').value.trim();
+    var amount = parseFloat(document.getElementById('copy-bl-amount').value);
+    var section = document.getElementById('copy-bl-section').value;
+
+    if (!name) { alert('Please enter a name for the copied budget line.'); return; }
+    if (isNaN(amount) || amount < 0) { alert('Please enter a valid amount.'); return; }
+    if (BUDGET.hasOwnProperty(name)) {
+        alert('A budget line with that name already exists. Please use a different name.');
+        return;
+    }
+
+    BUDGET[name] = amount;
+    BUDGET_LINE_SECTIONS[name] = section;
+    saveQuarterBudget();
+    closeCopyBudgetLineModal();
+    refreshAll();
+}
+
+// Quick copy a budget line (inline from the table row)
+function quickCopyBudgetLine(key) {
+    var newName = prompt('Enter name for the copied budget line:', key + ' (Copy)');
+    if (!newName) return;
+    newName = newName.trim();
+    if (!newName) { alert('Please enter a valid name.'); return; }
+    if (BUDGET.hasOwnProperty(newName)) {
+        alert('A budget line with that name already exists.');
+        return;
+    }
+    BUDGET[newName] = BUDGET[key] || 0;
+    BUDGET_LINE_SECTIONS[newName] = getBudgetLineSection(key);
+    saveQuarterBudget();
+    refreshAll();
 }
 
 function escapeHtml(text) {
