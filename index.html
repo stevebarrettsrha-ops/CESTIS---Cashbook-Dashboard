@@ -1735,9 +1735,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="stats-grid">
                 <div class="stat-card blue">
-                    <div class="label">Total Budget</div>
+                    <div class="label">Total Available</div>
                     <div class="value" id="dash-budget">$0</div>
-                    <div class="change">Approved subvention + B/F</div>
+                    <div class="change">B/F + Deposits</div>
                 </div>
                 <div class="stat-card green">
                     <div class="label">Total Deposits</div>
@@ -1758,6 +1758,11 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="label">Budget Utilization</div>
                     <div class="value" id="dash-util">0%</div>
                     <div class="change">Spent of available</div>
+                </div>
+                <div class="stat-card" style="border-left-color: var(--accent2);">
+                    <div class="label">Budget Allocated</div>
+                    <div class="value" id="dash-budget-allocated" style="color: var(--accent2);">$0</div>
+                    <div class="change" id="dash-budget-line-count">0 budget lines</div>
                 </div>
             </div>
 
@@ -1954,13 +1959,20 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="fin-line"><span>Bank Charges</span><span class="amount negative" id="fin-bank">$0</span></div>
                     <div class="fin-line total"><span>Closing Balance</span><span class="amount" id="fin-closing">$0</span></div>
                 </div>
+                <div class="fin-connector">→</div>
+                <div class="fin-box">
+                    <h4>Budget Allocation</h4>
+                    <div class="fin-line"><span>Total Budget Allocated</span><span class="amount" id="fin-budget-allocated">$0</span></div>
+                    <div class="fin-line"><span>Total Actual Spent</span><span class="amount negative" id="fin-budget-spent">$0</span></div>
+                    <div class="fin-line total"><span>Budget Variance</span><span class="amount" id="fin-budget-variance">$0</span></div>
+                </div>
             </div>
 
             <div class="card">
                 <div class="card-title">📝 Items of Recipient Expenses <span class="badge">Funded by HEART Subvention</span></div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>Item</th><th style="width:140px;">Expenses ($)</th></tr></thead>
+                        <thead><tr><th>Item</th><th style="width:130px;">Budgeted ($)</th><th style="width:130px;">Expenses ($)</th><th style="width:130px;">Variance ($)</th></tr></thead>
                         <tbody id="finItemsBody"></tbody>
                     </table>
                 </div>
@@ -2720,6 +2732,10 @@ async function checkCloudForChanges() {
 // ============================================
 
 function prepareBackupData() {
+    // Ensure current in-memory state is persisted to localStorage before collecting
+    saveToStorage();
+    saveQuarterBudget();
+
     // Collect all quarterly budget data from localStorage
     var quarterlyBudgets = {};
     for (var fy = 2024; fy <= 2027; fy++) {
@@ -2735,6 +2751,21 @@ function prepareBackupData() {
     // Include current in-memory budget for active quarter
     quarterlyBudgets[getCurrentBudgetQuarterKey()] = { budget: BUDGET, sections: BUDGET_LINE_SECTIONS };
 
+    // Collect all quarterly transaction data from localStorage (ensures ALL quarters are backed up)
+    var quarterlyTransactions = {};
+    for (var fy2 = 2024; fy2 <= 2027; fy2++) {
+        var fyStr2 = fy2 + '/' + (fy2 + 1);
+        for (var q2 = 1; q2 <= 4; q2++) {
+            var tKey = getQuarterKey(fyStr2, q2);
+            var tSaved = localStorage.getItem(tKey);
+            if (tSaved) {
+                try { quarterlyTransactions[tKey] = JSON.parse(tSaved); } catch(e) {}
+            }
+        }
+    }
+    // Include current in-memory transaction data for active quarter
+    quarterlyTransactions[getCurrentQuarterKey()] = { openingBalance: OPENING_BALANCE, transactions: transactions };
+
     return {
         version: '2.0',
         timestamp: new Date().toISOString(),
@@ -2747,6 +2778,7 @@ function prepareBackupData() {
             budget: JSON.parse(JSON.stringify(BUDGET)),
             budgetSections: JSON.parse(JSON.stringify(BUDGET_LINE_SECTIONS)),
             quarterlyBudgets: quarterlyBudgets,
+            quarterlyTransactions: quarterlyTransactions,
             deletedBudgetKeys: typeof deletedBudgetKeys !== 'undefined' ? deletedBudgetKeys.slice() : [],
             staffMembers: staffMembers,
             timeRecords: timeRecords
@@ -2769,6 +2801,12 @@ function restoreBackupData(backupData) {
     if (d.quarterlyBudgets && typeof d.quarterlyBudgets === 'object') {
         Object.keys(d.quarterlyBudgets).forEach(function(key) {
             try { localStorage.setItem(key, JSON.stringify(d.quarterlyBudgets[key])); } catch(e) {}
+        });
+    }
+    // Restore per-quarter transaction data if available (ensures ALL quarters are restored)
+    if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
+        Object.keys(d.quarterlyTransactions).forEach(function(key) {
+            try { localStorage.setItem(key, JSON.stringify(d.quarterlyTransactions[key])); } catch(e) {}
         });
     }
     // Restore current quarter budget
@@ -3076,6 +3114,14 @@ async function mergeFromCloud() {
             Object.keys(d.quarterlyBudgets).forEach(function(key) {
                 if (!localStorage.getItem(key)) {
                     try { localStorage.setItem(key, JSON.stringify(d.quarterlyBudgets[key])); } catch(e) {}
+                }
+            });
+        }
+        // Merge quarterly transaction data from cloud (adds data for quarters not present locally)
+        if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
+            Object.keys(d.quarterlyTransactions).forEach(function(key) {
+                if (!localStorage.getItem(key)) {
+                    try { localStorage.setItem(key, JSON.stringify(d.quarterlyTransactions[key])); } catch(e) {}
                 }
             });
         }
@@ -3408,12 +3454,15 @@ let chartInstances = {};
 // UTILITY FUNCTIONS
 // ============================================================
 function fmt(n) {
-    return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    var prefix = n < 0 ? '-$' : '$';
+    return prefix + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 function fmtShort(n) {
-    if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
-    if (n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
-    return '$' + n.toFixed(0);
+    var prefix = n < 0 ? '-$' : '$';
+    var abs = Math.abs(n);
+    if (abs >= 1000000) return prefix + (abs/1000000).toFixed(1) + 'M';
+    if (abs >= 1000) return prefix + (abs/1000).toFixed(0) + 'K';
+    return prefix + abs.toFixed(0);
 }
 const MONTH_KEYS = ['','jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 const MONTH_NAMES = {jan:'January',feb:'February',mar:'March',apr:'April',may:'May',jun:'June',
@@ -3480,6 +3529,13 @@ function renderDashboard() {
     document.getElementById('dash-balance').textContent = fmt(d.closingBalance);
     document.getElementById('dash-util').textContent = d.utilization.toFixed(1) + '%';
     document.getElementById('dash-txn-count').textContent = d.activeTxns.filter(t=>t.payment>0).length + ' payments processed';
+
+    // Budget Allocated card - sum of all BUDGET line amounts (synced from Budget Amounts section)
+    var totalBudgetAllocated = Object.values(BUDGET).reduce(function(s, v) { return s + v; }, 0);
+    var budgetLineCount = Object.keys(BUDGET).length;
+    document.getElementById('dash-budget-allocated').textContent = fmt(totalBudgetAllocated);
+    document.getElementById('dash-budget-line-count').textContent = budgetLineCount + ' budget line' + (budgetLineCount !== 1 ? 's' : '');
+
     // Update dynamic labels
     const period = quarterPeriodLabel(activeFY, activeQ);
     document.getElementById('dashSubtitle').textContent = 'Hazard STC · Subvention Period: ' + period;
@@ -3576,11 +3632,16 @@ function renderCategoriesPage() {
     const sorted = Object.entries(d.catSpend).filter(([k])=>k!=='Subvention').sort((a,b)=>b[1]-a[1]);
     const total = sorted.reduce((s,e)=>s+e[1],0);
 
-    let html = `<div class="card-title">🏷️ Category Ranking</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Category</th><th class="amount">Amount</th><th class="amount">Share</th><th>Visual</th></tr></thead><tbody>`;
+    let html = `<div class="card-title">🏷️ Category Ranking</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Category</th><th class="amount">Actual Spent</th><th class="amount">Budgeted</th><th class="amount">Variance</th><th class="amount">Share</th><th>Visual</th></tr></thead><tbody>`;
     sorted.forEach(([cat,amt],i) => {
         const pct = (amt/total*100);
+        const budgeted = BUDGET[cat] || 0;
+        const variance = budgeted - amt;
+        const varColor = variance < 0 ? 'var(--red)' : 'var(--green)';
         html += `<tr><td style="color:var(--text3)">${i+1}</td><td><span class="tag ${getCategoryTag(cat)}">${cat}</span></td>
-            <td class="amount">${fmt(amt)}</td><td class="amount">${pct.toFixed(1)}%</td>
+            <td class="amount">${fmt(amt)}</td><td class="amount">${fmt(budgeted)}</td>
+            <td class="amount" style="color:${varColor}">${variance<0?'-':''}${fmt(Math.abs(variance))}</td>
+            <td class="amount">${pct.toFixed(1)}%</td>
             <td><div class="mini-bar" style="width:200px;"><div class="mini-bar-fill under" style="width:${pct}%;background:var(--accent);"></div></div></td></tr>`;
     });
     html += `</tbody></table></div>`;
@@ -3616,20 +3677,34 @@ function renderMonthlyPage() {
     });
     document.getElementById('monthlyStats').innerHTML = html;
 
-    // Monthly detail table
+    // Monthly detail table — uses active (non-cancelled) transactions only for consistency with calcTotals
     let detail = `<div class="card-title">📅 Monthly Category Breakdown</div><div class="table-wrap"><table><thead><tr><th>Category</th>`;
     qm.monthNames.forEach(mn => { detail += `<th class="amount">${mn}</th>`; });
-    detail += `<th class="amount">Total</th></tr></thead><tbody>`;
-    const allCats = [...new Set(transactions.filter(t=>t.category!=='Cancelled'&&t.category!=='Subvention'&&t.payment>0).map(t=>t.category))];
+    detail += `<th class="amount">Total</th><th class="amount">Budgeted</th><th class="amount">Variance</th></tr></thead><tbody>`;
+    const activeTxns = d.activeTxns;
+    const allCats = [...new Set(activeTxns.filter(t=>t.category!=='Subvention'&&t.payment>0).map(t=>t.category))];
+    let grandTotal = 0, grandBudgeted = 0;
     allCats.sort().forEach(cat => {
-        const mAmts = qm.months.map(m => transactions.filter(t=>getMonth(t.date)===m&&t.category===cat).reduce((s,t)=>s+t.payment,0));
+        const mAmts = qm.months.map(m => activeTxns.filter(t=>getMonth(t.date)===m&&t.category===cat).reduce((s,t)=>s+t.payment,0));
         const tot = mAmts.reduce((s,a)=>s+a,0);
+        const budgeted = BUDGET[cat] || 0;
+        const variance = budgeted - tot;
         if (tot > 0) {
             detail += `<tr><td><span class="tag ${getCategoryTag(cat)}">${cat}</span></td>`;
             mAmts.forEach(a => { detail += `<td class="amount">${a?fmt(a):'-'}</td>`; });
-            detail += `<td class="amount" style="font-weight:700">${fmt(tot)}</td></tr>`;
+            detail += `<td class="amount" style="font-weight:700">${fmt(tot)}</td>`;
+            detail += `<td class="amount">${fmt(budgeted)}</td>`;
+            detail += `<td class="amount" style="color:${variance>=0?'var(--green)':'var(--red)'}">${variance<0?'-':''}${fmt(Math.abs(variance))}</td></tr>`;
+            grandTotal += tot;
+            grandBudgeted += budgeted;
         }
     });
+    var grandVariance = grandBudgeted - grandTotal;
+    detail += `<tr style="font-weight:700;background:var(--surface2);"><td>TOTAL</td>`;
+    qm.months.forEach(m => { detail += `<td class="amount">${fmt(d.monthSpend[m]||0)}</td>`; });
+    detail += `<td class="amount">${fmt(grandTotal)}</td>`;
+    detail += `<td class="amount">${fmt(grandBudgeted)}</td>`;
+    detail += `<td class="amount" style="color:${grandVariance>=0?'var(--green)':'var(--red)'}">${grandVariance<0?'-':''}${fmt(Math.abs(grandVariance))}</td></tr>`;
     detail += `</tbody></table></div>`;
     document.getElementById('monthlyDetail').innerHTML = detail;
 }
@@ -3643,30 +3718,46 @@ function renderFinancialForm() {
     document.getElementById('fin-bank').textContent = fmt(d.catSpend['Bank Charges']||0);
     document.getElementById('fin-closing').textContent = fmt(d.closingBalance);
 
-    // Items table - show all BUDGET categories with their actual spending
+    // Budget allocation summary — synced from Budget Amounts section
+    var totalBudgetAllocated = Object.values(BUDGET).reduce(function(s, v) { return s + v; }, 0);
+    var totalBudgetSpent = Object.keys(BUDGET).reduce(function(s, k) { return s + (d.catSpend[k] || 0); }, 0);
+    var budgetVariance = totalBudgetAllocated - totalBudgetSpent;
+    document.getElementById('fin-budget-allocated').textContent = fmt(totalBudgetAllocated);
+    document.getElementById('fin-budget-spent').textContent = fmt(totalBudgetSpent);
+    var varianceEl = document.getElementById('fin-budget-variance');
+    varianceEl.textContent = (budgetVariance < 0 ? '-' : '') + fmt(Math.abs(budgetVariance));
+    varianceEl.style.color = budgetVariance >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Items table - show all BUDGET categories with budgeted and actual spending
     let html = '';
     let total = 0;
+    let totalBudgeted = 0;
     const shownCats = new Set();
 
     // First show all BUDGET categories (sorted by actual spend descending, then alphabetically)
     const budgetEntries = Object.keys(BUDGET).map(cat => {
         const amt = d.catSpend[cat] || 0;
-        return [cat, amt];
+        const budgeted = BUDGET[cat] || 0;
+        return [cat, amt, budgeted];
     }).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
-    budgetEntries.forEach(([cat, amt]) => {
+    budgetEntries.forEach(([cat, amt, budgeted]) => {
         shownCats.add(cat);
-        html += `<tr><td>${cat.toUpperCase()}</td><td class="amount">${amt > 0 ? fmt(amt) : '<span style="color:var(--text3)">$0.00</span>'}</td></tr>`;
+        var variance = budgeted - amt;
+        var varColor = variance < 0 ? 'var(--red)' : 'var(--green)';
+        html += `<tr><td>${cat.toUpperCase()}</td><td class="amount">${fmt(budgeted)}</td><td class="amount">${amt > 0 ? fmt(amt) : '<span style="color:var(--text3)">$0.00</span>'}</td><td class="amount" style="color:${varColor}">${variance < 0 ? '-' : ''}${fmt(Math.abs(variance))}</td></tr>`;
         total += amt;
+        totalBudgeted += budgeted;
     });
 
     // Then show any transaction categories not in BUDGET (unbudgeted spending)
     Object.entries(d.catSpend).filter(([k]) => k !== 'Subvention' && !shownCats.has(k)).sort((a,b) => b[1] - a[1]).forEach(([cat, amt]) => {
-        html += `<tr><td>${cat.toUpperCase()} <span style="font-size:.65rem;color:var(--amber);">(UNBUDGETED)</span></td><td class="amount negative">${fmt(amt)}</td></tr>`;
+        html += `<tr><td>${cat.toUpperCase()} <span style="font-size:.65rem;color:var(--amber);">(UNBUDGETED)</span></td><td class="amount"><span style="color:var(--text3)">$0.00</span></td><td class="amount negative">${fmt(amt)}</td><td class="amount negative">-${fmt(amt)}</td></tr>`;
         total += amt;
     });
 
-    html += `<tr style="font-weight:700;background:var(--surface2);"><td>TOTAL</td><td class="amount">${fmt(total)}</td></tr>`;
+    var totalVariance = totalBudgeted - total;
+    html += `<tr style="font-weight:700;background:var(--surface2);"><td>TOTAL</td><td class="amount">${fmt(totalBudgeted)}</td><td class="amount">${fmt(total)}</td><td class="amount" style="color:${totalVariance>=0?'var(--green)':'var(--red)'}">${totalVariance<0?'-':''}${fmt(Math.abs(totalVariance))}</td></tr>`;
     document.getElementById('finItemsBody').innerHTML = html;
 }
 
@@ -3694,7 +3785,7 @@ function calcRecon() {
     const cb = parseFloat(document.getElementById('recon-cashbook').value) || 0;
     const diff = bank - cb;
     const el = document.getElementById('recon-diff');
-    el.value = (diff >= 0 ? '' : '-') + fmt(Math.abs(diff));
+    el.value = fmt(diff);
     el.style.color = Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)';
 }
 
@@ -3747,17 +3838,29 @@ function renderCharts(d) {
             scales:{y:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},x:{display:false}}}
     });
 
-    // Budget vs Actual Horizontal Bar
+    // Budget vs Actual Horizontal Bar — includes ALL budget lines (even $0 budget with actual spending)
     destroyChart('chartBudgetVsActual');
-    const topBudget = Object.entries(BUDGET).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const allBudgetEntries = Object.entries(BUDGET).map(function(e) {
+        return { cat: e[0], budgeted: e[1], actual: d.catSpend[e[0]] || 0 };
+    });
+    // Include any transaction categories with spending but no budget line (unbudgeted)
+    Object.entries(d.catSpend).forEach(function(e) {
+        if (e[0] !== 'Subvention' && !BUDGET.hasOwnProperty(e[0])) {
+            allBudgetEntries.push({ cat: e[0], budgeted: 0, actual: e[1] });
+        }
+    });
+    // Sort by budget amount descending, then by actual spend descending
+    allBudgetEntries.sort(function(a, b) { return (b.budgeted + b.actual) - (a.budgeted + a.actual); });
+    // Filter out lines where both budget and actual are zero
+    const activeBudgetEntries = allBudgetEntries.filter(function(e) { return e.budgeted > 0 || e.actual > 0; });
     const budgetChartContainer = document.getElementById('chartBudgetVsActual').parentElement;
-    budgetChartContainer.style.height = Math.max(280, topBudget.length * 32) + 'px';
+    budgetChartContainer.style.height = Math.max(280, activeBudgetEntries.length * 32) + 'px';
     chartInstances['chartBudgetVsActual'] = new Chart(document.getElementById('chartBudgetVsActual'), {
         type:'bar',
-        data:{labels:topBudget.map(e=>e[0].length>18?e[0].substring(0,18)+'…':e[0]),
+        data:{labels:activeBudgetEntries.map(e=>e.cat.length>18?e.cat.substring(0,18)+'…':e.cat),
             datasets:[
-                {label:'Budget',data:topBudget.map(e=>e[1]),backgroundColor:'rgba(59,130,246,0.3)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3},
-                {label:'Actual',data:topBudget.map(e=>d.catSpend[e[0]]||0),backgroundColor:'rgba(239,68,68,0.5)',borderColor:'#ef4444',borderWidth:1,borderRadius:3}
+                {label:'Budget',data:activeBudgetEntries.map(e=>e.budgeted),backgroundColor:'rgba(59,130,246,0.3)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3},
+                {label:'Actual',data:activeBudgetEntries.map(e=>e.actual),backgroundColor:'rgba(239,68,68,0.5)',borderColor:'#ef4444',borderWidth:1,borderRadius:3}
             ]},
         options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#9ba3bf',font:{size:10}}}},
             scales:{x:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
@@ -4946,11 +5049,13 @@ function showPageDirect(page) {
     document.querySelectorAll('.nav-item').forEach(n => {
         if (n.getAttribute('data-page') === page) n.classList.add('active');
     });
+    // Always save current state and refresh all sections first to ensure data consistency
+    saveToStorage();
+    saveQuarterBudget();
+    refreshAll();
     if (page === 'monthly-recon') {
         reconFY = activeFY;
         renderMonthlyRecon();
-    } else {
-        refreshAll();
     }
 }
 
