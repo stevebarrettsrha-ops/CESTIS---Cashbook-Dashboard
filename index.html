@@ -2579,13 +2579,20 @@ function initializeCloudSync() {
     const savedExpiry = localStorage.getItem('cestisGoogleTokenExpiry');
     const savedLastSync = localStorage.getItem('cestisLastSyncTime');
     const savedFileId = localStorage.getItem('cestisCloudFileId');
+    const savedFolderId = localStorage.getItem('cestisCloudFolderId');
 
     if (savedLastSync) {
         lastSyncTime = new Date(savedLastSync);
         updateLastSyncDisplay();
     }
 
-    if (savedFileId) {
+    // If the configured folder has changed, clear the cached file ID
+    // so data is saved to the correct new folder
+    if (savedFolderId !== GOOGLE_DRIVE_CONFIG.FOLDER_ID) {
+        localStorage.removeItem('cestisCloudFileId');
+        localStorage.setItem('cestisCloudFolderId', GOOGLE_DRIVE_CONFIG.FOLDER_ID);
+        cloudFileId = null;
+    } else if (savedFileId) {
         cloudFileId = savedFileId;
     }
 
@@ -2838,7 +2845,13 @@ async function findExistingBackupFile() {
                 cloudFileId = data.files[0].id;
                 cloudFileTimestamp = data.files[0].modifiedTime;
                 localStorage.setItem('cestisCloudFileId', cloudFileId);
+                localStorage.setItem('cestisCloudFolderId', GOOGLE_DRIVE_CONFIG.FOLDER_ID);
                 console.log('Found existing backup file:', cloudFileId);
+            } else {
+                // No file in the configured folder — clear any stale reference
+                cloudFileId = null;
+                localStorage.removeItem('cestisCloudFileId');
+                console.log('No backup file found in configured folder');
             }
         }
     } catch (error) {
@@ -3019,6 +3032,10 @@ async function saveToCloud() {
     setCloudSyncing(true);
 
     try {
+        // Re-discover the backup file in the configured folder to ensure
+        // we save to the correct location (not a stale cached file ID)
+        await findExistingBackupFile();
+
         var backupData = prepareBackupData();
         var jsonContent = JSON.stringify(backupData, null, 2);
         var blob = new Blob([jsonContent], { type: 'application/json' });
@@ -3061,6 +3078,7 @@ async function saveToCloud() {
                 var result = await response.json();
                 cloudFileId = result.id;
                 localStorage.setItem('cestisCloudFileId', cloudFileId);
+                localStorage.setItem('cestisCloudFolderId', GOOGLE_DRIVE_CONFIG.FOLDER_ID);
             }
         }
 
