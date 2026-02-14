@@ -368,7 +368,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .stat-card, .card { background:#fff; border:1px solid #ccc; }
 }
 
-/* Budget Lines Styles */
+/* Budget Amounts Styles */
 .budget-lines-grid {
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
@@ -499,7 +499,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     font-size:2.5rem;
     margin-bottom:.75rem;
 }
-/* Budget Lines Search */
+/* Budget Amounts Search */
 .budget-search-bar {
     display:flex;
     align-items:center;
@@ -778,7 +778,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .btn-unvoid:hover { background:#16a34a; }
 .btn-unvoid:disabled { opacity:.5; cursor:not-allowed; }
 
-/* Budget Lines Quarter Nav */
+/* Budget Amounts Quarter Nav */
 .bl-quarter-nav {
     background:var(--surface);
     border:1px solid var(--border);
@@ -900,7 +900,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .budget-section-badge.section-admin { background:rgba(245,158,11,0.12); color:var(--amber); }
 .budget-section-badge.section-instructors { background:rgba(20,184,166,0.12); color:var(--teal); }
 .budget-section-badge.section-other { background:rgba(107,114,128,0.12); color:var(--text3); }
-/* Budget Line Edit Modal */
+/* Budget Amount Edit Modal */
 .budget-edit-modal .form-grid {
     gap:1rem;
 }
@@ -1638,7 +1638,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <div class="nav-section">
             <div class="nav-label">Overview</div>
             <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
-            <div class="nav-item" onclick="showPage('budgetlines')"><span class="icon">💰</span> Budget Lines</div>
+            <div class="nav-item" onclick="showPage('budgetlines')"><span class="icon">💰</span> Budget Amounts</div>
             <div class="nav-item" onclick="showPage('transactions')"><span class="icon">📋</span> Transactions</div>
         </div>
         <div class="nav-section">
@@ -1777,7 +1777,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="chart-container"><canvas id="chartBalance"></canvas></div>
                 </div>
                 <div class="card">
-                    <div class="card-title">🎯 Budget vs Actual (All Line Items)</div>
+                    <div class="card-title">🎯 Budget vs Actual (All Budget Amounts)</div>
                     <div class="chart-container"><canvas id="chartBudgetVsActual"></canvas></div>
                 </div>
             </div>
@@ -1901,7 +1901,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         <!-- ====== BUDGET VS ACTUAL ====== -->
         <div id="page-budget" class="page">
             <div class="page-header">
-                <div><h2>Budget vs Actual</h2><div class="subtitle">Line item comparison</div></div>
+                <div><h2>Budget vs Actual</h2><div class="subtitle">Budget amount comparison</div></div>
             </div>
             <div class="card" id="budgetCard"></div>
         </div>
@@ -2030,20 +2030,20 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             </div>
         </div>
 
-        <!-- ====== BUDGET LINES ====== -->
+        <!-- ====== BUDGET AMOUNTS ====== -->
         <div id="page-budgetlines" class="page">
             <div class="page-header">
                 <div>
-                    <h2>Budget Lines Manager</h2>
+                    <h2>Budget Amounts Manager</h2>
                     <div class="subtitle" id="blSubtitle">Quarterly budget allocations</div>
                 </div>
                 <div class="header-actions">
                     <div class="budget-search-bar">
                         <span>🔍</span>
-                        <input type="text" id="budgetLineSearch" placeholder="Search budget lines..." oninput="renderBudgetLinesPage()">
+                        <input type="text" id="budgetLineSearch" placeholder="Search budget amounts..." oninput="renderBudgetLinesPage()">
                     </div>
                     <button class="btn btn-ghost" onclick="copyBudgetFromQuarter()">📋 Copy from Quarter</button>
-                    <button class="btn btn-success" onclick="openBudgetLineModal()">+ Add Line</button>
+                    <button class="btn btn-success" onclick="openBudgetLineModal()">+ Add Amount</button>
                 </div>
             </div>
 
@@ -2069,7 +2069,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="budget-lines-grid">
                 <div class="budget-summary-card card-blue">
-                    <div class="budget-summary-label">Total Line Items</div>
+                    <div class="budget-summary-label">Total Budget Items</div>
                     <div class="budget-summary-value" id="totalBudgetItems">0</div>
                     <div class="budget-summary-sub">Active budget categories</div>
                 </div>
@@ -2094,7 +2094,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 <div id="budgetLinesList" class="budget-list">
                     <div class="empty-state">
                         <div class="empty-state-icon">📋</div>
-                        <p>Loading budget lines...</p>
+                        <p>Loading budget amounts...</p>
                     </div>
                 </div>
             </div>
@@ -2123,14 +2123,14 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     </div>
 </div>
 
-<!-- Budget Line Edit Modal -->
+<!-- Budget Amount Edit Modal -->
 <div class="modal-overlay budget-edit-modal" id="budgetLineModal">
     <div class="modal">
-        <h3 id="budgetLineModalTitle">Add Budget Line</h3>
+        <h3 id="budgetLineModalTitle">Add Budget Amount</h3>
         <input type="hidden" id="bl-edit-key">
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Category / Line Item Name</label>
+                <label>Category / Budget Item Name</label>
                 <input type="text" id="bl-name" placeholder="e.g., Admin Expenses">
             </div>
             <div class="form-group">
@@ -2912,7 +2912,7 @@ async function mergeFromCloud() {
 
     if (!confirm('MERGE FROM CLOUD\n\nThis will merge cloud data with your local data:\n\n' +
         '- New transactions from cloud will be ADDED\n' +
-        '- New budget lines from cloud will be ADDED\n' +
+        '- New budget amounts from cloud will be ADDED\n' +
         '- New staff members from cloud will be ADDED\n' +
         '- Existing local items are preserved\n' +
         '- No local data will be removed\n\nContinue?')) {
@@ -2936,7 +2936,7 @@ async function mergeFromCloud() {
         }
 
         var d = backupData.data;
-        var mergeStats = { transactionsAdded: 0, budgetLinesAdded: 0, staffAdded: 0, timeRecordsAdded: 0 };
+        var mergeStats = { transactionsAdded: 0, budgetAmountsAdded: 0, staffAdded: 0, timeRecordsAdded: 0 };
 
         // Merge transactions — add cloud transactions that don't exist locally (match by id)
         if (Array.isArray(d.transactions)) {
@@ -2953,12 +2953,12 @@ async function mergeFromCloud() {
             }
         }
 
-        // Merge budget lines — add cloud budget categories not present locally
+        // Merge budget amounts — add cloud budget categories not present locally
         if (d.budget && typeof d.budget === 'object') {
             Object.keys(d.budget).forEach(function(cat) {
                 if (BUDGET[cat] === undefined) {
                     BUDGET[cat] = d.budget[cat];
-                    mergeStats.budgetLinesAdded++;
+                    mergeStats.budgetAmountsAdded++;
                 }
             });
             if (d.budgetSections && typeof d.budgetSections === 'object') {
@@ -2968,7 +2968,7 @@ async function mergeFromCloud() {
                     }
                 });
             }
-            if (mergeStats.budgetLinesAdded > 0) {
+            if (mergeStats.budgetAmountsAdded > 0) {
                 saveQuarterBudget();
             }
         }
@@ -3030,11 +3030,11 @@ async function mergeFromCloud() {
         var summary = 'Merge from cloud completed!\n\n';
         summary += 'Merge Summary:\n';
         summary += '- Transactions added: ' + mergeStats.transactionsAdded + '\n';
-        summary += '- Budget lines added: ' + mergeStats.budgetLinesAdded + '\n';
+        summary += '- Budget amounts added: ' + mergeStats.budgetAmountsAdded + '\n';
         summary += '- Staff members added: ' + mergeStats.staffAdded + '\n';
         summary += '- Time records added: ' + mergeStats.timeRecordsAdded + '\n';
 
-        var totalAdded = mergeStats.transactionsAdded + mergeStats.budgetLinesAdded + mergeStats.staffAdded + mergeStats.timeRecordsAdded;
+        var totalAdded = mergeStats.transactionsAdded + mergeStats.budgetAmountsAdded + mergeStats.staffAdded + mergeStats.timeRecordsAdded;
         if (totalAdded === 0) {
             summary += '\nNo new data found — your local data already contains everything from the cloud.';
         } else {
@@ -3130,7 +3130,7 @@ const DEFAULT_BUDGET = {
 // Active BUDGET object (loaded per quarter)
 let BUDGET = {};
 
-// Section definitions for budget line categorization
+// Section definitions for budget amount categorization
 const BUDGET_SECTIONS = {
     'Salaries': ['Coordinator Salary', 'Asst. Coordinator'],
     'Statutory': ['Statutory Deductions'],
@@ -3214,11 +3214,32 @@ function loadQuarterBudget() {
             }
         } catch(e) {}
     } else {
-        // New quarter starts with NO budget lines (fresh start)
+        // New quarter starts with NO budget amounts (fresh start)
         BUDGET = {};
         BUDGET_LINE_SECTIONS = {};
     }
 };
+
+// Sync budget amounts from transaction categories
+// Ensures every transaction category has a corresponding budget entry
+function syncBudgetFromTransactions() {
+    var specialCategories = ['Subvention', 'Cancelled'];
+    var added = false;
+    transactions.forEach(function(t) {
+        if (!t.category) return;
+        if (specialCategories.indexOf(t.category) !== -1) return;
+        if (!BUDGET.hasOwnProperty(t.category)) {
+            BUDGET[t.category] = 0;
+            if (!BUDGET_LINE_SECTIONS[t.category]) {
+                BUDGET_LINE_SECTIONS[t.category] = 'Other';
+            }
+            added = true;
+        }
+    });
+    if (added) {
+        saveQuarterBudget();
+    }
+}
 
 let OPENING_BALANCE = 237948.69;
 
@@ -3416,7 +3437,7 @@ function budgetPct(budgeted, actual) {
 
 function renderBudgetPage() {
     const d = calcTotals();
-    let html = `<div class="card-title">📊 Budget Line Comparison <span class="badge">${Object.keys(BUDGET).length} line items</span></div>`;
+    let html = `<div class="card-title">📊 Budget Amount Comparison <span class="badge">${Object.keys(BUDGET).length} items</span></div>`;
     html += `<div class="budget-vs-actual-wrap"><table class="budget-vs-actual-table"><thead><tr>
         <th>Category</th><th class="col-right">Budgeted</th><th class="col-right">Actual</th><th class="col-right">Variance</th><th>%</th>
     </tr></thead><tbody>`;
@@ -3936,6 +3957,7 @@ function filterMonth(m, el) {
 function filterTransactions() { renderTransactions(); }
 
 function refreshAll() {
+    syncBudgetFromTransactions();
     renderDashboard();
     renderTransactions();
     renderBudgetPage();
@@ -3951,7 +3973,7 @@ function refreshAll() {
 }
 
 // ============================================================
-// BUDGET LINES MANAGEMENT (Per-Quarter with Sections)
+// BUDGET AMOUNTS MANAGEMENT (Per-Quarter with Sections)
 // ============================================================
 
 // Legacy compatibility wrappers (no-ops, data now managed per-quarter)
@@ -3969,13 +3991,13 @@ function openBudgetLineModal(editKey) {
     var sectionSelect = document.getElementById('bl-section');
 
     if (editKey) {
-        titleEl.textContent = 'Edit Budget Line';
+        titleEl.textContent = 'Edit Budget Amount';
         keyInput.value = editKey;
         nameInput.value = editKey;
         amountInput.value = BUDGET[editKey] || 0;
         sectionSelect.value = getBudgetLineSection(editKey);
     } else {
-        titleEl.textContent = 'Add Budget Line';
+        titleEl.textContent = 'Add Budget Amount';
         keyInput.value = '';
         nameInput.value = '';
         amountInput.value = '';
@@ -3995,14 +4017,14 @@ function saveBudgetLine() {
     var amount = parseFloat(document.getElementById('bl-amount').value);
     var section = document.getElementById('bl-section').value;
 
-    if (!name) { alert('Please enter a line item name.'); return; }
+    if (!name) { alert('Please enter a budget item name.'); return; }
     if (isNaN(amount) || amount < 0) { alert('Please enter a valid amount.'); return; }
 
     if (editKey) {
         // Editing existing line
         if (editKey !== name) {
             if (BUDGET.hasOwnProperty(name) && name !== editKey) {
-                alert('A budget line with that name already exists.');
+                alert('A budget amount with that name already exists.');
                 return;
             }
             delete BUDGET[editKey];
@@ -4016,7 +4038,7 @@ function saveBudgetLine() {
         BUDGET[name] = amount;
     } else {
         if (BUDGET.hasOwnProperty(name)) {
-            alert('A budget line with that name already exists. Please use a different name or edit the existing one.');
+            alert('A budget amount with that name already exists. Please use a different name or edit the existing one.');
             return;
         }
         BUDGET[name] = amount;
@@ -4031,7 +4053,7 @@ function saveBudgetLine() {
 }
 
 function deleteBudgetLine(key) {
-    if (!confirm('Delete "' + key + '" from budget lines for this quarter?\n\nExisting transactions in this category will remain but no budget will be tracked for them.')) {
+    if (!confirm('Delete "' + key + '" from budget amounts for this quarter?\n\nExisting transactions in this category will remain but no budget will be tracked for them.')) {
         return;
     }
     delete BUDGET[key];
@@ -4040,7 +4062,7 @@ function deleteBudgetLine(key) {
     refreshAll();
 }
 
-// Copy budget lines from another quarter
+// Copy budget amounts from another quarter
 function copyBudgetFromQuarter() {
     // Build list of available quarters that have budget data
     var options = [];
@@ -4064,15 +4086,15 @@ function copyBudgetFromQuarter() {
     }
 
     if (options.length === 0) {
-        alert('No other quarters with budget data found.\n\nYou can add budget lines manually using "+ Add Line".');
+        alert('No other quarters with budget data found.\n\nYou can add budget amounts manually using "+ Add Amount".');
         return;
     }
 
-    var msg = 'Copy budget lines from which quarter?\n\n';
+    var msg = 'Copy budget amounts from which quarter?\n\n';
     options.forEach(function(o, i) { msg += (i + 1) + '. ' + o.label + '\n'; });
     msg += '\nEnter the number (1-' + options.length + '):';
     if (Object.keys(BUDGET).length > 0) {
-        msg += '\n\nWARNING: This will replace all current budget lines for this quarter.';
+        msg += '\n\nWARNING: This will replace all current budget amounts for this quarter.';
     }
 
     var choice = prompt(msg);
@@ -4101,13 +4123,13 @@ function copyBudgetFromQuarter() {
         BUDGET_LINE_SECTIONS = sourceData.sections ? JSON.parse(JSON.stringify(sourceData.sections)) : {};
         saveQuarterBudget();
         refreshAll();
-        alert('Budget lines copied from ' + selected.label + '.');
+        alert('Budget amounts copied from ' + selected.label + '.');
     } else {
         alert('No budget data found in the selected quarter.');
     }
 }
 
-// Budget Lines quarter navigation (independent of transactions quarter)
+// Budget Amounts quarter navigation (independent of transactions quarter)
 function blSwitchQuarter(q) {
     if (q === activeQ) return;
     // Save current data first
@@ -4217,7 +4239,7 @@ function renderBudgetLinesPage() {
     var listEl = document.getElementById('budgetLinesList');
     if (!listEl) return;
 
-    // Update quarter UI for budget lines page
+    // Update quarter UI for budget amounts page
     updateBLQuarterUI();
 
     // Render section filter tabs
@@ -4276,12 +4298,12 @@ function renderBudgetLinesPage() {
     }
 
     if (filtered.length === 0 && (search || currentBudgetSection !== 'all')) {
-        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No budget lines match your filter.</p></div>';
+        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No budget amounts match your filter.</p></div>';
         return;
     }
 
     if (filtered.length === 0) {
-        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No budget lines for this quarter. Click "+ Add Line" to create one, or "Copy from Quarter" to import from another quarter.</p></div>';
+        listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No budget amounts for this quarter. Click "+ Add Amount" to create one, or "Copy from Quarter" to import from another quarter.</p></div>';
         return;
     }
 
