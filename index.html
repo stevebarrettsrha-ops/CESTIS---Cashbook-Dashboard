@@ -2080,16 +2080,6 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="budget-summary-value" id="ablTotalAmount">$0</div>
                     <div class="budget-summary-sub">Allocated this quarter</div>
                 </div>
-                <div class="budget-summary-card card-red">
-                    <div class="budget-summary-label">Total Spent</div>
-                    <div class="budget-summary-value" id="ablTotalSpent">$0</div>
-                    <div class="budget-summary-sub">Actual expenditure</div>
-                </div>
-                <div class="budget-summary-card card-green">
-                    <div class="budget-summary-label">Total Variance</div>
-                    <div class="budget-summary-value" id="ablTotalVariance">$0</div>
-                    <div class="budget-summary-sub">Remaining budget</div>
-                </div>
             </div>
 
             <div class="card" style="padding:0;">
@@ -4209,11 +4199,11 @@ function copyBudgetFromQuarter() {
         return;
     }
 
-    var msg = 'Copy budget amounts from which quarter?\n\n';
+    var msg = 'Copy budget categories from which quarter?\n(Only category names will be copied, not amounts.)\n\n';
     options.forEach(function(o, i) { msg += (i + 1) + '. ' + o.label + '\n'; });
     msg += '\nEnter the number (1-' + options.length + '):';
     if (Object.keys(BUDGET).length > 0) {
-        msg += '\n\nWARNING: This will replace all current budget amounts for this quarter.';
+        msg += '\n\nWARNING: This will replace all current budget lines for this quarter.';
     }
 
     var choice = prompt(msg);
@@ -4238,11 +4228,16 @@ function copyBudgetFromQuarter() {
     }
 
     if (sourceData && sourceData.budget) {
-        BUDGET = JSON.parse(JSON.stringify(sourceData.budget));
+        // Copy only category names with zero amounts - user must enter amounts manually
+        var newBudget = {};
+        Object.keys(sourceData.budget).forEach(function(key) {
+            newBudget[key] = 0;
+        });
+        BUDGET = newBudget;
         BUDGET_LINE_SECTIONS = sourceData.sections ? JSON.parse(JSON.stringify(sourceData.sections)) : {};
         saveQuarterBudget();
         refreshAll();
-        alert('Budget amounts copied from ' + selected.label + '.');
+        alert('Budget categories copied from ' + selected.label + '. Please enter the budget amounts for each category.');
     } else {
         alert('No budget data found in the selected quarter.');
     }
@@ -4506,16 +4501,13 @@ function renderAddBudgetLinesPage() {
     // Update quarter UI
     updateABLQuarterUI();
 
-    var d = calcTotals();
     var search = (document.getElementById('ablSearch')?.value || '').toLowerCase();
 
     // Build combined list from BUDGET object with sections
     var entries = Object.keys(BUDGET).map(function(key) {
         var budgeted = BUDGET[key];
-        var actual = d.catSpend[key] || 0;
-        var variance = budgeted - actual;
         var section = getBudgetLineSection(key);
-        return { key: key, budgeted: budgeted, actual: actual, variance: variance, section: section };
+        return { key: key, budgeted: budgeted, section: section };
     });
 
     // Filter by search
@@ -4543,20 +4535,10 @@ function renderAddBudgetLinesPage() {
     // Update ABL summary cards
     var totalItems = Object.keys(BUDGET).length;
     var totalBudget = entries.reduce(function(s, e) { return s + e.budgeted; }, 0);
-    var totalSpent = entries.reduce(function(s, e) { return s + e.actual; }, 0);
-    var totalVariance = totalBudget - totalSpent;
 
     var el = function(id) { return document.getElementById(id); };
     if (el('ablTotalItems')) el('ablTotalItems').textContent = totalItems;
     if (el('ablTotalAmount')) el('ablTotalAmount').textContent = fmt(totalBudget);
-    if (el('ablTotalSpent')) {
-        el('ablTotalSpent').textContent = fmt(totalSpent);
-        el('ablTotalSpent').style.color = 'var(--red)';
-    }
-    if (el('ablTotalVariance')) {
-        el('ablTotalVariance').textContent = (totalVariance < 0 ? '-' : '') + fmt(Math.abs(totalVariance));
-        el('ablTotalVariance').style.color = totalVariance >= 0 ? 'var(--green)' : 'var(--red)';
-    }
 
     if (filtered.length === 0 && (search || currentBudgetSection !== 'all')) {
         listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No budget lines match your filter.</p></div>';
@@ -4573,46 +4555,25 @@ function renderAddBudgetLinesPage() {
         '<th>Category</th>' +
         '<th>Section</th>' +
         '<th class="col-right">Budgeted</th>' +
-        '<th class="col-right">Actual Spend</th>' +
-        '<th class="col-right">Variance</th>' +
-        '<th>Usage</th>' +
-        '<th class="col-right">Actions</th>' +
         '</tr></thead><tbody>';
 
-    // Data rows with edit/delete/copy actions
+    // Data rows
     filtered.forEach(function(e) {
-        var p = budgetPct(e.budgeted, e.actual);
-        var varClass = e.variance < 0 ? 'negative' : 'positive';
         var safeKey = escapeHtml(e.key);
         var sectionClass = getSectionCssClass(e.section);
         html += '<tr>' +
             '<td><span class="budget-item-name">' + safeKey + '</span></td>' +
             '<td><span class="budget-section-badge ' + sectionClass + '">' + escapeHtml(e.section) + '</span></td>' +
             '<td class="amount accent">' + fmt(e.budgeted) + '</td>' +
-            '<td class="amount">' + (e.actual > 0 ? fmt(e.actual) : '<span class="muted">-</span>') + '</td>' +
-            '<td class="amount ' + varClass + '">' + (e.variance < 0 ? '-' : '') + fmt(Math.abs(e.variance)) + '</td>' +
-            '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + p.barClass + '" style="width:' + p.barWidth + '%"></div></div><span class="pct-label">' + p.label + '</span></div></td>' +
-            '<td><div class="budget-item-actions">' +
-                '<button class="btn btn-ghost btn-sm" onclick="openBudgetLineModal(\'' + safeKey.replace(/'/g, "\\'") + '\')">Edit</button>' +
-                '<button class="btn btn-ghost btn-sm" onclick="quickCopyBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Copy</button>' +
-                '<button class="btn btn-danger btn-sm" onclick="deleteBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Delete</button>' +
-            '</div></td>' +
         '</tr>';
     });
 
     // Total row
     var filteredBudget = filtered.reduce(function(s, e) { return s + e.budgeted; }, 0);
-    var filteredSpent = filtered.reduce(function(s, e) { return s + e.actual; }, 0);
-    var filteredVariance = filteredBudget - filteredSpent;
-    var tp = budgetPct(filteredBudget, filteredSpent);
     html += '<tr class="total-row">' +
         '<td><strong>TOTAL' + (currentBudgetSection !== 'all' ? ' (' + escapeHtml(currentBudgetSection) + ')' : '') + '</strong></td>' +
         '<td></td>' +
         '<td class="amount accent">' + fmt(filteredBudget) + '</td>' +
-        '<td class="amount">' + fmt(filteredSpent) + '</td>' +
-        '<td class="amount ' + (filteredVariance < 0 ? 'negative' : 'positive') + '">' + (filteredVariance < 0 ? '-' : '') + fmt(Math.abs(filteredVariance)) + '</td>' +
-        '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + tp.barClass + '" style="width:' + tp.barWidth + '%"></div></div><span class="pct-label">' + tp.label + '</span></div></td>' +
-        '<td></td>' +
     '</tr>';
 
     html += '</tbody></table>';
