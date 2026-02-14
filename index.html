@@ -2078,16 +2078,6 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="budget-summary-value" id="totalBudgetAmount">$0</div>
                     <div class="budget-summary-sub">Allocated this quarter</div>
                 </div>
-                <div class="budget-summary-card card-red">
-                    <div class="budget-summary-label">Total Spent</div>
-                    <div class="budget-summary-value" id="totalBudgetSpent">$0</div>
-                    <div class="budget-summary-sub">Actual expenditure</div>
-                </div>
-                <div class="budget-summary-card card-green">
-                    <div class="budget-summary-label">Total Variance</div>
-                    <div class="budget-summary-value" id="totalBudgetVariance">$0</div>
-                    <div class="budget-summary-sub">Remaining budget</div>
-                </div>
             </div>
 
             <div class="card" style="padding:0;">
@@ -4195,18 +4185,23 @@ function renderSectionFilter() {
     var container = document.getElementById('blSectionFilter');
     if (!container) return;
 
-    // Count items per section
+    // Count items per section — only sections with data will be shown
     var counts = { 'all': Object.keys(BUDGET).length };
-    Object.keys(BUDGET_SECTIONS).forEach(function(s) { counts[s] = 0; });
     Object.keys(BUDGET).forEach(function(key) {
         var s = getBudgetLineSection(key);
         counts[s] = (counts[s] || 0) + 1;
     });
 
+    // If current filter points to a section with no data, reset to 'all'
+    if (currentBudgetSection !== 'all' && !counts[currentBudgetSection]) {
+        currentBudgetSection = 'all';
+    }
+
     var html = '<span class="section-filter-label">Section:</span>';
     html += '<div class="section-filter-tab' + (currentBudgetSection === 'all' ? ' active' : '') + '" data-section="all" onclick="filterBudgetSection(\'all\')">All<span class="section-count">' + counts['all'] + '</span></div>';
     Object.keys(BUDGET_SECTIONS).forEach(function(s) {
         var c = counts[s] || 0;
+        if (c === 0) return; // Only show sections that have budget lines
         var safeS = s.replace(/'/g, "\\'");
         html += '<div class="section-filter-tab' + (currentBudgetSection === s ? ' active' : '') + '" data-section="' + escapeHtml(s) + '" onclick="filterBudgetSection(\'' + safeS + '\')">' + escapeHtml(s) + '<span class="section-count">' + c + '</span></div>';
     });
@@ -4220,19 +4215,16 @@ function renderBudgetLinesPage() {
     // Update quarter UI for budget lines page
     updateBLQuarterUI();
 
-    // Render section filter tabs
+    // Render section filter tabs (only sections that have data)
     renderSectionFilter();
 
-    var d = calcTotals();
     var search = (document.getElementById('budgetLineSearch')?.value || '').toLowerCase();
 
-    // Build combined list from BUDGET object with sections
+    // Build list from BUDGET object with sections
     var entries = Object.keys(BUDGET).map(function(key) {
         var budgeted = BUDGET[key];
-        var actual = d.catSpend[key] || 0;
-        var variance = budgeted - actual;
         var section = getBudgetLineSection(key);
-        return { key: key, budgeted: budgeted, actual: actual, variance: variance, section: section };
+        return { key: key, budgeted: budgeted, section: section };
     });
 
     // Filter by search
@@ -4260,20 +4252,10 @@ function renderBudgetLinesPage() {
     // Update summary cards (use ALL entries, not just filtered)
     var totalItems = Object.keys(BUDGET).length;
     var totalBudget = entries.reduce(function(s, e) { return s + e.budgeted; }, 0);
-    var totalSpent = entries.reduce(function(s, e) { return s + e.actual; }, 0);
-    var totalVariance = totalBudget - totalSpent;
 
     var el = function(id) { return document.getElementById(id); };
     if (el('totalBudgetItems')) el('totalBudgetItems').textContent = totalItems;
     if (el('totalBudgetAmount')) el('totalBudgetAmount').textContent = fmt(totalBudget);
-    if (el('totalBudgetSpent')) {
-        el('totalBudgetSpent').textContent = fmt(totalSpent);
-        el('totalBudgetSpent').style.color = 'var(--red)';
-    }
-    if (el('totalBudgetVariance')) {
-        el('totalBudgetVariance').textContent = (totalVariance < 0 ? '-' : '') + fmt(Math.abs(totalVariance));
-        el('totalBudgetVariance').style.color = totalVariance >= 0 ? 'var(--green)' : 'var(--red)';
-    }
 
     if (filtered.length === 0 && (search || currentBudgetSection !== 'all')) {
         listEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No budget lines match your filter.</p></div>';
@@ -4285,30 +4267,22 @@ function renderBudgetLinesPage() {
         return;
     }
 
-    // Build table
+    // Build table — only Category, Section, Budgeted, Actions
     var html = '<table class="budget-table"><thead><tr>' +
         '<th>Category</th>' +
         '<th>Section</th>' +
         '<th class="col-right">Budgeted</th>' +
-        '<th class="col-right">Actual Spend</th>' +
-        '<th class="col-right">Variance</th>' +
-        '<th>Usage</th>' +
         '<th class="col-right">Actions</th>' +
         '</tr></thead><tbody>';
 
     // Data rows
     filtered.forEach(function(e) {
-        var p = budgetPct(e.budgeted, e.actual);
-        var varClass = e.variance < 0 ? 'negative' : 'positive';
         var safeKey = escapeHtml(e.key);
         var sectionClass = getSectionCssClass(e.section);
         html += '<tr>' +
             '<td><span class="budget-item-name">' + safeKey + '</span></td>' +
             '<td><span class="budget-section-badge ' + sectionClass + '">' + escapeHtml(e.section) + '</span></td>' +
             '<td class="amount accent">' + fmt(e.budgeted) + '</td>' +
-            '<td class="amount">' + (e.actual > 0 ? fmt(e.actual) : '<span class="muted">-</span>') + '</td>' +
-            '<td class="amount ' + varClass + '">' + (e.variance < 0 ? '-' : '') + fmt(Math.abs(e.variance)) + '</td>' +
-            '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + p.barClass + '" style="width:' + p.barWidth + '%"></div></div><span class="pct-label">' + p.label + '</span></div></td>' +
             '<td><div class="budget-item-actions">' +
                 '<button class="btn btn-ghost btn-sm" onclick="openBudgetLineModal(\'' + safeKey.replace(/'/g, "\\'") + '\')">Edit</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="deleteBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Delete</button>' +
@@ -4318,16 +4292,10 @@ function renderBudgetLinesPage() {
 
     // Total row
     var filteredBudget = filtered.reduce(function(s, e) { return s + e.budgeted; }, 0);
-    var filteredSpent = filtered.reduce(function(s, e) { return s + e.actual; }, 0);
-    var filteredVariance = filteredBudget - filteredSpent;
-    var tp = budgetPct(filteredBudget, filteredSpent);
     html += '<tr class="total-row">' +
         '<td><strong>TOTAL' + (currentBudgetSection !== 'all' ? ' (' + escapeHtml(currentBudgetSection) + ')' : '') + '</strong></td>' +
         '<td></td>' +
         '<td class="amount accent">' + fmt(filteredBudget) + '</td>' +
-        '<td class="amount">' + fmt(filteredSpent) + '</td>' +
-        '<td class="amount ' + (filteredVariance < 0 ? 'negative' : 'positive') + '">' + (filteredVariance < 0 ? '-' : '') + fmt(Math.abs(filteredVariance)) + '</td>' +
-        '<td><div class="budget-usage-cell"><div class="mini-bar"><div class="mini-bar-fill ' + tp.barClass + '" style="width:' + tp.barWidth + '%"></div></div><span class="pct-label">' + tp.label + '</span></div></td>' +
         '<td></td>' +
     '</tr>';
 
