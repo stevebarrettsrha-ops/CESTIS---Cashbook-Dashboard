@@ -404,17 +404,19 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .stat-card .value.amber-text { color:#b45309 !important; }
     .stat-card .change { color:#666 !important; font-size:7pt !important; }
 
-    /* ---- Charts grid: single column, controlled height ---- */
+    /* ---- Charts grid: single column, each chart on its own page ---- */
     .charts-grid {
         display:block !important;
     }
     .charts-grid .card {
         break-inside:avoid; page-break-inside:avoid;
-        margin-bottom:.5rem !important;
+        page-break-before:always; break-before:page;
+        margin-bottom:0 !important;
+        margin-top:0 !important;
     }
     .chart-container {
-        height:220px !important;
-        max-height:220px !important;
+        height:60vh !important;
+        max-height:60vh !important;
         overflow:hidden !important;
     }
 
