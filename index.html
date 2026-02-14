@@ -4550,11 +4550,12 @@ function renderAddBudgetLinesPage() {
         return;
     }
 
-    // Build table with full CRUD actions
+    // Build table with actions for edit/delete
     var html = '<table class="budget-table"><thead><tr>' +
         '<th>Category</th>' +
         '<th>Section</th>' +
         '<th class="col-right">Budgeted</th>' +
+        '<th class="col-right">Actions</th>' +
         '</tr></thead><tbody>';
 
     // Data rows
@@ -4565,6 +4566,10 @@ function renderAddBudgetLinesPage() {
             '<td><span class="budget-item-name">' + safeKey + '</span></td>' +
             '<td><span class="budget-section-badge ' + sectionClass + '">' + escapeHtml(e.section) + '</span></td>' +
             '<td class="amount accent">' + fmt(e.budgeted) + '</td>' +
+            '<td><div class="budget-item-actions">' +
+                '<button class="btn btn-ghost btn-sm" onclick="openBudgetLineModal(\'' + safeKey.replace(/'/g, "\\'") + '\')">Edit</button>' +
+                '<button class="btn btn-danger btn-sm" onclick="deleteBudgetLine(\'' + safeKey.replace(/'/g, "\\'") + '\')">Delete</button>' +
+            '</div></td>' +
         '</tr>';
     });
 
@@ -4574,6 +4579,7 @@ function renderAddBudgetLinesPage() {
         '<td><strong>TOTAL' + (currentBudgetSection !== 'all' ? ' (' + escapeHtml(currentBudgetSection) + ')' : '') + '</strong></td>' +
         '<td></td>' +
         '<td class="amount accent">' + fmt(filteredBudget) + '</td>' +
+        '<td></td>' +
     '</tr>';
 
     html += '</tbody></table>';
