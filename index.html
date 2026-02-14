@@ -3608,6 +3608,7 @@ let transactions = [];
 let nextId = 100;
 let currentFilter = 'all';
 let chartInstances = {};
+let editingTxnId = null;
 
 // ============================================================
 // UTILITY FUNCTIONS
@@ -3734,7 +3735,7 @@ function renderTransactions() {
             <td class="amount ${t.deposit>0?'positive':''}">${t.deposit>0?fmt(t.deposit):''}</td>
             <td class="amount ${t.payment>0?'negative':''}">${t.payment>0?fmt(t.payment):''}</td>
             <td class="amount" style="font-weight:600;">${fmt(balance)}</td>
-            <td class="no-print"><button class="btn btn-danger btn-sm" onclick="deleteTxn(${t.id})">✕</button></td>
+            <td class="no-print"><button class="btn btn-amber btn-sm" onclick="editTxn(${t.id})" style="margin-right:4px;">✎</button><button class="btn btn-danger btn-sm" onclick="deleteTxn(${t.id})">✕</button></td>
         </tr>`;
     });
 
@@ -4055,17 +4056,35 @@ function populateCategoryDropdown() {
 }
 
 function openAddModal() {
+    editingTxnId = null;
     document.getElementById('modalTitle').textContent = 'Add Transaction';
     ['m-date','m-cheque','m-details','m-deposit','m-payment'].forEach(id=>document.getElementById(id).value='');
     populateCategoryDropdown();
     document.getElementById('m-category').value = 'Admin Expenses';
     document.getElementById('addModal').classList.add('show');
 }
-function closeModal() { document.getElementById('addModal').classList.remove('show'); }
+function closeModal() {
+    editingTxnId = null;
+    document.getElementById('addModal').classList.remove('show');
+}
+
+function editTxn(id) {
+    const t = transactions.find(tx => tx.id === id);
+    if (!t) return;
+    editingTxnId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Transaction';
+    populateCategoryDropdown();
+    document.getElementById('m-date').value = t.date || '';
+    document.getElementById('m-cheque').value = t.cheque || '';
+    document.getElementById('m-details').value = t.details || '';
+    document.getElementById('m-deposit').value = t.deposit > 0 ? t.deposit : '';
+    document.getElementById('m-payment').value = t.payment > 0 ? t.payment : '';
+    document.getElementById('m-category').value = t.category || 'Admin Expenses';
+    document.getElementById('addModal').classList.add('show');
+}
 
 function saveTransaction() {
-    const t = {
-        id: nextId++,
+    const data = {
         date: document.getElementById('m-date').value,
         cheque: document.getElementById('m-cheque').value,
         details: document.getElementById('m-details').value,
@@ -4073,8 +4092,17 @@ function saveTransaction() {
         payment: parseFloat(document.getElementById('m-payment').value) || 0,
         category: document.getElementById('m-category').value
     };
-    if (!t.details) { alert('Please enter details'); return; }
-    transactions.push(t);
+    if (!data.details) { alert('Please enter details'); return; }
+
+    if (editingTxnId !== null) {
+        const idx = transactions.findIndex(t => t.id === editingTxnId);
+        if (idx !== -1) {
+            transactions[idx] = Object.assign({}, transactions[idx], data);
+        }
+    } else {
+        data.id = nextId++;
+        transactions.push(data);
+    }
     closeModal();
     refreshAll();
     saveToStorage();
