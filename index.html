@@ -100,6 +100,15 @@ input, select, button, textarea { font-family: var(--sans); }
 .btn-amber { background:var(--amber); color:#000; }
 .btn-sm { padding:.375rem .625rem; font-size:.75rem; }
 
+/* Transaction move buttons */
+.txn-move-btn { padding:0.2rem 0.4rem !important; font-size:0.65rem !important; line-height:1; min-width:0; }
+.txn-move-btn:disabled { opacity:0.3; cursor:not-allowed; }
+tr[draggable="true"] { cursor:grab; }
+tr[draggable="true"]:active { cursor:grabbing; }
+.txn-dragging { opacity:0.4; background:var(--accent) !important; }
+.txn-drop-above { box-shadow:inset 0 2px 0 0 var(--accent); }
+.txn-drop-below { box-shadow:inset 0 -2px 0 0 var(--accent); }
+
 /* Stats Grid */
 .stats-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.5rem; }
 .stat-card {
@@ -406,20 +415,28 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-collapse: collapse;
     margin-bottom: 16px;
     font-size: 8.5pt;
+    border: 1px solid #ccc;
 }
 .report-sheet thead th {
     background: #f3f4f6;
     color: #111;
     padding: 5px 6px;
+    border: 1px solid #ccc;
     border-bottom: 2px solid #999;
     text-align: left;
     font-weight: 600;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word;
 }
 .report-sheet tbody td {
     padding: 4px 6px;
-    border-bottom: 1px solid #ddd;
+    border: 1px solid #ddd;
     color: #222;
+}
+.report-sheet tfoot td {
+    padding: 5px 6px;
+    border: 1px solid #ccc;
+    font-weight: 700;
 }
 .report-sheet tbody tr:nth-child(even) { background: #fafafa; }
 .report-sheet .report-section-title {
@@ -2210,6 +2227,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                                 <th style="width:110px;">Deposit</th>
                                 <th style="width:110px;">Payment</th>
                                 <th style="width:120px;">Balance</th>
+                                <th style="width:50px;" class="no-print">Move</th>
                                 <th style="width:50px;" class="no-print">Act</th>
                             </tr>
                         </thead>
@@ -2372,7 +2390,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="card">
                 <div class="card-title">📑 Report Generator</div>
-                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
                     <div class="form-group">
                         <label>Report Type</label>
                         <select id="reportType" onchange="generateReport()">
@@ -3969,9 +3987,9 @@ function renderTransactions() {
     // Add opening balance row
     let html = `<tr class="deposit-row"><td></td><td></td><td><strong>BALANCE B/F</strong></td><td></td>
         <td class="amount positive">${fmt(OPENING_BALANCE)}</td><td></td>
-        <td class="amount" style="font-weight:700;">${fmt(balance)}</td><td class="no-print"></td></tr>`;
+        <td class="amount" style="font-weight:700;">${fmt(balance)}</td><td class="no-print"></td><td class="no-print"></td></tr>`;
 
-    transactions.forEach(t => {
+    transactions.forEach((t, idx) => {
         balance += t.deposit - t.payment;
         const m = getMonth(t.date);
 
@@ -3984,7 +4002,7 @@ function renderTransactions() {
         const isBank = t.category === 'Bank Charges';
         let rowClass = isCancelled ? 'cancelled' : isDeposit ? 'deposit-row' : isBank ? 'bank-charge' : '';
 
-        html += `<tr class="${rowClass}">
+        html += `<tr class="${rowClass}" draggable="true" data-txn-id="${t.id}" ondragstart="txnDragStart(event)" ondragover="txnDragOver(event)" ondrop="txnDrop(event)" ondragend="txnDragEnd(event)">
             <td>${t.date ? t.date.substring(5) : ''}</td>
             <td class="cheque-num">${t.cheque||''}</td>
             <td>${t.details}</td>
@@ -3992,6 +4010,10 @@ function renderTransactions() {
             <td class="amount ${t.deposit>0?'positive':''}">${t.deposit>0?fmt(t.deposit):''}</td>
             <td class="amount ${t.payment>0?'negative':''}">${t.payment>0?fmt(t.payment):''}</td>
             <td class="amount" style="font-weight:600;">${fmt(balance)}</td>
+            <td class="no-print" style="white-space:nowrap;">
+                <button class="btn btn-ghost btn-sm txn-move-btn" onclick="moveTxn(${t.id},-1)" title="Move Up" ${idx===0?'disabled':''}>▲</button>
+                <button class="btn btn-ghost btn-sm txn-move-btn" onclick="moveTxn(${t.id},1)" title="Move Down" ${idx===transactions.length-1?'disabled':''}>▼</button>
+            </td>
             <td class="no-print"><button class="btn btn-amber btn-sm" onclick="editTxn(${t.id})" style="margin-right:4px;">✎</button><button class="btn btn-danger btn-sm" onclick="deleteTxn(${t.id})">✕</button></td>
         </tr>`;
     });
@@ -4373,6 +4395,89 @@ function deleteTxn(id) {
 }
 
 // ============================================================
+// TRANSACTION REORDERING (Move Up/Down + Drag & Drop)
+// ============================================================
+function moveTxn(id, direction) {
+    var idx = transactions.findIndex(function(t){ return t.id === id; });
+    if (idx < 0) return;
+    var newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= transactions.length) return;
+    var temp = transactions[idx];
+    transactions[idx] = transactions[newIdx];
+    transactions[newIdx] = temp;
+    refreshAll();
+    saveToStorage();
+}
+
+var _dragTxnId = null;
+
+function txnDragStart(e) {
+    var row = e.target.closest('tr[data-txn-id]');
+    if (!row) return;
+    _dragTxnId = parseInt(row.getAttribute('data-txn-id'));
+    row.classList.add('txn-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', _dragTxnId);
+}
+
+function txnDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var row = e.target.closest('tr[data-txn-id]');
+    // Remove previous drop indicators
+    document.querySelectorAll('.txn-drop-above,.txn-drop-below').forEach(function(el){
+        el.classList.remove('txn-drop-above','txn-drop-below');
+    });
+    if (row) {
+        var rect = row.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        if (e.clientY < mid) {
+            row.classList.add('txn-drop-above');
+        } else {
+            row.classList.add('txn-drop-below');
+        }
+    }
+}
+
+function txnDrop(e) {
+    e.preventDefault();
+    document.querySelectorAll('.txn-drop-above,.txn-drop-below').forEach(function(el){
+        el.classList.remove('txn-drop-above','txn-drop-below');
+    });
+    var targetRow = e.target.closest('tr[data-txn-id]');
+    if (!targetRow || _dragTxnId === null) return;
+    var targetId = parseInt(targetRow.getAttribute('data-txn-id'));
+    if (_dragTxnId === targetId) return;
+
+    var fromIdx = transactions.findIndex(function(t){ return t.id === _dragTxnId; });
+    var toIdx = transactions.findIndex(function(t){ return t.id === targetId; });
+    if (fromIdx < 0 || toIdx < 0) return;
+
+    // Determine if dropping above or below based on mouse position
+    var rect = targetRow.getBoundingClientRect();
+    var mid = rect.top + rect.height / 2;
+    var dropBelow = e.clientY >= mid;
+
+    // Remove the dragged item
+    var item = transactions.splice(fromIdx, 1)[0];
+    // Recalculate toIdx after removal
+    toIdx = transactions.findIndex(function(t){ return t.id === targetId; });
+    var insertIdx = dropBelow ? toIdx + 1 : toIdx;
+    transactions.splice(insertIdx, 0, item);
+
+    _dragTxnId = null;
+    refreshAll();
+    saveToStorage();
+}
+
+function txnDragEnd(e) {
+    _dragTxnId = null;
+    document.querySelectorAll('.txn-dragging,.txn-drop-above,.txn-drop-below').forEach(function(el){
+        el.classList.remove('txn-dragging','txn-drop-above','txn-drop-below');
+    });
+}
+
+// ============================================================
 // VOID CHEQUE
 // ============================================================
 function populateVoidDropdown() {
@@ -4737,9 +4842,22 @@ function generateReport() {
                 if (chunkIdx > 0) html += '<div style="height:12px;"></div>';
                 html += '<table class="cb-minor-table" style="width:100%;border-collapse:collapse;font-size:8pt;">';
 
-                // BUDGETED row
+                var labelStyle = 'font-size:7pt;font-weight:700;white-space:nowrap;border:1px solid #999;padding:3px 6px;text-align:left;width:90px;min-width:90px;';
+
+                // Column headers
                 html += '<thead>';
+                html += '<tr class="cb-header-row">';
+                html += '<th style="' + labelStyle + 'background:#2e7d32;color:#fff;"></th>';
+                chunkKeys.forEach(function(k) {
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
+                });
+                html += '</tr>';
+                html += '</thead>';
+
+                // BUDGETED row
+                html += '<tbody>';
                 html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;">';
+                html += '<td style="' + labelStyle + 'background:#ffeb3b;">BUDGETED</td>';
                 chunkKeys.forEach(function(k) {
                     html += '<td class="amount" style="background:#ffeb3b;border:1px solid #999;padding:3px 5px;">' + fmt(BUDGET[k] || 0) + '</td>';
                 });
@@ -4747,6 +4865,7 @@ function generateReport() {
 
                 // GRAND TOTAL row
                 html += '<tr style="background:#00bcd4;color:#000;font-weight:700;">';
+                html += '<td style="' + labelStyle + 'background:#00bcd4;">GRAND TOTAL</td>';
                 chunkKeys.forEach(function(k) {
                     html += '<td class="amount" style="background:#00bcd4;border:1px solid #999;padding:3px 5px;">' + fmt(BUDGET[k] || 0) + '</td>';
                 });
@@ -4754,6 +4873,7 @@ function generateReport() {
 
                 // SPENT row
                 html += '<tr style="background:#4caf50;color:#000;font-weight:700;">';
+                html += '<td style="' + labelStyle + 'background:#4caf50;">SPENT</td>';
                 chunkKeys.forEach(function(k) {
                     html += '<td class="amount" style="background:#4caf50;border:1px solid #999;padding:3px 5px;">' + fmt(catSpent[k]) + '</td>';
                 });
@@ -4761,19 +4881,13 @@ function generateReport() {
 
                 // BALANCE row
                 html += '<tr style="background:#4caf50;color:#000;font-weight:700;">';
+                html += '<td style="' + labelStyle + 'background:#4caf50;">BALANCE</td>';
                 chunkKeys.forEach(function(k) {
                     var bal = (BUDGET[k] || 0) - catSpent[k];
                     html += '<td class="amount" style="background:#4caf50;border:1px solid #999;padding:3px 5px;">' + fmt(bal) + '</td>';
                 });
                 html += '</tr>';
-
-                // Column headers
-                html += '<tr class="cb-header-row">';
-                chunkKeys.forEach(function(k) {
-                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
-                });
-                html += '</tr>';
-                html += '</thead>';
+                html += '</tbody>';
 
                 html += '</table>';
             });
