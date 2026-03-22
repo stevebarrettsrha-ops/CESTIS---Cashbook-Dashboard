@@ -363,8 +363,15 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     background: var(--surface2);
     border-radius: var(--radius);
     padding: 1.5rem;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     max-height: 80vh;
+}
+.report-preview .cb-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    scrollbar-width: auto;
 }
 .report-sheet {
     background: #fff;
@@ -626,7 +633,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
     /* ---- Reports page print: only show the report sheet ---- */
     #page-reports .page-header { display:none !important; }
-    #page-reports > .card { display:none !important; }
+    #page-reports > .card:not(#reportPreviewCard) { display:none !important; }
     #reportPreviewCard { display:block !important; border:none !important; padding:0 !important; margin:0 !important; background:transparent !important; }
     #reportPreviewCard .card-title { display:none !important; }
     .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
@@ -2395,7 +2402,13 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="card" id="reportPreviewCard">
                 <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>📄 Report Preview</span>
-                    <span class="badge" id="reportPreviewBadge">Transactions Report</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div id="reportScrollBtns" style="display:none;">
+                            <button class="btn btn-ghost btn-sm" onclick="scrollReportLeft()" title="Scroll Left">◀ Scroll Left</button>
+                            <button class="btn btn-ghost btn-sm" onclick="scrollReportRight()" title="Scroll Right">Scroll Right ▶</button>
+                        </div>
+                        <span class="badge" id="reportPreviewBadge">Transactions Report</span>
+                    </div>
                 </div>
                 <div id="reportPreviewArea" class="report-preview">
                     <div class="report-sheet">
@@ -4614,6 +4627,16 @@ function renderReportsPage() {
     generateReport();
 }
 
+function scrollReportLeft() {
+    var wrapper = document.querySelector('#reportContent .cb-scroll-wrapper');
+    if (wrapper) wrapper.scrollBy({ left: -300, behavior: 'smooth' });
+}
+
+function scrollReportRight() {
+    var wrapper = document.querySelector('#reportContent .cb-scroll-wrapper');
+    if (wrapper) wrapper.scrollBy({ left: 300, behavior: 'smooth' });
+}
+
 function generateReport() {
     var typeEl = document.getElementById('reportType');
     if (!typeEl) return;
@@ -4625,9 +4648,11 @@ function generateReport() {
     var metaEl = document.getElementById('reportMetaLine');
     var contentEl = document.getElementById('reportContent');
 
-    // Show/hide print layout option (only for cashbook)
+    // Show/hide print layout option and scroll buttons (only for cashbook)
     var printLayoutGroup = document.getElementById('printLayoutGroup');
     if (printLayoutGroup) printLayoutGroup.style.display = (type === 'cashbook') ? '' : 'none';
+    var scrollBtns = document.getElementById('reportScrollBtns');
+    if (scrollBtns) scrollBtns.style.display = (type === 'cashbook') ? '' : 'none';
     if (!contentEl) return;
 
     var d = calcTotals();
@@ -4831,19 +4856,26 @@ function generateReport() {
         html += '</div>';
 
         var txns = range === 'all' ? transactions.filter(function(t){ return t.category !== 'Cancelled'; }) : d.activeTxns;
-        html += '<table><thead><tr><th>Date</th><th>Details</th><th>Cheque #</th><th>Category</th><th class="amount">Deposit</th><th class="amount">Payment</th></tr></thead><tbody>';
+        html += '<table><thead><tr><th>Date</th><th>Cheque #</th><th>Details</th><th>Category</th><th class="amount">Deposit</th><th class="amount">Payment</th><th class="amount">Balance</th></tr></thead><tbody>';
+
+        // Balance B/F row
+        var rptBalance = OPENING_BALANCE;
+        html += '<tr style="font-weight:700;background:#e8f5e9;"><td></td><td></td><td>BALANCE B/F</td><td></td><td class="amount">' + fmt(rptBalance) + '</td><td></td><td class="amount">' + fmt(rptBalance) + '</td></tr>';
+
         txns.forEach(function(t) {
+            rptBalance = rptBalance + (t.deposit || 0) - (t.payment || 0);
             html += '<tr>';
             html += '<td>' + (t.date || '') + '</td>';
-            html += '<td>' + (t.details || '') + '</td>';
             html += '<td>' + (t.cheque || '-') + '</td>';
+            html += '<td>' + (t.details || '') + '</td>';
             html += '<td>' + (t.category || '') + '</td>';
             html += '<td class="amount">' + (t.deposit > 0 ? fmt(t.deposit) : '-') + '</td>';
             html += '<td class="amount">' + (t.payment > 0 ? fmt(t.payment) : '-') + '</td>';
+            html += '<td class="amount">' + fmt(rptBalance) + '</td>';
             html += '</tr>';
         });
         html += '</tbody>';
-        html += '<tfoot><tr><td colspan="4" style="text-align:right;">Totals</td><td class="amount">' + fmt(d.totalDeposits) + '</td><td class="amount">' + fmt(d.totalPayments) + '</td></tr></tfoot>';
+        html += '<tfoot><tr><td colspan="4" style="text-align:right;">Totals</td><td class="amount">' + fmt(d.totalDeposits) + '</td><td class="amount">' + fmt(d.totalPayments) + '</td><td class="amount">' + fmt(rptBalance) + '</td></tr></tfoot>';
         html += '</table>';
     }
 
