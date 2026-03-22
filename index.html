@@ -362,18 +362,16 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .report-preview {
     background: var(--surface2);
     border-radius: var(--radius);
-    padding: 2rem;
-    display: flex;
-    justify-content: center;
+    padding: 1.5rem;
     overflow: auto;
-    max-height: 75vh;
+    max-height: 80vh;
 }
 .report-sheet {
     background: #fff;
     color: #000;
-    width: 210mm;
-    min-height: 297mm;
-    padding: 20mm 18mm;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 24px 28px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.5);
     border-radius: 4px;
     font-size: 10pt;
@@ -385,8 +383,8 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     padding-bottom: 12px;
     margin-bottom: 20px;
 }
-.report-title { font-size: 18pt; font-weight: 700; color: #111; margin-bottom: 4px; }
-.report-subtitle { font-size: 12pt; color: #444; margin-bottom: 2px; }
+.report-title { font-size: 16pt; font-weight: 700; color: #111; margin-bottom: 4px; }
+.report-subtitle { font-size: 11pt; color: #444; margin-bottom: 2px; }
 .report-meta { font-size: 9pt; color: #888; }
 .report-footer-block {
     border-top: 1px solid #ccc;
@@ -400,18 +398,19 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 16px;
-    font-size: 9pt;
+    font-size: 8.5pt;
 }
 .report-sheet thead th {
     background: #f3f4f6;
     color: #111;
-    padding: 6px 8px;
+    padding: 5px 6px;
     border-bottom: 2px solid #999;
     text-align: left;
     font-weight: 600;
+    white-space: nowrap;
 }
 .report-sheet tbody td {
-    padding: 5px 8px;
+    padding: 4px 6px;
     border-bottom: 1px solid #ddd;
     color: #222;
 }
@@ -434,15 +433,38 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     background: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    padding: 12px;
+    padding: 10px;
     text-align: center;
 }
-.report-sheet .report-summary-box .rsb-label { font-size: 8pt; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-.report-sheet .report-summary-box .rsb-value { font-size: 14pt; font-weight: 700; color: #111; margin-top: 4px; }
+.report-sheet .report-summary-box .rsb-label { font-size: 7.5pt; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.report-sheet .report-summary-box .rsb-value { font-size: 12pt; font-weight: 700; color: #111; margin-top: 4px; }
 .report-sheet .report-summary-box .rsb-value.positive { color: #16a34a; }
 .report-sheet .report-summary-box .rsb-value.negative { color: #dc2626; }
 .report-sheet .amount { text-align: right; font-family: var(--mono); }
 .report-sheet tfoot td { font-weight: 700; border-top: 2px solid #333; background: #f3f4f6; }
+/* Cashbook report specific */
+.report-sheet .cb-header-row { background: #2e7d32; color: #fff; }
+.report-sheet .cb-header-row th { color: #fff; background: #2e7d32; border-bottom: 2px solid #1b5e20; font-size: 8pt; padding: 6px; }
+.report-sheet .cb-subvention-row { background: #fff9c4; }
+.report-sheet .cb-subvention-row td { font-weight: 700; color: #333; }
+.report-sheet .cb-balance-bf td { font-weight: 700; background: #e8f5e9; }
+.report-sheet .cb-bank-charges td { font-weight: 700; font-style: italic; }
+.report-sheet .cb-cancelled td { color: #999; font-style: italic; }
+.report-sheet .cb-total-row { background: #e3f2fd; }
+.report-sheet .cb-total-row td { font-weight: 700; border-top: 2px solid #333; border-bottom: 2px solid #333; }
+.report-sheet .cb-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-size: 9pt;
+}
+.report-sheet .cb-info-box {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+.report-sheet .cb-info-box strong { display: block; color: #333; margin-bottom: 2px; }
 
 /* Print */
 @media print {
@@ -600,10 +622,14 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     #reportPreviewCard { border:none !important; padding:0 !important; background:transparent !important; }
     #reportPreviewCard .card-title { display:none !important; }
     .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
-    .report-sheet { box-shadow:none !important; padding:10mm 15mm !important; width:100% !important; min-height:auto !important; }
-    .report-sheet table { page-break-inside:auto !important; }
+    .report-sheet { box-shadow:none !important; padding:5mm 10mm !important; max-width:100% !important; width:100% !important; }
+    .report-sheet table { page-break-inside:auto !important; font-size:7.5pt !important; }
     .report-sheet thead { display:table-header-group; }
     .report-sheet tr { page-break-inside:avoid; }
+    .report-sheet .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
+    .report-sheet .cb-subvention-row td { background:#fff9c4 !important; }
+    .report-sheet .cb-balance-bf td { background:#e8f5e9 !important; }
+    .report-sheet .cb-total-row td { background:#e3f2fd !important; }
 }
 
 /* Budget Amounts Styles */
@@ -2322,6 +2348,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="form-group">
                         <label>Report Type</label>
                         <select id="reportType" onchange="generateReport()">
+                            <option value="cashbook">Cashbook</option>
                             <option value="transactions">Transactions Report</option>
                             <option value="categories">Categories Report</option>
                             <option value="financial">Financial Data Form Report</option>
@@ -4580,6 +4607,7 @@ function generateReport() {
     var quarterLabel = qm.shortLabel + ' ' + activeFY;
 
     var titles = {
+        'cashbook': 'Cashbook',
         'transactions': 'Transactions Report',
         'categories': 'Categories Report',
         'financial': 'Financial Data Form Report',
@@ -4593,6 +4621,143 @@ function generateReport() {
     if (metaEl) metaEl.textContent = 'Quarter: ' + quarterLabel + ' | Generated: ' + new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
     var html = '';
+
+    if (type === 'cashbook') {
+        // Get budget category keys (excluding special ones)
+        var budgetKeys = Object.keys(BUDGET).filter(function(k) { return k !== 'Subvention' && k !== 'Cancelled'; });
+        var totalBudgetAllocated = budgetKeys.reduce(function(s,k){ return s + (BUDGET[k] || 0); }, 0);
+        var colCount = 6 + budgetKeys.length; // Date, Cheque, Details, Deposit, Payment, Balance + categories
+
+        // Compute per-category spent totals
+        var catSpent = {};
+        budgetKeys.forEach(function(k){ catSpent[k] = 0; });
+        var allTxns = range === 'all' ? transactions : d.activeTxns;
+        allTxns.forEach(function(t) {
+            if (t.payment > 0 && t.category !== 'Cancelled' && t.category !== 'Subvention' && catSpent.hasOwnProperty(t.category)) {
+                catSpent[t.category] += t.payment;
+            }
+        });
+
+        html += '<div style="overflow-x:auto;">';
+        html += '<table style="min-width:' + (600 + budgetKeys.length * 100) + 'px;">';
+
+        // === BUDGETED header row ===
+        html += '<thead>';
+        html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;font-size:8pt;">';
+        html += '<td colspan="5" style="text-align:right;border:1px solid #999;padding:4px 6px;">BUDGETED</td>';
+        html += '<td style="border:1px solid #999;padding:4px 6px;"></td>';
+        budgetKeys.forEach(function(k) {
+            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(BUDGET[k] || 0) + '</td>';
+        });
+        html += '</tr>';
+
+        // === GRAND TOTAL row ===
+        html += '<tr style="background:#00bcd4;color:#000;font-weight:700;font-size:8pt;">';
+        html += '<td colspan="5" style="text-align:right;border:1px solid #999;padding:4px 6px;">GRAND TOTAL</td>';
+        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalBudgetAllocated) + '</td>';
+        budgetKeys.forEach(function(k) {
+            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(BUDGET[k] || 0) + '</td>';
+        });
+        html += '</tr>';
+
+        // === SUBVENTION PERIOD / SPENT / BALANCE rows ===
+        var totalSpent = budgetKeys.reduce(function(s,k){ return s + catSpent[k]; }, 0);
+        html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
+        html += '<td style="border:1px solid #999;padding:4px 6px;">SUBVENTION PERIOD</td>';
+        html += '<td style="border:1px solid #999;padding:4px 6px;font-style:italic;">FROM</td>';
+        html += '<td style="border:1px solid #999;padding:4px 6px;">' + qm.shortLabel + ' ' + activeFY + '</td>';
+        html += '<td colspan="2" style="text-align:right;border:1px solid #999;padding:4px 6px;">SPENT</td>';
+        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalSpent) + '</td>';
+        budgetKeys.forEach(function(k) {
+            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(catSpent[k]) + '</td>';
+        });
+        html += '</tr>';
+
+        html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
+        html += '<td colspan="4" style="border:1px solid #999;padding:4px 6px;"></td>';
+        html += '<td style="text-align:right;border:1px solid #999;padding:4px 6px;">BALANCE</td>';
+        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalBudgetAllocated - totalSpent) + '</td>';
+        budgetKeys.forEach(function(k) {
+            var bal = (BUDGET[k] || 0) - catSpent[k];
+            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(bal) + '</td>';
+        });
+        html += '</tr>';
+
+        // === Empty spacer row ===
+        html += '<tr><td colspan="' + colCount + '" style="height:8px;"></td></tr>';
+
+        // === Column headers ===
+        html += '<tr class="cb-header-row">';
+        html += '<th>Date</th><th>Cheque #</th><th>Details</th>';
+        html += '<th class="amount">Deposit</th><th class="amount">Payment</th><th class="amount">Balance</th>';
+        budgetKeys.forEach(function(k) {
+            html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;">' + k + '</th>';
+        });
+        html += '</tr>';
+        html += '</thead>';
+
+        // === Body rows ===
+        html += '<tbody>';
+        var balance = OPENING_BALANCE;
+
+        // Balance B/F row
+        html += '<tr class="cb-balance-bf"><td></td><td></td><td>BALANCE B/F</td>';
+        html += '<td></td><td></td><td class="amount">' + fmt(balance) + '</td>';
+        budgetKeys.forEach(function() { html += '<td></td>'; });
+        html += '</tr>';
+
+        allTxns.forEach(function(t) {
+            var isCancelled = t.category === 'Cancelled';
+            var isSubvention = t.category === 'Subvention';
+            var isBankCharge = (t.details || '').toLowerCase().indexOf('bank charge') >= 0 || t.category === 'Bank Charges';
+
+            if (!isCancelled) {
+                balance = balance + (t.deposit || 0) - (t.payment || 0);
+            }
+
+            var rowClass = '';
+            if (isCancelled) rowClass = 'cb-cancelled';
+            else if (isSubvention) rowClass = 'cb-subvention-row';
+            else if (isBankCharge) rowClass = 'cb-bank-charges';
+
+            html += '<tr class="' + rowClass + '">';
+            html += '<td>' + (t.date || '') + '</td>';
+            html += '<td>' + (t.cheque || '') + '</td>';
+            html += '<td>' + (t.details || '') + '</td>';
+            html += '<td class="amount">' + (t.deposit > 0 ? fmt(t.deposit) : '') + '</td>';
+            html += '<td class="amount">' + (t.payment > 0 ? fmt(t.payment) : (isCancelled ? '-' : '')) + '</td>';
+            html += '<td class="amount">' + fmt(balance) + '</td>';
+
+            // Category columns - show amount in matching column
+            budgetKeys.forEach(function(k) {
+                if (!isCancelled && t.payment > 0 && t.category === k) {
+                    html += '<td class="amount">' + fmt(t.payment) + '</td>';
+                } else if (!isCancelled && t.deposit > 0 && t.category === k) {
+                    html += '<td class="amount">' + fmt(t.deposit) + '</td>';
+                } else if (isCancelled && t.category === 'Cancelled' && k === 'Bank Charges') {
+                    // Show cancelled marker in relevant column if needed
+                    html += '<td></td>';
+                } else {
+                    html += '<td></td>';
+                }
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody>';
+
+        // === Totals footer ===
+        html += '<tfoot><tr class="cb-total-row">';
+        html += '<td colspan="3" style="text-align:right;">Totals</td>';
+        html += '<td class="amount">' + fmt(d.totalDeposits) + '</td>';
+        html += '<td class="amount">' + fmt(d.totalPayments) + '</td>';
+        html += '<td class="amount">' + fmt(balance) + '</td>';
+        budgetKeys.forEach(function(k) {
+            html += '<td class="amount">' + (catSpent[k] > 0 ? fmt(catSpent[k]) : '') + '</td>';
+        });
+        html += '</tr></tfoot>';
+        html += '</table></div>';
+    }
 
     if (type === 'transactions' || type === 'summary') {
         html += '<div class="report-section-title">Transactions</div>';
