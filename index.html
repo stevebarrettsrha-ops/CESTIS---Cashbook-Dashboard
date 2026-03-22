@@ -526,6 +526,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     padding:40px 48px 36px; box-shadow:0 4px 24px rgba(0,0,0,0.5); border-radius:4px;
     font-family:'Times New Roman', Times, serif; font-size:10pt; line-height:1.4;
     page-break-after:always; position:relative;
+    display:flex; flex-direction:column; min-height:calc(100vh - 76px);
 }
 .recon-doc-page:last-child { page-break-after:auto; }
 .rdoc-header {
@@ -642,6 +643,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .rdoc-sig-line b { white-space:nowrap; }
 .rdoc-sig-line .rdoc-sig-blank {
     flex:1; border-bottom:1px solid #000; min-width:80px; height:1em;
+}
+.rdoc-footer-wrap {
+    margin-top:auto;
 }
 .rdoc-footer-note {
     margin-top:14px; font-size:8.5pt; font-style:italic; color:#444;
@@ -842,6 +846,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         box-shadow:none !important; margin:0 !important; padding:24px 28px !important;
         max-width:100% !important; width:100% !important;
         page-break-after:always !important; break-after:page !important;
+        min-height:100vh !important;
     }
     .recon-preview-overlay .recon-doc-page:last-child { page-break-after:auto !important; break-after:auto !important; }
     .recon-preview-overlay .rdoc-header { border-bottom:none !important; }
@@ -6854,8 +6859,10 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     h += '</div>';
 
     // ===== Footer =====
+    h += '<div class="rdoc-footer-wrap">';
     h += '<div class="rdoc-footer-note">Other Deposits*: (stale-date cheques, returned cheques, lodgments).</div>';
     h += '<div class="rdoc-version">CTI/Bank Reconciliation/Version 2.0:12/03/2020</div>';
+    h += '</div>';
 
     h += '</div>'; // end page
     return h;
