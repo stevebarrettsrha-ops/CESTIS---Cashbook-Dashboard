@@ -7436,23 +7436,41 @@ function checkCloudAndNotify(reason){
 }
 
 // Monitor token expiry in real time
+let tokenExpiryWarningShown = false;
+
 function startCloudMonitor(){
   // Clear any previous interval
   if (cloudCheckInterval) clearInterval(cloudCheckInterval);
+  tokenExpiryWarningShown = false;
 
-  // Check every 60 seconds if the token has expired
+  // Check every 30 seconds for token expiry and 5-minute warning
   cloudCheckInterval = setInterval(function(){
     if (isCloudConnected && googleAccessToken) {
       const savedExpiry = localStorage.getItem('cestisGoogleTokenExpiry');
-      if (savedExpiry && new Date(savedExpiry) <= new Date()) {
-        // Token just expired
+      if (!savedExpiry) return;
+
+      const expiryDate = new Date(savedExpiry);
+      const now = new Date();
+      const msRemaining = expiryDate - now;
+
+      if (msRemaining <= 0) {
+        // Token has expired
+        tokenExpiryWarningShown = false;
         googleAccessToken = null;
         isCloudConnected = false;
         updateCloudUI(false);
         checkCloudAndNotify('token_expired');
+      } else if (msRemaining <= 300000 && !tokenExpiryWarningShown) {
+        // 5 minutes or less remaining — warn user
+        tokenExpiryWarningShown = true;
+        var minsLeft = Math.ceil(msRemaining / 60000);
+        showCloudNotification('warn', 'Session Expiring Soon',
+          'Your Google Drive session expires in ' + minsLeft + ' minute' + (minsLeft > 1 ? 's' : '') + '. ' +
+          'Reconnect now to avoid losing cloud sync.',
+          true, 0);
       }
     }
-  }, 60000);
+  }, 30000);
 }
 
 // ============================================================
@@ -7507,6 +7525,8 @@ async function autoMergeAndSave() {
                 if (backupData.data && backupData.version) {
                     silentMerge(backupData);
                 }
+            } else if (pullResponse.status === 401 || pullResponse.status === 403) {
+                throw new Error('invalid_token');
             }
         }
 
@@ -7562,13 +7582,25 @@ async function autoMergeAndSave() {
             cloudFileTimestamp = new Date().toISOString();
             updateLastSyncDisplay();
             updateLastSavedByDisplay();
+        } else if (pushResponse.status === 401 || pushResponse.status === 403) {
+            // Auth failure on push — token is invalid
+            throw new Error('invalid_token');
         }
 
     } catch (error) {
         console.error('Auto-sync error:', error);
-        // If token expired, stop auto-sync
         if (error.message && (error.message.includes('invalid_token') || error.message.includes('Invalid Credentials'))) {
-            stopAutoSync();
+            // Token expired — disconnect and notify user
+            googleAccessToken = null;
+            isCloudConnected = false;
+            updateCloudUI(false);
+            showCloudNotification('error', 'Cloud Disconnected',
+                'Your Google Drive session has expired. Auto-sync has stopped. Please reconnect to resume cloud backup.',
+                true, 0);
+        } else if (!navigator.onLine) {
+            showCloudNotification('error', 'Cloud Sync Failed',
+                'You are offline. Auto-sync will resume when your internet connection is restored.',
+                false, 15);
         }
     } finally {
         cloudSyncing = false;
