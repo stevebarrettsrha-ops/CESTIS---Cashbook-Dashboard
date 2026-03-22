@@ -633,7 +633,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
     /* ---- Reports page print: only show the report sheet ---- */
     #page-reports .page-header { display:none !important; }
-    #page-reports > .card { display:none !important; }
+    #page-reports > .card:not(#reportPreviewCard) { display:none !important; }
     #reportPreviewCard { display:block !important; border:none !important; padding:0 !important; margin:0 !important; background:transparent !important; }
     #reportPreviewCard .card-title { display:none !important; }
     .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
