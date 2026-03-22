@@ -373,8 +373,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-radius: var(--radius);
     padding: 1.5rem;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     max-height: 80vh;
+    contain: paint;
 }
 .report-preview .cb-scroll-wrapper {
     overflow-x: auto;
@@ -2432,7 +2433,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             </div>
 
             <!-- Report Preview Area -->
-            <div class="card" id="reportPreviewCard">
+            <div class="card" id="reportPreviewCard" style="overflow:hidden;">
                 <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>📄 Report Preview</span>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
