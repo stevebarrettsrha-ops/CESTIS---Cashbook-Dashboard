@@ -652,6 +652,10 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .report-sheet .cb-balance-bf td { background:#e8f5e9 !important; }
     .report-sheet .cb-total-row td { background:#e3f2fd !important; }
     .cb-scroll-wrapper th, .cb-scroll-wrapper td { border:1px solid #999 !important; padding:2px 4px !important; font-size:6.5pt !important; }
+    /* Minor columns print: stacked tables */
+    .cb-minor-table { page-break-inside:avoid !important; border-collapse:collapse !important; }
+    .cb-minor-table td, .cb-minor-table th { border:1px solid #999 !important; padding:3px 5px !important; font-size:7pt !important; }
+    .cb-minor-table .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
     /* Print landscape hint for cashbook */
     @page { margin: 10mm; }
 }
@@ -2368,7 +2372,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="card">
                 <div class="card-title">📑 Report Generator</div>
-                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Report Type</label>
                         <select id="reportType" onchange="generateReport()">
@@ -2386,6 +2390,14 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                         <select id="reportDateRange" onchange="generateReport()">
                             <option value="current-quarter">Current Quarter</option>
                             <option value="all">All Transactions</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="printSelectionGroup">
+                        <label>Print Selection</label>
+                        <select id="reportPrintSelection" onchange="generateReport()">
+                            <option value="all">All Columns</option>
+                            <option value="major">Major Columns (Date, Cheque, Details, Deposit, Payment, Balance)</option>
+                            <option value="minor">Minor Columns (Budget Categories)</option>
                         </select>
                     </div>
                     <div class="form-group" id="printLayoutGroup">
@@ -4648,11 +4660,15 @@ function generateReport() {
     var metaEl = document.getElementById('reportMetaLine');
     var contentEl = document.getElementById('reportContent');
 
-    // Show/hide print layout option and scroll buttons (only for cashbook)
+    // Show/hide print layout option, print selection, and scroll buttons (only for cashbook)
     var printLayoutGroup = document.getElementById('printLayoutGroup');
     if (printLayoutGroup) printLayoutGroup.style.display = (type === 'cashbook') ? '' : 'none';
+    var printSelectionGroup = document.getElementById('printSelectionGroup');
+    if (printSelectionGroup) printSelectionGroup.style.display = (type === 'cashbook') ? '' : 'none';
     var scrollBtns = document.getElementById('reportScrollBtns');
     if (scrollBtns) scrollBtns.style.display = (type === 'cashbook') ? '' : 'none';
+    var printSelEl = document.getElementById('reportPrintSelection');
+    var printSelection = (printSelEl && type === 'cashbook') ? printSelEl.value : 'all';
     if (!contentEl) return;
 
     var d = calcTotals();
@@ -4679,7 +4695,6 @@ function generateReport() {
         // Get budget category keys (excluding special ones)
         var budgetKeys = Object.keys(BUDGET).filter(function(k) { return k !== 'Subvention' && k !== 'Cancelled'; });
         var totalBudgetAllocated = budgetKeys.reduce(function(s,k){ return s + (BUDGET[k] || 0); }, 0);
-        var colCount = 6 + budgetKeys.length; // Date, Cheque, Details, Deposit, Payment, Balance + categories
 
         // Compute per-category spent totals
         var catSpent = {};
@@ -4705,146 +4720,222 @@ function generateReport() {
             return '<th class="' + cls + '"' + style + '>' + content + '</th>';
         };
 
-        html += '<div class="cb-scroll-wrapper">';
-        html += '<table>';
+        var showMajor = (printSelection === 'all' || printSelection === 'major');
+        var showMinor = (printSelection === 'all' || printSelection === 'minor');
+        var colCount = (showMajor ? 6 : 0) + (showMinor ? budgetKeys.length : 0);
 
-        // === BUDGETED header row ===
-        html += '<thead>';
-        html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;font-size:8pt;">';
-        html += stickyTd(0, '', '', 'background:#ffeb3b;');
-        html += stickyTd(1, '', '', 'background:#ffeb3b;');
-        html += stickyTd(2, '', '', 'background:#ffeb3b;');
-        html += stickyTd(3, '', '', 'background:#ffeb3b;');
-        html += stickyTd(4, 'BUDGETED', '', 'background:#ffeb3b;text-align:right;font-weight:700;');
-        html += stickyTd(5, '', '', 'background:#ffeb3b;');
-        budgetKeys.forEach(function(k) {
-            html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
-        });
-        html += '</tr>';
-
-        // === GRAND TOTAL row ===
-        html += '<tr style="background:#00bcd4;color:#000;font-weight:700;font-size:8pt;">';
-        html += stickyTd(0, '', '', 'background:#00bcd4;');
-        html += stickyTd(1, '', '', 'background:#00bcd4;');
-        html += stickyTd(2, '', '', 'background:#00bcd4;');
-        html += stickyTd(3, '', '', 'background:#00bcd4;');
-        html += stickyTd(4, 'GRAND TOTAL', '', 'background:#00bcd4;text-align:right;font-weight:700;');
-        html += stickyTd(5, fmt(totalBudgetAllocated), 'amount', 'background:#00bcd4;');
-        budgetKeys.forEach(function(k) {
-            html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
-        });
-        html += '</tr>';
-
-        // === SUBVENTION PERIOD / SPENT / BALANCE rows ===
-        var totalSpent = budgetKeys.reduce(function(s,k){ return s + catSpent[k]; }, 0);
-        html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
-        html += stickyTd(0, 'SUBVENTION PERIOD', '', 'background:#4caf50;white-space:nowrap;');
-        html += stickyTd(1, '<em>FROM</em>', '', 'background:#4caf50;');
-        html += stickyTd(2, qm.shortLabel + ' ' + activeFY, '', 'background:#4caf50;');
-        html += stickyTd(3, '', '', 'background:#4caf50;');
-        html += stickyTd(4, 'SPENT', '', 'background:#4caf50;text-align:right;');
-        html += stickyTd(5, fmt(totalSpent), 'amount', 'background:#4caf50;');
-        budgetKeys.forEach(function(k) {
-            html += '<td class="amount">' + fmt(catSpent[k]) + '</td>';
-        });
-        html += '</tr>';
-
-        html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
-        html += stickyTd(0, '', '', 'background:#4caf50;');
-        html += stickyTd(1, '', '', 'background:#4caf50;');
-        html += stickyTd(2, '', '', 'background:#4caf50;');
-        html += stickyTd(3, '', '', 'background:#4caf50;');
-        html += stickyTd(4, 'BALANCE', '', 'background:#4caf50;text-align:right;');
-        html += stickyTd(5, fmt(totalBudgetAllocated - totalSpent), 'amount', 'background:#4caf50;');
-        budgetKeys.forEach(function(k) {
-            var bal = (BUDGET[k] || 0) - catSpent[k];
-            html += '<td class="amount">' + fmt(bal) + '</td>';
-        });
-        html += '</tr>';
-
-        // === Empty spacer row ===
-        html += '<tr><td colspan="' + colCount + '" style="height:8px;border:none;"></td></tr>';
-
-        // === Column headers ===
-        html += '<tr class="cb-header-row">';
-        html += stickyTh(0, 'Date', '', 'background:#2e7d32;color:#fff;');
-        html += stickyTh(1, 'Cheque #', '', 'background:#2e7d32;color:#fff;');
-        html += stickyTh(2, 'Details', '', 'background:#2e7d32;color:#fff;');
-        html += stickyTh(3, 'Deposit', 'amount', 'background:#2e7d32;color:#fff;');
-        html += stickyTh(4, 'Payment', 'amount', 'background:#2e7d32;color:#fff;');
-        html += stickyTh(5, 'Balance', 'amount', 'background:#2e7d32;color:#fff;');
-        budgetKeys.forEach(function(k) {
-            html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:90px;background:#2e7d32;color:#fff;">' + k + '</th>';
-        });
-        html += '</tr>';
-        html += '</thead>';
-
-        // === Body rows ===
-        html += '<tbody>';
-        var balance = OPENING_BALANCE;
-
-        // Balance B/F row
-        html += '<tr class="cb-balance-bf">';
-        html += stickyTd(0, '', '', 'background:#e8f5e9;');
-        html += stickyTd(1, '', '', 'background:#e8f5e9;');
-        html += stickyTd(2, 'BALANCE B/F', '', 'background:#e8f5e9;font-weight:700;');
-        html += stickyTd(3, '', '', 'background:#e8f5e9;');
-        html += stickyTd(4, '', '', 'background:#e8f5e9;');
-        html += stickyTd(5, fmt(balance), 'amount', 'background:#e8f5e9;font-weight:700;');
-        budgetKeys.forEach(function() { html += '<td></td>'; });
-        html += '</tr>';
-
-        allTxns.forEach(function(t) {
-            var isCancelled = t.category === 'Cancelled';
-            var isSubvention = t.category === 'Subvention';
-            var isBankCharge = (t.details || '').toLowerCase().indexOf('bank charge') >= 0 || t.category === 'Bank Charges';
-
-            if (!isCancelled) {
-                balance = balance + (t.deposit || 0) - (t.payment || 0);
+        if (printSelection === 'minor') {
+            // === MINOR COLUMNS ONLY: budget categories in 3 stacked table chunks ===
+            var totalSpent = budgetKeys.reduce(function(s,k){ return s + catSpent[k]; }, 0);
+            var chunkSize = Math.ceil(budgetKeys.length / 3);
+            var chunks = [];
+            for (var ci = 0; ci < budgetKeys.length; ci += chunkSize) {
+                chunks.push(budgetKeys.slice(ci, ci + chunkSize));
             }
 
-            var rowClass = '';
-            var rowBg = '#fff';
-            if (isCancelled) { rowClass = 'cb-cancelled'; rowBg = '#fff'; }
-            else if (isSubvention) { rowClass = 'cb-subvention-row'; rowBg = '#fff9c4'; }
-            else if (isBankCharge) { rowClass = 'cb-bank-charges'; rowBg = '#fff'; }
+            chunks.forEach(function(chunkKeys, chunkIdx) {
+                if (chunkIdx > 0) html += '<div style="height:12px;"></div>';
+                html += '<table class="cb-minor-table" style="width:100%;border-collapse:collapse;font-size:8pt;">';
 
-            html += '<tr class="' + rowClass + '">';
-            html += stickyTd(0, t.date || '', '', 'background:' + rowBg + ';');
-            html += stickyTd(1, t.cheque || '', '', 'background:' + rowBg + ';');
-            html += stickyTd(2, t.details || '', '', 'background:' + rowBg + ';');
-            html += stickyTd(3, t.deposit > 0 ? fmt(t.deposit) : '', 'amount', 'background:' + rowBg + ';');
-            html += stickyTd(4, t.payment > 0 ? fmt(t.payment) : (isCancelled ? '-' : ''), 'amount', 'background:' + rowBg + ';');
-            html += stickyTd(5, fmt(balance), 'amount', 'background:' + rowBg + ';');
+                // BUDGETED row
+                html += '<thead>';
+                html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;">';
+                chunkKeys.forEach(function(k) {
+                    html += '<td class="amount" style="background:#ffeb3b;border:1px solid #999;padding:3px 5px;">' + fmt(BUDGET[k] || 0) + '</td>';
+                });
+                html += '</tr>';
 
-            // Category columns - show amount in matching column
-            budgetKeys.forEach(function(k) {
-                if (!isCancelled && t.payment > 0 && t.category === k) {
-                    html += '<td class="amount">' + fmt(t.payment) + '</td>';
-                } else if (!isCancelled && t.deposit > 0 && t.category === k) {
-                    html += '<td class="amount">' + fmt(t.deposit) + '</td>';
-                } else {
-                    html += '<td></td>';
-                }
+                // GRAND TOTAL row
+                html += '<tr style="background:#00bcd4;color:#000;font-weight:700;">';
+                chunkKeys.forEach(function(k) {
+                    html += '<td class="amount" style="background:#00bcd4;border:1px solid #999;padding:3px 5px;">' + fmt(BUDGET[k] || 0) + '</td>';
+                });
+                html += '</tr>';
+
+                // SPENT row
+                html += '<tr style="background:#4caf50;color:#000;font-weight:700;">';
+                chunkKeys.forEach(function(k) {
+                    html += '<td class="amount" style="background:#4caf50;border:1px solid #999;padding:3px 5px;">' + fmt(catSpent[k]) + '</td>';
+                });
+                html += '</tr>';
+
+                // BALANCE row
+                html += '<tr style="background:#4caf50;color:#000;font-weight:700;">';
+                chunkKeys.forEach(function(k) {
+                    var bal = (BUDGET[k] || 0) - catSpent[k];
+                    html += '<td class="amount" style="background:#4caf50;border:1px solid #999;padding:3px 5px;">' + fmt(bal) + '</td>';
+                });
+                html += '</tr>';
+
+                // Column headers
+                html += '<tr class="cb-header-row">';
+                chunkKeys.forEach(function(k) {
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
+                });
+                html += '</tr>';
+                html += '</thead>';
+
+                html += '</table>';
             });
+        } else {
+            // === ALL or MAJOR mode ===
+            html += '<div class="cb-scroll-wrapper">';
+            html += '<table>';
+
+            // === BUDGETED header row ===
+            html += '<thead>';
+            html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;font-size:8pt;">';
+            html += stickyTd(0, '', '', 'background:#ffeb3b;');
+            html += stickyTd(1, '', '', 'background:#ffeb3b;');
+            html += stickyTd(2, '', '', 'background:#ffeb3b;');
+            html += stickyTd(3, '', '', 'background:#ffeb3b;');
+            html += stickyTd(4, 'BUDGETED', '', 'background:#ffeb3b;text-align:right;font-weight:700;');
+            html += stickyTd(5, '', '', 'background:#ffeb3b;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
+                });
+            }
             html += '</tr>';
-        });
 
-        html += '</tbody>';
+            // === GRAND TOTAL row ===
+            html += '<tr style="background:#00bcd4;color:#000;font-weight:700;font-size:8pt;">';
+            html += stickyTd(0, '', '', 'background:#00bcd4;');
+            html += stickyTd(1, '', '', 'background:#00bcd4;');
+            html += stickyTd(2, '', '', 'background:#00bcd4;');
+            html += stickyTd(3, '', '', 'background:#00bcd4;');
+            html += stickyTd(4, 'GRAND TOTAL', '', 'background:#00bcd4;text-align:right;font-weight:700;');
+            html += stickyTd(5, fmt(totalBudgetAllocated), 'amount', 'background:#00bcd4;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
+                });
+            }
+            html += '</tr>';
 
-        // === Totals footer ===
-        html += '<tfoot><tr class="cb-total-row">';
-        html += stickyTd(0, '', '', 'background:#e3f2fd;');
-        html += stickyTd(1, '', '', 'background:#e3f2fd;');
-        html += stickyTd(2, 'Totals', '', 'background:#e3f2fd;text-align:right;font-weight:700;');
-        html += stickyTd(3, fmt(d.totalDeposits), 'amount', 'background:#e3f2fd;font-weight:700;');
-        html += stickyTd(4, fmt(d.totalPayments), 'amount', 'background:#e3f2fd;font-weight:700;');
-        html += stickyTd(5, fmt(balance), 'amount', 'background:#e3f2fd;font-weight:700;');
-        budgetKeys.forEach(function(k) {
-            html += '<td class="amount">' + (catSpent[k] > 0 ? fmt(catSpent[k]) : '') + '</td>';
-        });
-        html += '</tr></tfoot>';
-        html += '</table></div>';
+            // === SUBVENTION PERIOD / SPENT / BALANCE rows ===
+            var totalSpent = budgetKeys.reduce(function(s,k){ return s + catSpent[k]; }, 0);
+            html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
+            html += stickyTd(0, 'SUBVENTION PERIOD', '', 'background:#4caf50;white-space:nowrap;');
+            html += stickyTd(1, '<em>FROM</em>', '', 'background:#4caf50;');
+            html += stickyTd(2, qm.shortLabel + ' ' + activeFY, '', 'background:#4caf50;');
+            html += stickyTd(3, '', '', 'background:#4caf50;');
+            html += stickyTd(4, 'SPENT', '', 'background:#4caf50;text-align:right;');
+            html += stickyTd(5, fmt(totalSpent), 'amount', 'background:#4caf50;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    html += '<td class="amount">' + fmt(catSpent[k]) + '</td>';
+                });
+            }
+            html += '</tr>';
+
+            html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
+            html += stickyTd(0, '', '', 'background:#4caf50;');
+            html += stickyTd(1, '', '', 'background:#4caf50;');
+            html += stickyTd(2, '', '', 'background:#4caf50;');
+            html += stickyTd(3, '', '', 'background:#4caf50;');
+            html += stickyTd(4, 'BALANCE', '', 'background:#4caf50;text-align:right;');
+            html += stickyTd(5, fmt(totalBudgetAllocated - totalSpent), 'amount', 'background:#4caf50;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    var bal = (BUDGET[k] || 0) - catSpent[k];
+                    html += '<td class="amount">' + fmt(bal) + '</td>';
+                });
+            }
+            html += '</tr>';
+
+            // === Empty spacer row ===
+            html += '<tr><td colspan="' + colCount + '" style="height:8px;border:none;"></td></tr>';
+
+            // === Column headers ===
+            html += '<tr class="cb-header-row">';
+            html += stickyTh(0, 'Date', '', 'background:#2e7d32;color:#fff;');
+            html += stickyTh(1, 'Cheque #', '', 'background:#2e7d32;color:#fff;');
+            html += stickyTh(2, 'Details', '', 'background:#2e7d32;color:#fff;');
+            html += stickyTh(3, 'Deposit', 'amount', 'background:#2e7d32;color:#fff;');
+            html += stickyTh(4, 'Payment', 'amount', 'background:#2e7d32;color:#fff;');
+            html += stickyTh(5, 'Balance', 'amount', 'background:#2e7d32;color:#fff;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:90px;background:#2e7d32;color:#fff;">' + k + '</th>';
+                });
+            }
+            html += '</tr>';
+            html += '</thead>';
+
+            // === Body rows ===
+            html += '<tbody>';
+            var balance = OPENING_BALANCE;
+
+            // Balance B/F row
+            html += '<tr class="cb-balance-bf">';
+            html += stickyTd(0, '', '', 'background:#e8f5e9;');
+            html += stickyTd(1, '', '', 'background:#e8f5e9;');
+            html += stickyTd(2, 'BALANCE B/F', '', 'background:#e8f5e9;font-weight:700;');
+            html += stickyTd(3, '', '', 'background:#e8f5e9;');
+            html += stickyTd(4, '', '', 'background:#e8f5e9;');
+            html += stickyTd(5, fmt(balance), 'amount', 'background:#e8f5e9;font-weight:700;');
+            if (showMinor) {
+                budgetKeys.forEach(function() { html += '<td></td>'; });
+            }
+            html += '</tr>';
+
+            allTxns.forEach(function(t) {
+                var isCancelled = t.category === 'Cancelled';
+                var isSubvention = t.category === 'Subvention';
+                var isBankCharge = (t.details || '').toLowerCase().indexOf('bank charge') >= 0 || t.category === 'Bank Charges';
+
+                if (!isCancelled) {
+                    balance = balance + (t.deposit || 0) - (t.payment || 0);
+                }
+
+                var rowClass = '';
+                var rowBg = '#fff';
+                if (isCancelled) { rowClass = 'cb-cancelled'; rowBg = '#fff'; }
+                else if (isSubvention) { rowClass = 'cb-subvention-row'; rowBg = '#fff9c4'; }
+                else if (isBankCharge) { rowClass = 'cb-bank-charges'; rowBg = '#fff'; }
+
+                html += '<tr class="' + rowClass + '">';
+                html += stickyTd(0, t.date || '', '', 'background:' + rowBg + ';');
+                html += stickyTd(1, t.cheque || '', '', 'background:' + rowBg + ';');
+                html += stickyTd(2, t.details || '', '', 'background:' + rowBg + ';');
+                html += stickyTd(3, t.deposit > 0 ? fmt(t.deposit) : '', 'amount', 'background:' + rowBg + ';');
+                html += stickyTd(4, t.payment > 0 ? fmt(t.payment) : (isCancelled ? '-' : ''), 'amount', 'background:' + rowBg + ';');
+                html += stickyTd(5, fmt(balance), 'amount', 'background:' + rowBg + ';');
+
+                // Category columns - show amount in matching column
+                if (showMinor) {
+                    budgetKeys.forEach(function(k) {
+                        if (!isCancelled && t.payment > 0 && t.category === k) {
+                            html += '<td class="amount">' + fmt(t.payment) + '</td>';
+                        } else if (!isCancelled && t.deposit > 0 && t.category === k) {
+                            html += '<td class="amount">' + fmt(t.deposit) + '</td>';
+                        } else {
+                            html += '<td></td>';
+                        }
+                    });
+                }
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+
+            // === Totals footer ===
+            html += '<tfoot><tr class="cb-total-row">';
+            html += stickyTd(0, '', '', 'background:#e3f2fd;');
+            html += stickyTd(1, '', '', 'background:#e3f2fd;');
+            html += stickyTd(2, 'Totals', '', 'background:#e3f2fd;text-align:right;font-weight:700;');
+            html += stickyTd(3, fmt(d.totalDeposits), 'amount', 'background:#e3f2fd;font-weight:700;');
+            html += stickyTd(4, fmt(d.totalPayments), 'amount', 'background:#e3f2fd;font-weight:700;');
+            html += stickyTd(5, fmt(balance), 'amount', 'background:#e3f2fd;font-weight:700;');
+            if (showMinor) {
+                budgetKeys.forEach(function(k) {
+                    html += '<td class="amount">' + (catSpent[k] > 0 ? fmt(catSpent[k]) : '') + '</td>';
+                });
+            }
+            html += '</tr></tfoot>';
+            html += '</table></div>';
+        }
     }
 
     if (type === 'transactions' || type === 'summary') {
@@ -4975,8 +5066,16 @@ function printReport() {
         printStyle.id = 'printPageStyle';
         document.head.appendChild(printStyle);
     }
+    var printSelEl = document.getElementById('reportPrintSelection');
+    var printSel = (printSelEl && type === 'cashbook') ? printSelEl.value : 'all';
     var css = '';
-    if (type === 'cashbook' && layout === 'fit-page') {
+    if (type === 'cashbook' && printSel === 'major') {
+        // Major columns only – portrait fits nicely
+        css += '@media print { @page { size: portrait; margin: 5mm; } }';
+    } else if (type === 'cashbook' && printSel === 'minor') {
+        // Minor columns stacked in 3 rows – landscape fits better
+        css += '@media print { @page { size: landscape; margin: 5mm; } }';
+    } else if (type === 'cashbook' && layout === 'fit-page') {
         // Portrait, single page – browser "Fit to page" scaling handles the rest
         css += '@media print { @page { size: portrait; margin: 5mm; } }';
     } else if (type === 'cashbook' && layout === 'full-size') {
