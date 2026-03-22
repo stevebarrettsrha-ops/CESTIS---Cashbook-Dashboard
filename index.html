@@ -373,8 +373,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-radius: var(--radius);
     padding: 1.5rem;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     max-height: 80vh;
+    contain: paint;
 }
 .report-preview .cb-scroll-wrapper {
     overflow-x: auto;
@@ -655,8 +656,11 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     #reportPreviewCard .card-title { display:none !important; }
     .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
     .report-sheet { box-shadow:none !important; padding:0 !important; margin:0 !important; max-width:100% !important; width:100% !important; }
-    .report-sheet table { page-break-inside:auto !important; font-size:7pt !important; }
+    .report-sheet table { page-break-inside:auto !important; font-size:7pt !important; border:1px solid #999 !important; }
     .report-sheet thead { display:table-header-group; }
+    .report-sheet thead th { border:1px solid #999 !important; border-bottom:2px solid #666 !important; background:#f3f4f6 !important; color:#111 !important; }
+    .report-sheet tbody td { border:1px solid #bbb !important; }
+    .report-sheet tfoot td { border:1px solid #999 !important; }
     .report-sheet tr { page-break-inside:avoid; }
     .report-sheet .report-header-block { margin-bottom:10px; padding-bottom:8px; }
     .report-sheet .report-title { font-size:14pt !important; }
@@ -2429,7 +2433,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             </div>
 
             <!-- Report Preview Area -->
-            <div class="card" id="reportPreviewCard">
+            <div class="card" id="reportPreviewCard" style="overflow:hidden;">
                 <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>📄 Report Preview</span>
                     <div style="display:flex; align-items:center; gap:0.5rem;">
