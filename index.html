@@ -5334,7 +5334,10 @@ function deleteBudgetLine(key) {
 function copyBudgetFromQuarter() {
     // Build list of available quarters that have budget data
     var options = [];
-    for (var fy = 2024; fy <= 2027; fy++) {
+    var currentYear = parseInt(activeFY.split('/')[0]);
+    var startFY = Math.min(2024, currentYear - 2);
+    var endFY = Math.max(2027, currentYear + 2);
+    for (var fy = startFY; fy <= endFY; fy++) {
         var fyStr = fy + '/' + (fy + 1);
         for (var q = 1; q <= 4; q++) {
             if (fyStr === activeFY && q === activeQ) continue;
@@ -5354,11 +5357,11 @@ function copyBudgetFromQuarter() {
     }
 
     if (options.length === 0) {
-        alert('No other quarters with budget data found.\n\nYou can add budget amounts manually using "+ Add Amount".');
+        alert('No other quarters with budget data found.\n\nYou can add budget amounts manually using "+ Add Budget Line".');
         return;
     }
 
-    var msg = 'Copy budget categories from which quarter?\n(Only category names will be copied, not amounts.)\n\n';
+    var msg = 'Copy budget lines from which quarter?\n(Budget lines and amounts will be copied.)\n\n';
     options.forEach(function(o, i) { msg += (i + 1) + '. ' + o.label + '\n'; });
     msg += '\nEnter the number (1-' + options.length + '):';
     if (Object.keys(BUDGET).length > 0) {
@@ -5387,16 +5390,13 @@ function copyBudgetFromQuarter() {
     }
 
     if (sourceData && sourceData.budget) {
-        // Copy only category names with zero amounts - user must enter amounts manually
-        var newBudget = {};
-        Object.keys(sourceData.budget).forEach(function(key) {
-            newBudget[key] = 0;
-        });
-        BUDGET = newBudget;
+        // Copy budget lines with their amounts from the source quarter
+        BUDGET = JSON.parse(JSON.stringify(sourceData.budget));
         BUDGET_LINE_SECTIONS = sourceData.sections ? JSON.parse(JSON.stringify(sourceData.sections)) : {};
         saveQuarterBudget();
         refreshAll();
-        alert('Budget categories copied from ' + selected.label + '. Please enter the budget amounts for each category.');
+        var totalCopied = Object.keys(BUDGET).length;
+        alert(totalCopied + ' budget line(s) copied from ' + selected.label + '.');
     } else {
         alert('No budget data found in the selected quarter.');
     }
