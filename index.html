@@ -2229,6 +2229,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 </div>
             </div>
             <div class="cloud-sync-info" id="cloudSyncInfo"></div>
+            <div class="cloud-sync-info" id="autoSyncStatus" style="font-size:0.65rem; margin-top:4px; color:var(--text3);">Auto-sync: OFF</div>
         </div>
         <div class="sidebar-logout">
             <div class="nav-item" onclick="handleLogout()"><span class="icon">&#x1F6AA;</span> Sign Out</div>
@@ -2946,6 +2947,8 @@ let lastSyncTime = localStorage.getItem('cestisLastSyncTime') ? new Date(localSt
 let lastSavedBy = null;
 let cloudFileTimestamp = null;
 let cloudSyncing = false;
+let autoSyncInterval = null;
+const AUTO_SYNC_INTERVAL_MS = 15000; // 15 seconds
 
 // Google Token Client for OAuth (Google Identity Services)
 let googleTokenClient = null;
@@ -3014,11 +3017,13 @@ function updateCloudUI(connected) {
         if (connectedDiv) connectedDiv.style.display = 'block';
         if (statusDot) statusDot.className = 'cloud-status-dot connected';
         if (statusText) statusText.textContent = 'Connected';
+        startAutoSync();
     } else {
         if (notConnectedDiv) notConnectedDiv.style.display = 'block';
         if (connectedDiv) connectedDiv.style.display = 'none';
         if (statusDot) statusDot.className = 'cloud-status-dot';
         if (statusText) statusText.textContent = 'Not connected';
+        stopAutoSync();
     }
     updateLastSyncDisplay();
 }
@@ -6404,6 +6409,8 @@ function renderMonthlyRecon() {
 
             const savedBank = loadReconBankBalance(reconFY, q, mKey);
             const bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+            const savedDepNotShown = loadDepositNotShown(reconFY, q, mKey);
+            const depNotShownVal = savedDepNotShown !== '' ? parseFloat(savedDepNotShown) : 0;
             const diff = !isNaN(bankVal) ? bankVal - closeBal : NaN;
             const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
             const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
@@ -6415,7 +6422,7 @@ function renderMonthlyRecon() {
                 if (preUnclearedList.indexOf(chq.id) >= 0) preUnclearedTotal += chq.payment;
             });
             fyTotalUncleared += preUnclearedTotal;
-            const preAdjustedDiff = !isNaN(bankVal) ? (bankVal - preUnclearedTotal) - closeBal : NaN;
+            const preAdjustedDiff = !isNaN(bankVal) ? (bankVal + depNotShownVal - preUnclearedTotal) - closeBal : NaN;
 
             // Status based on adjusted difference (bank balance minus uncleared cheques vs cashbook)
             let statusClass, statusText;
@@ -6479,8 +6486,8 @@ function renderMonthlyRecon() {
                 cardsHtml += '</tbody></table></div>';
             }
 
-            // Adjusted bank balance = bank statement - uncleared cheques
-            var adjustedBankBal = !isNaN(bankVal) ? bankVal - preUnclearedTotal : NaN;
+            // Adjusted bank balance = bank statement + deposits not shown - uncleared cheques
+            var adjustedBankBal = !isNaN(bankVal) ? bankVal + depNotShownVal - preUnclearedTotal : NaN;
             var adjustedDiff = !isNaN(adjustedBankBal) ? adjustedBankBal - closeBal : NaN;
             var adjustedDiffDisplay = !isNaN(adjustedDiff) ? ((adjustedDiff >= 0 ? '' : '-') + fmt(Math.abs(adjustedDiff))) : '—';
             var adjustedDiffColor = !isNaN(adjustedDiff) ? (Math.abs(adjustedDiff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
@@ -6492,6 +6499,12 @@ function renderMonthlyRecon() {
                             'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
                             'placeholder="Enter bank balance">' +
                         '<span class="recon-diff" style="color:' + diffColor + ';">Raw Diff: ' + diffDisplay + '</span>' +
+                    '</div>' +
+                    '<div class="recon-month-bank">' +
+                        '<label>Deposit not shown on statement:</label>' +
+                        '<input type="number" step="0.01" value="' + (savedDepNotShown !== '' ? savedDepNotShown : '') + '" ' +
+                            'onchange="onDepositNotShownInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
+                            'placeholder="0.00">' +
                     '</div>';
 
             // Bank Reconciliation Statement section
@@ -6502,6 +6515,13 @@ function renderMonthlyRecon() {
                         '<span class="rs-label">Balance per Bank Statement</span>' +
                         '<span class="rs-value">' + fmt(bankVal) + '</span>' +
                     '</div>';
+
+                if (depNotShownVal > 0) {
+                    cardsHtml += '<div class="recon-statement-line">' +
+                        '<span class="rs-label">Add: Deposit Not Shown on Statement</span>' +
+                        '<span class="rs-value" style="color:var(--green);">+ ' + fmt(depNotShownVal) + '</span>' +
+                    '</div>';
+                }
 
                 if (unclearedCheques.length > 0) {
                     cardsHtml += '<div class="recon-statement-line">' +
@@ -6594,6 +6614,24 @@ function toggleUnclearedCheque(fy, q, monthKey, chequeId) {
     if (idx >= 0) list.splice(idx, 1);
     else list.push(chequeId);
     saveUnclearedCheques(fy, q, monthKey, list);
+    renderMonthlyRecon();
+}
+
+// Deposit not shown on statement storage
+function getDepositNotShownKey(fy, q, monthKey) {
+    return 'cestis_recon_depnotshown_' + fy + '_Q' + q + '_' + monthKey;
+}
+
+function saveDepositNotShown(fy, q, monthKey, value) {
+    try { localStorage.setItem(getDepositNotShownKey(fy, q, monthKey), value); } catch(e) {}
+}
+
+function loadDepositNotShown(fy, q, monthKey) {
+    try { return localStorage.getItem(getDepositNotShownKey(fy, q, monthKey)) || ''; } catch(e) { return ''; }
+}
+
+function onDepositNotShownInput(fy, q, monthKey, value) {
+    saveDepositNotShown(fy, q, monthKey, value);
     renderMonthlyRecon();
 }
 
@@ -6731,19 +6769,20 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     // Bank balance and uncleared cheques
     var savedBank = loadReconBankBalance(fy, q, mKey);
     var bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+    var savedDepNotShown = loadDepositNotShown(fy, q, mKey);
+    var depNotShownVal = savedDepNotShown !== '' ? parseFloat(savedDepNotShown) : 0;
     var unclearedList = loadUnclearedCheques(fy, q, mKey);
     var unclearedCheques = monthCheques.filter(function(c) { return unclearedList.indexOf(c.id) >= 0; });
     var unclearedTotal = unclearedCheques.reduce(function(s,c){ return s + (c.payment||0); }, 0);
-    var adjustedBank = !isNaN(bankVal) ? bankVal - unclearedTotal : NaN;
+    var bankPlusDeposits = !isNaN(bankVal) ? bankVal + depNotShownVal : NaN;
+    var adjustedBank = !isNaN(bankVal) ? bankVal + depNotShownVal - unclearedTotal : NaN;
     var diff = !isNaN(adjustedBank) ? adjustedBank - closeBal : NaN;
     var diffClass = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'matched' : 'unmatched') : '';
 
-    // Total cheques on bank statement = bank side total (deposits visible to bank)
-    var bankTotalA = !isNaN(bankVal) ? bankVal : 0;
-
     // Build HTML matching the exact image layout
     var bankDisplay = !isNaN(bankVal) ? fmt(bankVal) : '$ -';
-    var bankTotalDisplay = bankDisplay;
+    var depNotShownDisplay = depNotShownVal > 0 ? fmt(depNotShownVal) : '$ -';
+    var bankTotalDisplay = !isNaN(bankPlusDeposits) ? fmt(bankPlusDeposits) : bankDisplay;
     var adjustedDisplay = !isNaN(adjustedBank) ? fmt(adjustedBank) : '$ -';
 
     var h = '<div class="recon-doc-page">';
@@ -6784,7 +6823,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     h += '<td class="rdoc-bt-left rdoc-bt-label">Deposit during month<br>Subvention</td>';
     h += '<td class="rdoc-bt-left rdoc-bt-val">' + (monthDeposits > 0 ? fmt(monthDeposits) : '$ -') + '</td>';
     h += '<td class="rdoc-bt-right rdoc-bt-label">Deposit made not shown on<br>statement</td>';
-    h += '<td class="rdoc-bt-right rdoc-bt-val">$ -</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-val">' + depNotShownDisplay + '</td>';
     h += '</tr>';
     // Row 3: Other Deposits / spacer
     h += '<tr>';
@@ -7397,23 +7436,284 @@ function checkCloudAndNotify(reason){
 }
 
 // Monitor token expiry in real time
+let tokenExpiryWarningShown = false;
+
 function startCloudMonitor(){
   // Clear any previous interval
   if (cloudCheckInterval) clearInterval(cloudCheckInterval);
+  tokenExpiryWarningShown = false;
 
-  // Check every 60 seconds if the token has expired
+  // Check every 30 seconds for token expiry and 5-minute warning
   cloudCheckInterval = setInterval(function(){
     if (isCloudConnected && googleAccessToken) {
       const savedExpiry = localStorage.getItem('cestisGoogleTokenExpiry');
-      if (savedExpiry && new Date(savedExpiry) <= new Date()) {
-        // Token just expired
+      if (!savedExpiry) return;
+
+      const expiryDate = new Date(savedExpiry);
+      const now = new Date();
+      const msRemaining = expiryDate - now;
+
+      if (msRemaining <= 0) {
+        // Token has expired
+        tokenExpiryWarningShown = false;
         googleAccessToken = null;
         isCloudConnected = false;
         updateCloudUI(false);
         checkCloudAndNotify('token_expired');
+      } else if (msRemaining <= 300000 && !tokenExpiryWarningShown) {
+        // 5 minutes or less remaining — warn user
+        tokenExpiryWarningShown = true;
+        var minsLeft = Math.ceil(msRemaining / 60000);
+        showCloudNotification('warn', 'Session Expiring Soon',
+          'Your Google Drive session expires in ' + minsLeft + ' minute' + (minsLeft > 1 ? 's' : '') + '. ' +
+          'Reconnect now to avoid losing cloud sync.',
+          true, 0);
       }
     }
-  }, 60000);
+  }, 30000);
+}
+
+// ============================================================
+// AUTO-SYNC: Merge & Save to Cloud every 15 seconds
+// ============================================================
+function startAutoSync() {
+    if (autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(autoMergeAndSave, AUTO_SYNC_INTERVAL_MS);
+    updateAutoSyncStatusUI(true);
+}
+
+function stopAutoSync() {
+    if (autoSyncInterval) {
+        clearInterval(autoSyncInterval);
+        autoSyncInterval = null;
+    }
+    updateAutoSyncStatusUI(false);
+}
+
+function updateAutoSyncStatusUI(active) {
+    var el = document.getElementById('autoSyncStatus');
+    if (el) {
+        el.textContent = active ? 'Auto-sync: ON (every 15s)' : 'Auto-sync: OFF';
+        el.style.color = active ? 'var(--green, #4CAF50)' : 'var(--text3, #888)';
+    }
+}
+
+async function autoMergeAndSave() {
+    // Skip if not connected, already syncing, or offline
+    if (!isCloudConnected || !googleAccessToken || cloudSyncing || !navigator.onLine) return;
+
+    // Check token expiry before attempting sync
+    var savedExpiry = localStorage.getItem('cestisGoogleTokenExpiry');
+    if (savedExpiry && new Date(savedExpiry) <= new Date()) return;
+
+    cloudSyncing = true;
+    setCloudSyncing(true);
+
+    try {
+        // Ensure we have the correct file ID
+        if (!cloudFileId) await findExistingBackupFile();
+
+        // --- STEP 1: Merge from cloud (pull changes from other users) ---
+        if (cloudFileId) {
+            var pullResponse = await fetch(
+                'https://www.googleapis.com/drive/v3/files/' + cloudFileId + '?alt=media',
+                { headers: { 'Authorization': 'Bearer ' + googleAccessToken } }
+            );
+
+            if (pullResponse.ok) {
+                var backupData = await pullResponse.json();
+                if (backupData.data && backupData.version) {
+                    silentMerge(backupData);
+                }
+            } else if (pullResponse.status === 401 || pullResponse.status === 403) {
+                throw new Error('invalid_token');
+            }
+        }
+
+        // --- STEP 2: Save to cloud (push local changes) ---
+        var backupPayload = prepareBackupData();
+        var jsonContent = JSON.stringify(backupPayload, null, 2);
+        var blob = new Blob([jsonContent], { type: 'application/json' });
+
+        var pushResponse;
+        if (cloudFileId) {
+            pushResponse = await fetch(
+                'https://www.googleapis.com/upload/drive/v3/files/' + cloudFileId + '?uploadType=media',
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + googleAccessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: blob
+                }
+            );
+        } else {
+            var metadata = {
+                name: GOOGLE_DRIVE_CONFIG.BACKUP_FILE_NAME,
+                parents: [GOOGLE_DRIVE_CONFIG.FOLDER_ID],
+                mimeType: 'application/json'
+            };
+            var formData = new FormData();
+            formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            formData.append('file', blob);
+
+            pushResponse = await fetch(
+                'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + googleAccessToken },
+                    body: formData
+                }
+            );
+
+            if (pushResponse.ok) {
+                var result = await pushResponse.json();
+                cloudFileId = result.id;
+                localStorage.setItem('cestisCloudFileId', cloudFileId);
+                localStorage.setItem('cestisCloudFolderId', GOOGLE_DRIVE_CONFIG.FOLDER_ID);
+            }
+        }
+
+        if (pushResponse.ok) {
+            lastSyncTime = new Date();
+            localStorage.setItem('cestisLastSyncTime', lastSyncTime.toISOString());
+            lastSavedBy = currentUser ? currentUser.fullName : 'Unknown';
+            cloudFileTimestamp = new Date().toISOString();
+            updateLastSyncDisplay();
+            updateLastSavedByDisplay();
+        } else if (pushResponse.status === 401 || pushResponse.status === 403) {
+            // Auth failure on push — token is invalid
+            throw new Error('invalid_token');
+        }
+
+    } catch (error) {
+        console.error('Auto-sync error:', error);
+        if (error.message && (error.message.includes('invalid_token') || error.message.includes('Invalid Credentials'))) {
+            // Token expired — disconnect and notify user
+            googleAccessToken = null;
+            isCloudConnected = false;
+            updateCloudUI(false);
+            showCloudNotification('error', 'Cloud Disconnected',
+                'Your Google Drive session has expired. Auto-sync has stopped. Please reconnect to resume cloud backup.',
+                true, 0);
+        } else if (!navigator.onLine) {
+            showCloudNotification('error', 'Cloud Sync Failed',
+                'You are offline. Auto-sync will resume when your internet connection is restored.',
+                false, 15);
+        }
+    } finally {
+        cloudSyncing = false;
+        setCloudSyncing(false);
+    }
+}
+
+// Silent merge: adds new items from cloud without UI prompts
+function silentMerge(backupData) {
+    var d = backupData.data;
+    var changed = false;
+
+    // Merge quarterly transaction data
+    if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
+        Object.keys(d.quarterlyTransactions).forEach(function(key) {
+            var cloudData = d.quarterlyTransactions[key];
+            var localRaw = localStorage.getItem(key);
+            if (!localRaw) {
+                // Quarter not present locally — add it entirely
+                try { localStorage.setItem(key, JSON.stringify(cloudData)); changed = true; } catch(e) {}
+            } else {
+                // Merge individual transactions by id
+                try {
+                    var localData = JSON.parse(localRaw);
+                    if (Array.isArray(cloudData.transactions) && Array.isArray(localData.transactions)) {
+                        var localIds = new Set(localData.transactions.map(function(t) { return t.id; }));
+                        var added = 0;
+                        cloudData.transactions.forEach(function(ct) {
+                            if (!localIds.has(ct.id)) {
+                                localData.transactions.push(ct);
+                                added++;
+                            }
+                        });
+                        if (added > 0) {
+                            localStorage.setItem(key, JSON.stringify(localData));
+                            changed = true;
+                        }
+                    }
+                } catch(e) {}
+            }
+        });
+    }
+
+    // Merge active in-memory transactions
+    if (Array.isArray(d.transactions)) {
+        var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
+        d.transactions.forEach(function(cloudTxn) {
+            if (!localTxnIds.has(cloudTxn.id)) {
+                transactions.push(cloudTxn);
+                changed = true;
+            }
+        });
+        if (changed) {
+            nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+            saveToStorage();
+        }
+    }
+
+    // Merge quarterly budgets
+    if (d.quarterlyBudgets && typeof d.quarterlyBudgets === 'object') {
+        Object.keys(d.quarterlyBudgets).forEach(function(key) {
+            if (!localStorage.getItem(key)) {
+                try { localStorage.setItem(key, JSON.stringify(d.quarterlyBudgets[key])); } catch(e) {}
+            }
+        });
+    }
+
+    // Merge budget for active quarter
+    if (d.budget && typeof d.budget === 'object') {
+        Object.keys(d.budget).forEach(function(cat) {
+            if (BUDGET[cat] === undefined) {
+                BUDGET[cat] = d.budget[cat];
+                changed = true;
+            }
+        });
+        if (d.budgetSections && typeof d.budgetSections === 'object') {
+            Object.keys(d.budgetSections).forEach(function(cat) {
+                if (!BUDGET_LINE_SECTIONS[cat]) {
+                    BUDGET_LINE_SECTIONS[cat] = d.budgetSections[cat];
+                }
+            });
+        }
+    }
+
+    // Merge staff members
+    if (Array.isArray(d.staffMembers)) {
+        var localStaffNames = staffMembers.map(function(s) { return (s.name || '').toLowerCase(); });
+        d.staffMembers.forEach(function(cloudStaff) {
+            if (!localStaffNames.includes((cloudStaff.name || '').toLowerCase())) {
+                staffMembers.push(cloudStaff);
+                changed = true;
+            }
+        });
+        if (changed) {
+            try { localStorage.setItem('cestisStaffMembers', JSON.stringify(staffMembers)); } catch(e) {}
+        }
+    }
+
+    // Merge time records
+    if (Array.isArray(d.timeRecords)) {
+        var localRecordKeys = new Set(timeRecords.map(function(r) {
+            return (r.date || '') + '|' + (r.staffId || r.name || '');
+        }));
+        d.timeRecords.forEach(function(cloudRecord) {
+            var key = (cloudRecord.date || '') + '|' + (cloudRecord.staffId || cloudRecord.name || '');
+            if (!localRecordKeys.has(key)) {
+                timeRecords.push(cloudRecord);
+            }
+        });
+        try { localStorage.setItem('cestisTimeRecords', JSON.stringify(timeRecords)); } catch(e) {}
+    }
+
+    if (changed) refreshAll();
 }
 
 // Listen for browser online/offline events
