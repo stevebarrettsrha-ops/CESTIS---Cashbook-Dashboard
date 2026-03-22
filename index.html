@@ -363,8 +363,15 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     background: var(--surface2);
     border-radius: var(--radius);
     padding: 1.5rem;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     max-height: 80vh;
+}
+.report-preview .cb-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    scrollbar-width: auto;
 }
 .report-sheet {
     background: #fff;
@@ -2395,7 +2402,13 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="card" id="reportPreviewCard">
                 <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>📄 Report Preview</span>
-                    <span class="badge" id="reportPreviewBadge">Transactions Report</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div id="reportScrollBtns" style="display:none;">
+                            <button class="btn btn-ghost btn-sm" onclick="scrollReportLeft()" title="Scroll Left">◀ Scroll Left</button>
+                            <button class="btn btn-ghost btn-sm" onclick="scrollReportRight()" title="Scroll Right">Scroll Right ▶</button>
+                        </div>
+                        <span class="badge" id="reportPreviewBadge">Transactions Report</span>
+                    </div>
                 </div>
                 <div id="reportPreviewArea" class="report-preview">
                     <div class="report-sheet">
@@ -4614,6 +4627,16 @@ function renderReportsPage() {
     generateReport();
 }
 
+function scrollReportLeft() {
+    var wrapper = document.querySelector('#reportContent .cb-scroll-wrapper');
+    if (wrapper) wrapper.scrollBy({ left: -300, behavior: 'smooth' });
+}
+
+function scrollReportRight() {
+    var wrapper = document.querySelector('#reportContent .cb-scroll-wrapper');
+    if (wrapper) wrapper.scrollBy({ left: 300, behavior: 'smooth' });
+}
+
 function generateReport() {
     var typeEl = document.getElementById('reportType');
     if (!typeEl) return;
@@ -4625,9 +4648,11 @@ function generateReport() {
     var metaEl = document.getElementById('reportMetaLine');
     var contentEl = document.getElementById('reportContent');
 
-    // Show/hide print layout option (only for cashbook)
+    // Show/hide print layout option and scroll buttons (only for cashbook)
     var printLayoutGroup = document.getElementById('printLayoutGroup');
     if (printLayoutGroup) printLayoutGroup.style.display = (type === 'cashbook') ? '' : 'none';
+    var scrollBtns = document.getElementById('reportScrollBtns');
+    if (scrollBtns) scrollBtns.style.display = (type === 'cashbook') ? '' : 'none';
     if (!contentEl) return;
 
     var d = calcTotals();
