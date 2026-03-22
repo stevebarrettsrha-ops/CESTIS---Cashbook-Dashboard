@@ -415,20 +415,28 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-collapse: collapse;
     margin-bottom: 16px;
     font-size: 8.5pt;
+    border: 1px solid #ccc;
 }
 .report-sheet thead th {
     background: #f3f4f6;
     color: #111;
     padding: 5px 6px;
+    border: 1px solid #ccc;
     border-bottom: 2px solid #999;
     text-align: left;
     font-weight: 600;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word;
 }
 .report-sheet tbody td {
     padding: 4px 6px;
-    border-bottom: 1px solid #ddd;
+    border: 1px solid #ddd;
     color: #222;
+}
+.report-sheet tfoot td {
+    padding: 5px 6px;
+    border: 1px solid #ccc;
+    font-weight: 700;
 }
 .report-sheet tbody tr:nth-child(even) { background: #fafafa; }
 .report-sheet .report-section-title {
