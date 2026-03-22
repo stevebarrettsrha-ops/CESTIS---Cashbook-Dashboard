@@ -499,6 +499,149 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .cb-scroll-wrapper .cb-cancelled td.cb-sticky { background: #fff; }
 .cb-scroll-wrapper .cb-total-row td.cb-sticky { background: #e3f2fd; }
 
+/* ---- Recon Live Preview ---- */
+.recon-preview-overlay {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,0.85); overflow-y:auto; padding:1rem;
+}
+.recon-preview-overlay.show { display:block; }
+.recon-preview-toolbar {
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:.75rem 1.25rem; margin-bottom:1rem; gap:.75rem; flex-wrap:wrap;
+}
+.recon-preview-toolbar .rpt-title { font-size:.9375rem; font-weight:700; color:var(--accent2); }
+.recon-preview-toolbar .rpt-actions { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.recon-preview-toolbar .rpt-month-nav { display:flex; gap:.375rem; align-items:center; }
+.recon-preview-toolbar select {
+    background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-size:.8125rem; padding:.375rem .5rem; font-family:var(--sans);
+}
+.recon-preview-pages { max-width:820px; margin:0 auto; }
+
+/* Recon document page (white paper look) */
+.recon-doc-page {
+    background:#fff; color:#000; width:100%; max-width:800px; margin:0 auto 2rem;
+    padding:40px 48px 36px; box-shadow:0 4px 24px rgba(0,0,0,0.5); border-radius:4px;
+    font-family:'DM Sans', Arial, sans-serif; font-size:10pt; line-height:1.4;
+    page-break-after:always; position:relative;
+}
+.recon-doc-page:last-child { page-break-after:auto; }
+.rdoc-header {
+    display:flex; align-items:flex-start; gap:16px; margin-bottom:10px;
+    border-bottom:2px solid #000; padding-bottom:10px;
+}
+.rdoc-logo { width:72px; height:auto; flex-shrink:0; }
+.rdoc-logo img { width:72px; height:auto; display:block; }
+.rdoc-logo-placeholder {
+    width:72px; height:72px; border:2px dashed #999; border-radius:4px;
+    display:flex; align-items:center; justify-content:center; font-size:7pt;
+    color:#999; text-align:center; cursor:pointer;
+}
+.rdoc-header-text { flex:1; text-align:center; }
+.rdoc-header-text h2 { font-size:13pt; font-weight:700; margin:0; letter-spacing:1px; text-transform:uppercase; }
+.rdoc-header-text h3 { font-size:11pt; font-weight:600; margin:2px 0; text-transform:uppercase; }
+.rdoc-header-text h4 { font-size:11pt; font-weight:700; margin:2px 0; letter-spacing:3px; text-transform:uppercase; }
+
+/* Project / Month row */
+.rdoc-info-row {
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:1px solid #000; padding:6px 0; margin-bottom:12px; font-size:10pt;
+}
+.rdoc-info-row b { font-weight:700; }
+.rdoc-info-row .rdoc-info-val { border-bottom:1px solid #000; padding:0 4px; min-width:120px; display:inline-block; }
+
+/* Two-column balance section */
+.rdoc-balance-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:0; margin-bottom:12px;
+    border:1px solid #000;
+}
+.rdoc-bal-left, .rdoc-bal-right { padding:0; }
+.rdoc-bal-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:5px 10px; border-bottom:1px solid #ccc; font-size:9.5pt; min-height:28px;
+}
+.rdoc-bal-row.rdoc-total { border-top:2px solid #000; border-bottom:2px solid #000; font-weight:700; background:#f5f5f5; }
+.rdoc-bal-left { border-right:1px solid #000; }
+.rdoc-bal-label { flex:1; }
+.rdoc-bal-val { font-weight:600; text-align:right; min-width:100px; font-family:'JetBrains Mono', monospace; }
+
+/* Cheques issued section */
+.rdoc-cheques-section { margin-bottom:12px; }
+.rdoc-cheques-section h4 { font-size:10pt; font-weight:700; margin-bottom:6px; text-decoration:underline; }
+.rdoc-cheques-grid {
+    display:grid; grid-template-columns:200px 1fr; gap:0; align-items:start;
+}
+.rdoc-cheques-summary { font-size:9.5pt; }
+.rdoc-cheques-summary .rdoc-chq-line {
+    display:flex; justify-content:space-between; padding:3px 0; gap:8px;
+}
+.rdoc-cheques-summary .rdoc-chq-line .rdoc-chq-label { flex:1; }
+.rdoc-cheques-summary .rdoc-chq-line .rdoc-chq-val {
+    font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right; min-width:90px;
+    border-bottom:1px solid #000;
+}
+.rdoc-cheques-summary .rdoc-chq-line.rdoc-chq-total .rdoc-chq-val { border-bottom:2px solid #000; font-weight:700; }
+
+/* Uncleared cheques table */
+.rdoc-uncleared-table { font-size:9pt; width:100%; }
+.rdoc-uncleared-caption {
+    font-size:8pt; font-style:italic; text-align:center; margin-bottom:4px; color:#333;
+}
+.rdoc-uncleared-table table { border-collapse:collapse; width:100%; }
+.rdoc-uncleared-table th {
+    background:#d4d4d4; color:#000; padding:4px 8px; border:1px solid #999;
+    font-weight:700; font-size:8.5pt; text-align:center;
+}
+.rdoc-uncleared-table td {
+    padding:4px 8px; border:1px solid #ccc; font-family:'JetBrains Mono', monospace; font-size:8.5pt;
+}
+.rdoc-uncleared-table td.amount { text-align:right; }
+.rdoc-uncleared-table td.center { text-align:center; }
+.rdoc-uncleared-table tfoot td { font-weight:700; border-top:2px solid #000; }
+
+/* Bottom balance row */
+.rdoc-bottom-balance {
+    display:grid; grid-template-columns:1fr 1fr; gap:0;
+    border:1px solid #000; margin-bottom:4px;
+}
+.rdoc-bottom-bal-cell {
+    display:flex; align-items:center; gap:8px; padding:8px 10px; font-size:10pt;
+}
+.rdoc-bottom-bal-cell:first-child { border-right:1px solid #000; }
+.rdoc-bottom-bal-cell b { font-weight:700; }
+.rdoc-bottom-bal-cell .rdoc-bal-val {
+    background:#fef9c3; padding:3px 8px; border:1px solid #999; font-weight:700;
+    font-family:'JetBrains Mono', monospace; font-size:10pt;
+}
+.rdoc-difference {
+    text-align:center; font-weight:700; font-size:11pt; padding:4px 0; margin-bottom:10px;
+    font-family:'JetBrains Mono', monospace;
+}
+.rdoc-difference.matched { color:#16a34a; }
+.rdoc-difference.unmatched { color:#dc2626; }
+
+/* Signature lines */
+.rdoc-signatures { margin-top:14px; font-size:9.5pt; }
+.rdoc-sig-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:10px;
+}
+.rdoc-sig-line {
+    display:flex; align-items:baseline; gap:4px;
+}
+.rdoc-sig-line b { white-space:nowrap; }
+.rdoc-sig-line .rdoc-sig-blank {
+    flex:1; border-bottom:1px solid #000; min-width:80px; height:1em;
+}
+.rdoc-footer-note {
+    margin-top:14px; font-size:8.5pt; font-style:italic; color:#444;
+    border-top:1px solid #ccc; padding-top:6px;
+}
+.rdoc-version {
+    margin-top:10px; font-size:7pt; color:#999; border-top:1px solid #eee; padding-top:4px;
+}
+
 /* Print */
 @media print {
     /* ---- Hide non-printable UI ---- */
@@ -679,6 +822,34 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     .cb-minor-table .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
     /* Print landscape hint for cashbook */
     @page { margin: 10mm; }
+
+    /* ---- Recon Live Preview print ---- */
+    .recon-preview-overlay.show {
+        display:block !important; position:static !important; background:transparent !important;
+        padding:0 !important; overflow:visible !important;
+    }
+    .recon-preview-overlay .recon-preview-toolbar { display:none !important; }
+    .recon-preview-overlay .recon-doc-page {
+        box-shadow:none !important; margin:0 !important; padding:24px 28px !important;
+        max-width:100% !important; width:100% !important;
+        page-break-after:always !important; break-after:page !important;
+    }
+    .recon-preview-overlay .recon-doc-page:last-child { page-break-after:auto !important; break-after:auto !important; }
+    .recon-preview-overlay .rdoc-header { border-bottom:2px solid #000 !important; }
+    .recon-preview-overlay .rdoc-balance-grid { border:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-bal-left { border-right:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-bal-row { border-bottom:1px solid #ccc !important; }
+    .recon-preview-overlay .rdoc-bal-row.rdoc-total { border-top:2px solid #000 !important; border-bottom:2px solid #000 !important; background:#f5f5f5 !important; }
+    .recon-preview-overlay .rdoc-bottom-balance { border:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-bottom-bal-cell:first-child { border-right:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-bottom-bal-cell .rdoc-bal-val { background:#fef9c3 !important; border:1px solid #999 !important; }
+    .recon-preview-overlay .rdoc-uncleared-table th { background:#d4d4d4 !important; border:1px solid #999 !important; }
+    .recon-preview-overlay .rdoc-uncleared-table td { border:1px solid #ccc !important; }
+    .recon-preview-overlay .rdoc-difference.matched { color:#16a34a !important; }
+    .recon-preview-overlay .rdoc-difference.unmatched { color:#dc2626 !important; }
+    /* Hide all other content when printing recon preview */
+    body.printing-recon-preview .app { display:none !important; }
+    body.printing-recon-preview .recon-preview-overlay.show { display:block !important; }
 }
 
 /* Budget Amounts Styles */
@@ -2359,6 +2530,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="page-header">
                 <div><h2>Monthly Bank Reconciliation</h2><div class="subtitle">Month-by-month reconciliation across fiscal year quarters</div></div>
                 <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openReconPreview()">📄 Live Preview Recon</button>
                     <button class="btn btn-ghost" onclick="showPageDirect('reconciliation')">← Back to Reconciliation</button>
                 </div>
             </div>
@@ -2684,6 +2856,27 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <button class="btn btn-success" onclick="saveCopyBudgetLine()">Copy</button>
         </div>
     </div>
+</div>
+
+<!-- ====== RECON LIVE PREVIEW OVERLAY ====== -->
+<div class="recon-preview-overlay" id="reconPreviewOverlay">
+    <div class="recon-preview-toolbar">
+        <span class="rpt-title">Live Preview Recon</span>
+        <div class="rpt-actions">
+            <div class="rpt-month-nav">
+                <label style="font-size:.75rem;color:var(--text2);">Month:</label>
+                <select id="reconPreviewMonth" onchange="renderReconPreviewMonth()">
+                    <option value="all">All Months</option>
+                </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('reconLogoInput').click()">Upload Logo</button>
+            <input type="file" id="reconLogoInput" accept="image/*" style="display:none" onchange="handleReconLogoUpload(event)">
+            <button class="btn btn-ghost btn-sm" onclick="removeReconLogo()">Remove Logo</button>
+            <button class="btn btn-primary btn-sm" onclick="printReconPreview()">Print / Save PDF</button>
+            <button class="btn btn-danger btn-sm" onclick="closeReconPreview()">Close</button>
+        </div>
+    </div>
+    <div class="recon-preview-pages" id="reconPreviewPages"></div>
 </div>
 
 <script>
@@ -6362,6 +6555,273 @@ function toggleUnclearedCheque(fy, q, monthKey, chequeId) {
     else list.push(chequeId);
     saveUnclearedCheques(fy, q, monthKey, list);
     renderMonthlyRecon();
+}
+
+// ============================================================
+// RECON LIVE PREVIEW
+// ============================================================
+const RECON_LOGO_KEY = 'cestis_recon_logo';
+const RECON_ORG_LINE1 = 'HEART/NSTA TRUST';
+const RECON_ORG_LINE2 = 'COMMUNITY TRAINING INTERVENTIONS';
+const RECON_ORG_LINE3 = 'BANK RECONCILIATION';
+const RECON_PROJECT_NAME = 'HAZARD STC - CESTIS';
+
+function getReconLogo() {
+    try { return localStorage.getItem(RECON_LOGO_KEY) || ''; } catch(e) { return ''; }
+}
+
+function handleReconLogoUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 500000) { alert('Logo file must be under 500KB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try { localStorage.setItem(RECON_LOGO_KEY, e.target.result); } catch(ex) { alert('Could not save logo.'); }
+        renderReconPreviewMonth();
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+function removeReconLogo() {
+    try { localStorage.removeItem(RECON_LOGO_KEY); } catch(e) {}
+    renderReconPreviewMonth();
+}
+
+function openReconPreview() {
+    // Build month selector options
+    var sel = document.getElementById('reconPreviewMonth');
+    sel.innerHTML = '<option value="all">All Months</option>';
+    [1,2,3,4].forEach(function(q) {
+        var qm = getQuarterMeta(q);
+        var calYear = getQuarterCalendarYear(reconFY, q);
+        qm.months.forEach(function(mKey, mi) {
+            sel.innerHTML += '<option value="' + q + '-' + mKey + '">' + qm.monthNames[mi] + ' ' + calYear + '</option>';
+        });
+    });
+    renderReconPreviewMonth();
+    document.getElementById('reconPreviewOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeReconPreview() {
+    document.getElementById('reconPreviewOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function renderReconPreviewMonth() {
+    var sel = document.getElementById('reconPreviewMonth').value;
+    var container = document.getElementById('reconPreviewPages');
+    var html = '';
+
+    if (sel === 'all') {
+        // Generate all months
+        [1,2,3,4].forEach(function(q) {
+            var qm = getQuarterMeta(q);
+            qm.months.forEach(function(mKey, mi) {
+                html += generateReconDocPage(reconFY, q, mKey, qm.monthNames[mi], qm.monthNums[mi]);
+            });
+        });
+    } else {
+        var parts = sel.split('-');
+        var q = parseInt(parts[0]);
+        var mKey = parts[1];
+        var qm = getQuarterMeta(q);
+        var mi = qm.months.indexOf(mKey);
+        html = generateReconDocPage(reconFY, q, mKey, qm.monthNames[mi], qm.monthNums[mi]);
+    }
+
+    container.innerHTML = html;
+}
+
+function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
+    var calYear = getQuarterCalendarYear(fy, q);
+    var data = loadQuarterDataForRecon(fy, q);
+    var activeTxns = data.transactions.filter(function(t) { return t.category !== 'Cancelled'; });
+    var logo = getReconLogo();
+
+    // Calculate running balance up to this month
+    var qm = getQuarterMeta(q);
+    var runBal = data.openingBalance;
+
+    // We need the opening balance for THIS month, so process earlier months first
+    // But we also need to consider prior quarters in the FY
+    var openBal = data.openingBalance;
+    var priorQuarters = [];
+    for (var pq = 1; pq < q; pq++) priorQuarters.push(pq);
+
+    // Add all prior quarter net movement to opening balance
+    var fyOpenBal = 0;
+    priorQuarters.forEach(function(priorQ) {
+        var priorData = loadQuarterDataForRecon(fy, priorQ);
+        var priorActive = priorData.transactions.filter(function(t) { return t.category !== 'Cancelled'; });
+        if (priorQ === 1) fyOpenBal = priorData.openingBalance;
+        var dep = priorActive.reduce(function(s,t){ return s + (t.deposit||0); }, 0);
+        var pay = priorActive.reduce(function(s,t){ return s + (t.payment||0); }, 0);
+        // The next quarter's opening = prior opening + dep - pay
+        // But loadQuarterDataForRecon returns per-quarter opening, so just use it directly
+    });
+
+    // Use the quarter's opening balance and process months in order
+    runBal = data.openingBalance;
+    var thisMonthIdx = qm.months.indexOf(mKey);
+    for (var i = 0; i < thisMonthIdx; i++) {
+        var prevMonthNum = qm.monthNums[i];
+        var prevTxns = activeTxns.filter(function(t) {
+            return t.date && parseInt(t.date.split('-')[1]) === prevMonthNum;
+        });
+        var prevDep = prevTxns.reduce(function(s,t){ return s + (t.deposit||0); }, 0);
+        var prevPay = prevTxns.reduce(function(s,t){ return s + (t.payment||0); }, 0);
+        runBal += prevDep - prevPay;
+    }
+    openBal = runBal;
+
+    // This month's transactions
+    var monthTxns = activeTxns.filter(function(t) {
+        return t.date && parseInt(t.date.split('-')[1]) === monthNum;
+    });
+    var monthDeposits = monthTxns.reduce(function(s,t){ return s + (t.deposit||0); }, 0);
+    var monthPayments = monthTxns.reduce(function(s,t){ return s + (t.payment||0); }, 0);
+    var monthBankCharges = monthTxns.filter(function(t){ return t.category === 'Bank Charges'; }).reduce(function(s,t){ return s + (t.payment||0); }, 0);
+    var monthCheques = monthTxns.filter(function(t){ return t.cheque && t.payment > 0; });
+    var chequesTotal = monthCheques.reduce(function(s,t){ return s + (t.payment||0); }, 0);
+    var closeBal = openBal + monthDeposits - monthPayments;
+    var totalA = openBal + monthDeposits;
+
+    // Bank balance and uncleared cheques
+    var savedBank = loadReconBankBalance(fy, q, mKey);
+    var bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+    var unclearedList = loadUnclearedCheques(fy, q, mKey);
+    var unclearedCheques = monthCheques.filter(function(c) { return unclearedList.indexOf(c.id) >= 0; });
+    var unclearedTotal = unclearedCheques.reduce(function(s,c){ return s + (c.payment||0); }, 0);
+    var adjustedBank = !isNaN(bankVal) ? bankVal - unclearedTotal : NaN;
+    var diff = !isNaN(adjustedBank) ? adjustedBank - closeBal : NaN;
+    var diffClass = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'matched' : 'unmatched') : '';
+
+    // Total cheques on bank statement = bank side total (deposits visible to bank)
+    var bankTotalA = !isNaN(bankVal) ? bankVal : 0;
+
+    // Build HTML matching the exact image layout
+    var h = '<div class="recon-doc-page">';
+
+    // Header with logo
+    h += '<div class="rdoc-header">';
+    h += '<div class="rdoc-logo">';
+    if (logo) {
+        h += '<img src="' + logo + '" alt="Logo">';
+    } else {
+        h += '<div class="rdoc-logo-placeholder" onclick="document.getElementById(\'reconLogoInput\').click()">Click to<br>upload<br>logo</div>';
+    }
+    h += '</div>';
+    h += '<div class="rdoc-header-text">';
+    h += '<h2>' + RECON_ORG_LINE1 + '</h2>';
+    h += '<h3>' + RECON_ORG_LINE2 + '</h3>';
+    h += '<h4>' + RECON_ORG_LINE3 + '</h4>';
+    h += '</div>';
+    h += '</div>';
+
+    // Project Name / Month row
+    h += '<div class="rdoc-info-row">';
+    h += '<span><b>Project Name:</b> &nbsp; <span class="rdoc-info-val">' + RECON_PROJECT_NAME + '</span></span>';
+    h += '<span><b>Month:</b> &nbsp; <span class="rdoc-info-val">' + monthName.toUpperCase() + ' ' + calYear + '</span></span>';
+    h += '</div>';
+
+    // Two-column balance grid
+    h += '<div class="rdoc-balance-grid">';
+
+    // Left column: Cash Book
+    h += '<div class="rdoc-bal-left">';
+    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Balance shown in Cash Book<br>Beginning of month</b></span><span class="rdoc-bal-val">' + fmt(openBal) + '</span></div>';
+    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Deposit during month<br>Subvention</b></span><span class="rdoc-bal-val">' + (monthDeposits > 0 ? fmt(monthDeposits) : '$ -') + '</span></div>';
+    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Other Deposits*</b></span><span class="rdoc-bal-val">$ -</span></div>';
+    h += '<div class="rdoc-bal-row rdoc-total"><span class="rdoc-bal-label">TOTAL (A)</span><span class="rdoc-bal-val">' + fmt(totalA) + '</span></div>';
+    h += '</div>';
+
+    // Right column: Bank Statement
+    h += '<div class="rdoc-bal-right">';
+    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Balance on Bank Statement</b></span><span class="rdoc-bal-val">' + (!isNaN(bankVal) ? fmt(bankVal) : '—') + '</span></div>';
+    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Deposit made not shown on<br>statement</b></span><span class="rdoc-bal-val">$ -</span></div>';
+    h += '<div class="rdoc-bal-row" style="visibility:hidden"><span>&nbsp;</span><span>&nbsp;</span></div>';
+    h += '<div class="rdoc-bal-row rdoc-total"><span class="rdoc-bal-label">TOTAL (A)</span><span class="rdoc-bal-val">' + (!isNaN(bankVal) ? fmt(bankVal) : '—') + '</span></div>';
+    h += '</div>';
+
+    h += '</div>'; // end balance grid
+
+    // Total cheques issued section
+    h += '<div class="rdoc-cheques-section">';
+    h += '<h4>Total cheques issued</h4>';
+    h += '<div class="rdoc-cheques-grid">';
+
+    // Left side: summary
+    h += '<div class="rdoc-cheques-summary">';
+    h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Cash Book</span><span class="rdoc-chq-val">' + fmt(chequesTotal) + '</span></div>';
+    h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Bank Charges</span><span class="rdoc-chq-val">' + fmt(monthBankCharges) + '</span></div>';
+    h += '<div class="rdoc-chq-line rdoc-chq-total"><span class="rdoc-chq-label"><b>Total</b></span><span class="rdoc-chq-val">' + fmt(chequesTotal + monthBankCharges) + '</span></div>';
+    h += '</div>';
+
+    // Right side: uncleared cheques table
+    h += '<div class="rdoc-uncleared-table">';
+    h += '<div class="rdoc-uncleared-caption">(cheques issued but not shown on bank statement)</div>';
+    h += '<table><thead><tr><th>Cheque Amount</th><th>Cheque No.</th><th>Cheque Date</th></tr></thead>';
+    h += '<tbody>';
+    if (unclearedCheques.length > 0) {
+        unclearedCheques.forEach(function(uc) {
+            var chqDate = uc.date ? formatReconDate(uc.date) : '';
+            h += '<tr><td class="amount">' + fmt(uc.payment) + '</td><td class="center">' + uc.cheque + '</td><td class="center">' + chqDate + '</td></tr>';
+        });
+    } else {
+        h += '<tr><td colspan="3" style="text-align:center;color:#999;font-style:italic;">No uncleared cheques</td></tr>';
+    }
+    // Total row
+    h += '</tbody><tfoot><tr><td class="amount" style="text-align:right;">Total &nbsp;&nbsp; ' + fmt(unclearedTotal > 0 ? chequesTotal : chequesTotal) + '</td><td></td><td></td></tr></tfoot>';
+    h += '</table></div>';
+
+    h += '</div>'; // end cheques grid
+    h += '</div>'; // end cheques section
+
+    // Bottom balance row
+    h += '<div class="rdoc-bottom-balance">';
+    h += '<div class="rdoc-bottom-bal-cell"><b>Cash Book Balance b/d</b> &nbsp; <span class="rdoc-bal-val">' + fmt(closeBal) + '</span></div>';
+    h += '<div class="rdoc-bottom-bal-cell" style="justify-content:flex-end;"><b>Bank Balance</b> &nbsp; <span class="rdoc-bal-val">' + (!isNaN(adjustedBank) ? fmt(adjustedBank) : '—') + '</span></div>';
+    h += '</div>';
+
+    // Difference
+    h += '<div class="rdoc-difference ' + diffClass + '">' + (!isNaN(diff) ? fmt(diff) : '') + '</div>';
+
+    // Signature lines
+    h += '<div class="rdoc-signatures">';
+    h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Prepared by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
+    h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Checked by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
+    h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Verified by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
+    h += '</div>';
+
+    // Footer note
+    h += '<div class="rdoc-footer-note">Other Deposits*: (stale-date cheques, returned cheques, lodgments).</div>';
+    h += '<div class="rdoc-version">CTI/Bank Reconciliation/Version 2.0/' + new Date().toLocaleDateString('en-GB') + '</div>';
+
+    h += '</div>'; // end page
+    return h;
+}
+
+function formatReconDate(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+function printReconPreview() {
+    document.body.classList.add('printing-recon-preview');
+    // Dynamically set print page style
+    var printStyle = document.getElementById('reconPrintPageStyle');
+    if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'reconPrintPageStyle';
+        document.head.appendChild(printStyle);
+    }
+    printStyle.textContent = '@media print { @page { size: portrait; margin: 8mm; } }';
+    window.print();
+    document.body.classList.remove('printing-recon-preview');
 }
 
 // ============================================================
