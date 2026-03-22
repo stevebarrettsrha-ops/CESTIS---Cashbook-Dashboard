@@ -6694,7 +6694,6 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     var monthBankCharges = monthTxns.filter(function(t){ return t.category === 'Bank Charges'; }).reduce(function(s,t){ return s + (t.payment||0); }, 0);
     var monthCheques = monthTxns.filter(function(t){ return t.cheque && t.payment > 0; });
     var chequesTotal = monthCheques.reduce(function(s,t){ return s + (t.payment||0); }, 0);
-    var otherPayments = monthPayments - chequesTotal - monthBankCharges;
     var closeBal = openBal + monthDeposits - monthPayments;
     var totalA = openBal + monthDeposits;
 
@@ -6779,11 +6778,8 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
 
     // Left side: summary (Cash Book, Bank Charges, Total)
     h += '<div class="rdoc-cheques-summary">';
-    h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Cash Book</span><span class="rdoc-chq-val">' + fmt(chequesTotal) + '</span></div>';
+    h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Cash Book</span><span class="rdoc-chq-val">' + fmt(monthPayments - monthBankCharges) + '</span></div>';
     h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Bank Charges</span><span class="rdoc-chq-val">' + fmt(monthBankCharges) + '</span></div>';
-    if (otherPayments > 0.005) {
-        h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Other Payments</span><span class="rdoc-chq-val">' + fmt(otherPayments) + '</span></div>';
-    }
     h += '<div class="rdoc-chq-line rdoc-chq-total"><span class="rdoc-chq-label"><b>Total</b></span><span class="rdoc-chq-val">' + fmt(monthPayments) + '</span></div>';
     h += '</div>';
 
