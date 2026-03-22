@@ -625,19 +625,28 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     tr { page-break-inside:avoid; }
 
     /* ---- Reports page print: only show the report sheet ---- */
-    #page-reports .card:first-of-type { display:none !important; }
     #page-reports .page-header { display:none !important; }
-    #reportPreviewCard { border:none !important; padding:0 !important; background:transparent !important; }
+    #page-reports > .card { display:none !important; }
+    #reportPreviewCard { display:block !important; border:none !important; padding:0 !important; margin:0 !important; background:transparent !important; }
     #reportPreviewCard .card-title { display:none !important; }
     .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
-    .report-sheet { box-shadow:none !important; padding:5mm 10mm !important; max-width:100% !important; width:100% !important; }
-    .report-sheet table { page-break-inside:auto !important; font-size:7.5pt !important; }
+    .report-sheet { box-shadow:none !important; padding:0 !important; margin:0 !important; max-width:100% !important; width:100% !important; }
+    .report-sheet table { page-break-inside:auto !important; font-size:7pt !important; }
     .report-sheet thead { display:table-header-group; }
     .report-sheet tr { page-break-inside:avoid; }
+    .report-sheet .report-header-block { margin-bottom:10px; padding-bottom:8px; }
+    .report-sheet .report-title { font-size:14pt !important; }
+    .report-sheet .report-subtitle { font-size:10pt !important; }
+    /* Cashbook print: unstick columns for flat print, preserve colors */
+    .cb-scroll-wrapper { overflow:visible !important; }
+    .cb-scroll-wrapper .cb-sticky { position:static !important; }
     .report-sheet .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
     .report-sheet .cb-subvention-row td { background:#fff9c4 !important; }
     .report-sheet .cb-balance-bf td { background:#e8f5e9 !important; }
     .report-sheet .cb-total-row td { background:#e3f2fd !important; }
+    .cb-scroll-wrapper th, .cb-scroll-wrapper td { border:1px solid #999 !important; padding:2px 4px !important; font-size:6.5pt !important; }
+    /* Print landscape hint for cashbook */
+    @page { margin: 10mm; }
 }
 
 /* Budget Amounts Styles */
@@ -4912,6 +4921,19 @@ function printReport() {
     if (!reportsPage.classList.contains('active')) {
         document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
         reportsPage.classList.add('active');
+    }
+    // Set landscape for cashbook (many columns), portrait for others
+    var type = document.getElementById('reportType').value;
+    var printStyle = document.getElementById('printPageStyle');
+    if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'printPageStyle';
+        document.head.appendChild(printStyle);
+    }
+    if (type === 'cashbook') {
+        printStyle.textContent = '@media print { @page { size: landscape; margin: 5mm; } }';
+    } else {
+        printStyle.textContent = '@media print { @page { size: portrait; margin: 10mm; } }';
     }
     // Trigger browser print dialog (user can choose Save as PDF)
     window.print();
