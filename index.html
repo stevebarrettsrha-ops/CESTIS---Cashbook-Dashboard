@@ -358,6 +358,92 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 }
 .recon-statement-line.rs-total .rs-label { color:var(--text); }
 
+/* ---- Reports Page ---- */
+.report-preview {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    max-height: 75vh;
+}
+.report-sheet {
+    background: #fff;
+    color: #000;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 18mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    border-radius: 4px;
+    font-size: 10pt;
+    line-height: 1.5;
+}
+.report-header-block {
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.report-title { font-size: 18pt; font-weight: 700; color: #111; margin-bottom: 4px; }
+.report-subtitle { font-size: 12pt; color: #444; margin-bottom: 2px; }
+.report-meta { font-size: 9pt; color: #888; }
+.report-footer-block {
+    border-top: 1px solid #ccc;
+    margin-top: 24px;
+    padding-top: 10px;
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+}
+.report-sheet table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 9pt;
+}
+.report-sheet thead th {
+    background: #f3f4f6;
+    color: #111;
+    padding: 6px 8px;
+    border-bottom: 2px solid #999;
+    text-align: left;
+    font-weight: 600;
+}
+.report-sheet tbody td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #ddd;
+    color: #222;
+}
+.report-sheet tbody tr:nth-child(even) { background: #fafafa; }
+.report-sheet .report-section-title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #222;
+    margin: 20px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #ccc;
+}
+.report-sheet .report-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.report-sheet .report-summary-box {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+}
+.report-sheet .report-summary-box .rsb-label { font-size: 8pt; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.report-sheet .report-summary-box .rsb-value { font-size: 14pt; font-weight: 700; color: #111; margin-top: 4px; }
+.report-sheet .report-summary-box .rsb-value.positive { color: #16a34a; }
+.report-sheet .report-summary-box .rsb-value.negative { color: #dc2626; }
+.report-sheet .amount { text-align: right; font-family: var(--mono); }
+.report-sheet tfoot td { font-weight: 700; border-top: 2px solid #333; background: #f3f4f6; }
+
 /* Print */
 @media print {
     /* ---- Hide non-printable UI ---- */
@@ -507,6 +593,17 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     /* ---- Page breaks ---- */
     h2 { page-break-after:avoid; }
     tr { page-break-inside:avoid; }
+
+    /* ---- Reports page print: only show the report sheet ---- */
+    #page-reports .card:first-of-type { display:none !important; }
+    #page-reports .page-header { display:none !important; }
+    #reportPreviewCard { border:none !important; padding:0 !important; background:transparent !important; }
+    #reportPreviewCard .card-title { display:none !important; }
+    .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
+    .report-sheet { box-shadow:none !important; padding:10mm 15mm !important; width:100% !important; min-height:auto !important; }
+    .report-sheet table { page-break-inside:auto !important; }
+    .report-sheet thead { display:table-header-group; }
+    .report-sheet tr { page-break-inside:avoid; }
 }
 
 /* Budget Amounts Styles */
@@ -1816,6 +1913,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="nav-item" data-page="financial" onclick="showPage('financial')"><span class="icon">📄</span> Financial Data Form</div>
             <div class="nav-item" data-page="reconciliation" onclick="showPage('reconciliation')"><span class="icon">🏦</span> Reconciliation</div>
             <div class="nav-item" data-page="monthly-recon" onclick="showPageDirect('monthly-recon')"><span class="icon">📅</span> Monthly Recon</div>
+            <div class="nav-item" data-page="reports" onclick="showPage('reports')"><span class="icon">📑</span> Reports</div>
         </div>
         <div class="nav-section">
             <div class="nav-label">External Links</div>
@@ -2203,6 +2301,67 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="card">
                 <div class="card-title">📊 Fiscal Year Summary <span class="badge" id="reconFYSummaryLabel"></span></div>
                 <div class="recon-summary-grid" id="reconFYSummary"></div>
+            </div>
+        </div>
+
+        <!-- ====== REPORTS ====== -->
+        <div id="page-reports" class="page">
+            <div class="page-header">
+                <div>
+                    <h2>Reports</h2>
+                    <div class="subtitle">Generate and print PDF reports for all sections</div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="printReport()">🖨 Print / Save as PDF</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📑 Report Generator</div>
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Report Type</label>
+                        <select id="reportType" onchange="generateReport()">
+                            <option value="transactions">Transactions Report</option>
+                            <option value="categories">Categories Report</option>
+                            <option value="financial">Financial Data Form Report</option>
+                            <option value="budget-amounts">Budget Amounts Report</option>
+                            <option value="budget-vs-actual">Budget vs Actual Report</option>
+                            <option value="summary">Full Summary Report</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Range</label>
+                        <select id="reportDateRange" onchange="generateReport()">
+                            <option value="current-quarter">Current Quarter</option>
+                            <option value="all">All Transactions</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Preview Area -->
+            <div class="card" id="reportPreviewCard">
+                <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>📄 Report Preview</span>
+                    <span class="badge" id="reportPreviewBadge">Transactions Report</span>
+                </div>
+                <div id="reportPreviewArea" class="report-preview">
+                    <div class="report-sheet">
+                        <div class="report-header-block">
+                            <h2 class="report-title">CESTIS Cash Book</h2>
+                            <p class="report-subtitle" id="reportSubtitleLine">Report</p>
+                            <p class="report-meta" id="reportMetaLine"></p>
+                        </div>
+                        <div id="reportContent">
+                            <div class="empty-state"><div class="empty-state-icon">📑</div><p>Select a report type above to generate a preview</p></div>
+                        </div>
+                        <div class="report-footer-block">
+                            <p>Generated by CESTIS Cash Book Manager</p>
+                            <p id="reportDateStamp"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -4387,10 +4546,167 @@ function refreshAll() {
     renderReconciliation();
     renderBudgetLinesPage();
     renderAddBudgetLinesPage();
+    renderReportsPage();
     populateVoidDropdown();
     populateUnvoidDropdown();
     populateSubventionFields();
     renderMonthTabs();
+}
+
+// ============================================================
+// REPORTS PAGE
+// ============================================================
+
+function renderReportsPage() {
+    var el = document.getElementById('reportDateStamp');
+    if (el) el.textContent = 'Date: ' + new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    generateReport();
+}
+
+function generateReport() {
+    var typeEl = document.getElementById('reportType');
+    if (!typeEl) return;
+    var type = typeEl.value;
+    var rangeEl = document.getElementById('reportDateRange');
+    var range = rangeEl ? rangeEl.value : 'current-quarter';
+    var badgeEl = document.getElementById('reportPreviewBadge');
+    var subtitleEl = document.getElementById('reportSubtitleLine');
+    var metaEl = document.getElementById('reportMetaLine');
+    var contentEl = document.getElementById('reportContent');
+    if (!contentEl) return;
+
+    var d = calcTotals();
+    var qm = getQuarterMeta(activeQ);
+    var quarterLabel = qm.shortLabel + ' ' + activeFY;
+
+    var titles = {
+        'transactions': 'Transactions Report',
+        'categories': 'Categories Report',
+        'financial': 'Financial Data Form Report',
+        'budget-amounts': 'Budget Amounts Report',
+        'budget-vs-actual': 'Budget vs Actual Report',
+        'summary': 'Full Summary Report'
+    };
+    var title = titles[type] || 'Report';
+    if (badgeEl) badgeEl.textContent = title;
+    if (subtitleEl) subtitleEl.textContent = title;
+    if (metaEl) metaEl.textContent = 'Quarter: ' + quarterLabel + ' | Generated: ' + new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+    var html = '';
+
+    if (type === 'transactions' || type === 'summary') {
+        html += '<div class="report-section-title">Transactions</div>';
+        html += '<div class="report-summary-grid">';
+        html += '<div class="report-summary-box"><div class="rsb-label">Total Deposits</div><div class="rsb-value positive">' + fmt(d.totalDeposits) + '</div></div>';
+        html += '<div class="report-summary-box"><div class="rsb-label">Total Payments</div><div class="rsb-value negative">' + fmt(d.totalPayments) + '</div></div>';
+        html += '<div class="report-summary-box"><div class="rsb-label">Closing Balance</div><div class="rsb-value">' + fmt(d.closingBalance) + '</div></div>';
+        html += '</div>';
+
+        var txns = range === 'all' ? transactions.filter(function(t){ return t.category !== 'Cancelled'; }) : d.activeTxns;
+        html += '<table><thead><tr><th>Date</th><th>Details</th><th>Cheque #</th><th>Category</th><th class="amount">Deposit</th><th class="amount">Payment</th></tr></thead><tbody>';
+        txns.forEach(function(t) {
+            html += '<tr>';
+            html += '<td>' + (t.date || '') + '</td>';
+            html += '<td>' + (t.details || '') + '</td>';
+            html += '<td>' + (t.cheque || '-') + '</td>';
+            html += '<td>' + (t.category || '') + '</td>';
+            html += '<td class="amount">' + (t.deposit > 0 ? fmt(t.deposit) : '-') + '</td>';
+            html += '<td class="amount">' + (t.payment > 0 ? fmt(t.payment) : '-') + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody>';
+        html += '<tfoot><tr><td colspan="4" style="text-align:right;">Totals</td><td class="amount">' + fmt(d.totalDeposits) + '</td><td class="amount">' + fmt(d.totalPayments) + '</td></tr></tfoot>';
+        html += '</table>';
+    }
+
+    if (type === 'categories' || type === 'summary') {
+        html += '<div class="report-section-title">Category Breakdown</div>';
+        var sorted = Object.entries(d.catSpend).sort(function(a,b){ return b[1] - a[1]; });
+        var totalCatSpend = sorted.reduce(function(s,e){ return s + e[1]; }, 0);
+        html += '<table><thead><tr><th>#</th><th>Category</th><th class="amount">Amount</th><th class="amount">% of Total</th></tr></thead><tbody>';
+        sorted.forEach(function(entry, i) {
+            var cat = entry[0], amt = entry[1];
+            var pct = totalCatSpend > 0 ? (amt / totalCatSpend * 100).toFixed(1) : '0.0';
+            html += '<tr><td>' + (i+1) + '</td><td>' + cat + '</td><td class="amount">' + fmt(amt) + '</td><td class="amount">' + pct + '%</td></tr>';
+        });
+        html += '</tbody>';
+        html += '<tfoot><tr><td></td><td>Total</td><td class="amount">' + fmt(totalCatSpend) + '</td><td class="amount">100%</td></tr></tfoot>';
+        html += '</table>';
+    }
+
+    if (type === 'financial' || type === 'summary') {
+        html += '<div class="report-section-title">Financial Data Form</div>';
+        html += '<div class="report-summary-grid">';
+        html += '<div class="report-summary-box"><div class="rsb-label">Opening Balance</div><div class="rsb-value">' + fmt(OPENING_BALANCE) + '</div></div>';
+        html += '<div class="report-summary-box"><div class="rsb-label">Total Available</div><div class="rsb-value positive">' + fmt(d.totalAvailable) + '</div></div>';
+        html += '<div class="report-summary-box"><div class="rsb-label">Closing Balance</div><div class="rsb-value">' + fmt(d.closingBalance) + '</div></div>';
+        html += '</div>';
+
+        var totalBudgeted = 0, totalActual = 0;
+        var budgetEntries = Object.entries(BUDGET).sort(function(a,b){ return b[1] - a[1]; });
+        html += '<table><thead><tr><th>Item</th><th class="amount">Budgeted</th><th class="amount">Actual Spent</th><th class="amount">Variance</th></tr></thead><tbody>';
+        budgetEntries.forEach(function(entry) {
+            var item = entry[0], budgeted = entry[1];
+            var actual = d.catSpend[item] || 0;
+            totalBudgeted += budgeted;
+            totalActual += actual;
+            var variance = budgeted - actual;
+            html += '<tr><td>' + item + '</td><td class="amount">' + fmt(budgeted) + '</td><td class="amount">' + fmt(actual) + '</td><td class="amount">' + fmt(variance) + '</td></tr>';
+        });
+        html += '</tbody>';
+        html += '<tfoot><tr><td>Total</td><td class="amount">' + fmt(totalBudgeted) + '</td><td class="amount">' + fmt(totalActual) + '</td><td class="amount">' + fmt(totalBudgeted - totalActual) + '</td></tr></tfoot>';
+        html += '</table>';
+    }
+
+    if (type === 'budget-amounts' || type === 'summary') {
+        html += '<div class="report-section-title">Budget Amounts</div>';
+        var budgetItems = Object.entries(BUDGET).sort(function(a,b){ return b[1] - a[1]; });
+        var budgetTotal = budgetItems.reduce(function(s,e){ return s + e[1]; }, 0);
+        html += '<table><thead><tr><th>#</th><th>Budget Line</th><th class="amount">Allocated Amount</th><th class="amount">% of Budget</th></tr></thead><tbody>';
+        budgetItems.forEach(function(entry, i) {
+            var item = entry[0], amt = entry[1];
+            var pct = budgetTotal > 0 ? (amt / budgetTotal * 100).toFixed(1) : '0.0';
+            html += '<tr><td>' + (i+1) + '</td><td>' + item + '</td><td class="amount">' + fmt(amt) + '</td><td class="amount">' + pct + '%</td></tr>';
+        });
+        html += '</tbody>';
+        html += '<tfoot><tr><td></td><td>Total Budget</td><td class="amount">' + fmt(budgetTotal) + '</td><td class="amount">100%</td></tr></tfoot>';
+        html += '</table>';
+    }
+
+    if (type === 'budget-vs-actual' || type === 'summary') {
+        html += '<div class="report-section-title">Budget vs Actual</div>';
+        var totalBudgeted2 = 0, totalActual2 = 0;
+        var entries2 = Object.entries(BUDGET).sort(function(a,b){ return b[1] - a[1]; });
+        html += '<table><thead><tr><th>Category</th><th class="amount">Budget</th><th class="amount">Actual</th><th class="amount">Variance</th><th class="amount">Utilization</th></tr></thead><tbody>';
+        entries2.forEach(function(entry) {
+            var cat = entry[0], budget = entry[1];
+            var actual = d.catSpend[cat] || 0;
+            totalBudgeted2 += budget;
+            totalActual2 += actual;
+            var variance = budget - actual;
+            var util = budget > 0 ? (actual / budget * 100).toFixed(1) : '0.0';
+            html += '<tr><td>' + cat + '</td><td class="amount">' + fmt(budget) + '</td><td class="amount">' + fmt(actual) + '</td><td class="amount">' + fmt(variance) + '</td><td class="amount">' + util + '%</td></tr>';
+        });
+        html += '</tbody>';
+        var totalUtil = totalBudgeted2 > 0 ? (totalActual2 / totalBudgeted2 * 100).toFixed(1) : '0.0';
+        html += '<tfoot><tr><td>Total</td><td class="amount">' + fmt(totalBudgeted2) + '</td><td class="amount">' + fmt(totalActual2) + '</td><td class="amount">' + fmt(totalBudgeted2 - totalActual2) + '</td><td class="amount">' + totalUtil + '%</td></tr></tfoot>';
+        html += '</table>';
+    }
+
+    contentEl.innerHTML = html;
+}
+
+function printReport() {
+    // Ensure report is generated with latest data
+    generateReport();
+    // Switch to reports page if not already active
+    var reportsPage = document.getElementById('page-reports');
+    if (!reportsPage.classList.contains('active')) {
+        document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+        reportsPage.classList.add('active');
+    }
+    // Trigger browser print dialog (user can choose Save as PDF)
+    window.print();
 }
 
 // ============================================================
