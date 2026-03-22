@@ -2361,7 +2361,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="card">
                 <div class="card-title">📑 Report Generator</div>
-                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Report Type</label>
                         <select id="reportType" onchange="generateReport()">
@@ -2379,6 +2379,13 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                         <select id="reportDateRange" onchange="generateReport()">
                             <option value="current-quarter">Current Quarter</option>
                             <option value="all">All Transactions</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="printLayoutGroup">
+                        <label>Print Layout</label>
+                        <select id="reportPrintLayout">
+                            <option value="fit-page">Fit to One Page (Portrait)</option>
+                            <option value="full-size">Full Size (Landscape, Multi-Page)</option>
                         </select>
                     </div>
                 </div>
@@ -4617,6 +4624,10 @@ function generateReport() {
     var subtitleEl = document.getElementById('reportSubtitleLine');
     var metaEl = document.getElementById('reportMetaLine');
     var contentEl = document.getElementById('reportContent');
+
+    // Show/hide print layout option (only for cashbook)
+    var printLayoutGroup = document.getElementById('printLayoutGroup');
+    if (printLayoutGroup) printLayoutGroup.style.display = (type === 'cashbook') ? '' : 'none';
     if (!contentEl) return;
 
     var d = calcTotals();
@@ -4922,19 +4933,39 @@ function printReport() {
         document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
         reportsPage.classList.add('active');
     }
-    // Set landscape for cashbook (many columns), portrait for others
+    // Set print layout based on report type and layout selection
     var type = document.getElementById('reportType').value;
+    var printLayout = document.getElementById('reportPrintLayout');
+    var layout = (printLayout && type === 'cashbook') ? printLayout.value : 'portrait';
     var printStyle = document.getElementById('printPageStyle');
     if (!printStyle) {
         printStyle = document.createElement('style');
         printStyle.id = 'printPageStyle';
         document.head.appendChild(printStyle);
     }
-    if (type === 'cashbook') {
-        printStyle.textContent = '@media print { @page { size: landscape; margin: 5mm; } }';
+    var css = '';
+    if (type === 'cashbook' && layout === 'fit-page') {
+        // Fit to one page: portrait, scale everything down
+        css += '@media print { @page { size: portrait; margin: 5mm; } ';
+        css += '.report-sheet { padding:0 !important; } ';
+        css += '.report-sheet .report-header-block { margin-bottom:4px !important; padding-bottom:4px !important; } ';
+        css += '.report-sheet .report-title { font-size:10pt !important; } ';
+        css += '.report-sheet .report-subtitle { font-size:7pt !important; } ';
+        css += '.report-sheet .report-meta { font-size:6pt !important; } ';
+        css += '.cb-scroll-wrapper th, .cb-scroll-wrapper td { font-size:5pt !important; padding:1px 2px !important; } ';
+        css += '.cb-scroll-wrapper table { width:100% !important; table-layout:fixed !important; } ';
+        css += '.report-sheet .report-footer-block { margin-top:4px !important; padding-top:2px !important; font-size:5pt !important; } ';
+        css += '}';
+    } else if (type === 'cashbook' && layout === 'full-size') {
+        // Full size: landscape, multiple pages, no shrinking
+        css += '@media print { @page { size: landscape; margin: 5mm; } ';
+        css += '.cb-scroll-wrapper th, .cb-scroll-wrapper td { font-size:7pt !important; padding:3px 5px !important; white-space:nowrap !important; } ';
+        css += '.cb-scroll-wrapper table { width:auto !important; } ';
+        css += '}';
     } else {
-        printStyle.textContent = '@media print { @page { size: portrait; margin: 10mm; } }';
+        css += '@media print { @page { size: portrait; margin: 10mm; } }';
     }
+    printStyle.textContent = css;
     // Trigger browser print dialog (user can choose Save as PDF)
     window.print();
 }
