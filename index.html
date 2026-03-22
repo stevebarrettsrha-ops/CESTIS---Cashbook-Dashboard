@@ -1992,8 +1992,8 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         </div>
         <div class="nav-section">
             <div class="nav-label">External Links</div>
-            <div class="nav-item" onclick="openExternalLink('staffPayslip')"><span class="icon">💳</span> Staff Payslip</div>
-            <div class="nav-item" onclick="openExternalLink('virementRequest')"><span class="icon">📤</span> Virement Request</div>
+            <div class="nav-item" data-page="staff-payslip" onclick="showEmbeddedPage('staff-payslip', 'staffPayslip')"><span class="icon">💳</span> Staff Payslip</div>
+            <div class="nav-item" data-page="virement-request" onclick="showEmbeddedPage('virement-request', 'virementRequest')"><span class="icon">📤</span> Virement Request</div>
         </div>
         <!-- Cloud Sync Section -->
         <div class="cloud-section">
@@ -2592,6 +2592,28 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 </div>
             </div>
         </div>
+        <!-- ====== STAFF PAYSLIP (Embedded) ====== -->
+        <div id="page-staff-payslip" class="page">
+            <div class="page-header">
+                <div>
+                    <h2>Staff Payslip</h2>
+                    <div class="subtitle">Staff payslip dashboard</div>
+                </div>
+            </div>
+            <iframe id="iframe-staff-payslip" src="" style="width:100%;height:calc(100vh - 140px);border:none;border-radius:8px;"></iframe>
+        </div>
+
+        <!-- ====== VIREMENT REQUEST (Embedded) ====== -->
+        <div id="page-virement-request" class="page">
+            <div class="page-header">
+                <div>
+                    <h2>Virement Request</h2>
+                    <div class="subtitle">Virement request form</div>
+                </div>
+            </div>
+            <iframe id="iframe-virement-request" src="" style="width:100%;height:calc(100vh - 140px);border:none;border-radius:8px;"></iframe>
+        </div>
+
     </main>
 </div>
 
@@ -4708,6 +4730,17 @@ function openExternalLink(linkKey) {
     const url = EXTERNAL_LINKS[linkKey];
     if (url) {
         window.open(url, '_blank', 'noopener,noreferrer');
+    }
+}
+
+function showEmbeddedPage(page, linkKey) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    var iframe = document.getElementById('iframe-' + page);
+    if (iframe && !iframe.src.includes(EXTERNAL_LINKS[linkKey])) {
+        iframe.src = EXTERNAL_LINKS[linkKey];
     }
 }
 
