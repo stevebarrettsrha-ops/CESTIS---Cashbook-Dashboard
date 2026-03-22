@@ -4834,8 +4834,17 @@ function generateReport() {
                 if (chunkIdx > 0) html += '<div style="height:12px;"></div>';
                 html += '<table class="cb-minor-table" style="width:100%;border-collapse:collapse;font-size:8pt;">';
 
-                // BUDGETED row
+                // Column headers
                 html += '<thead>';
+                html += '<tr class="cb-header-row">';
+                chunkKeys.forEach(function(k) {
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
+                });
+                html += '</tr>';
+                html += '</thead>';
+
+                // BUDGETED row
+                html += '<tbody>';
                 html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;">';
                 chunkKeys.forEach(function(k) {
                     html += '<td class="amount" style="background:#ffeb3b;border:1px solid #999;padding:3px 5px;">' + fmt(BUDGET[k] || 0) + '</td>';
@@ -4863,14 +4872,7 @@ function generateReport() {
                     html += '<td class="amount" style="background:#4caf50;border:1px solid #999;padding:3px 5px;">' + fmt(bal) + '</td>';
                 });
                 html += '</tr>';
-
-                // Column headers
-                html += '<tr class="cb-header-row">';
-                chunkKeys.forEach(function(k) {
-                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
-                });
-                html += '</tr>';
-                html += '</thead>';
+                html += '</tbody>';
 
                 html += '</table>';
             });
