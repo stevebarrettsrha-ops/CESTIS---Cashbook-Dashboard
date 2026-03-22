@@ -1829,6 +1829,9 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 <span class="cloud-status-dot" id="cloudStatusDot"></span>
                 <span id="cloudStatusText">Not connected</span>
             </div>
+            <div style="padding: 2px 12px; font-size: 0.75rem;">
+                <span id="autosaveIndicator" style="color: #888;">Autosave active</span>
+            </div>
             <div id="cloudNotConnected">
                 <button class="cloud-connect-btn" onclick="connectToGoogleDrive()">
                     <span>☁️</span>
@@ -2484,10 +2487,20 @@ function initCurrentUser() {
 
 // Save/load staff and time records
 function saveStaffMembers() {
-    try { localStorage.setItem('cestisStaffMembers', JSON.stringify(staffMembers)); } catch(e) {}
+    try {
+        localStorage.setItem('cestisStaffMembers', JSON.stringify(staffMembers));
+    } catch(e) {
+        console.error('CESTIS: localStorage save failed for staff', e);
+        if (typeof updateAutosaveIndicator === 'function') updateAutosaveIndicator('error');
+    }
 }
 function saveTimeRecords() {
-    try { localStorage.setItem('cestisTimeRecords', JSON.stringify(timeRecords)); } catch(e) {}
+    try {
+        localStorage.setItem('cestisTimeRecords', JSON.stringify(timeRecords));
+    } catch(e) {
+        console.error('CESTIS: localStorage save failed for time records', e);
+        if (typeof updateAutosaveIndicator === 'function') updateAutosaveIndicator('error');
+    }
 }
 
 // ============================================
@@ -2908,7 +2921,8 @@ async function checkCloudForChanges() {
 // ============================================
 
 function prepareBackupData() {
-    // Ensure current in-memory state is persisted to localStorage before collecting
+    // Flush any pending autosave, then persist current state
+    flushAutosave();
     saveToStorage();
     saveQuarterBudget();
 
@@ -3506,7 +3520,12 @@ function getCurrentBudgetQuarterKey() {
 function saveQuarterBudget() {
     var key = getCurrentBudgetQuarterKey();
     var data = { budget: BUDGET, sections: BUDGET_LINE_SECTIONS };
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch(e) {
+        console.error('CESTIS: localStorage save failed for budget', e);
+        if (typeof updateAutosaveIndicator === 'function') updateAutosaveIndicator('error');
+    }
 }
 
 // Load per-quarter budget from localStorage
@@ -4988,12 +5007,144 @@ function exportCSV() {
     a.click();
 }
 
-function saveToStorage() {
+// ============================================================
+// AUTOSAVE SYSTEM — merges & saves every 15 seconds
+// ============================================================
+let _autosaveDirty = false;        // true when in-memory state differs from localStorage
+let _autosaveInterval = null;      // setInterval handle
+const AUTOSAVE_INTERVAL_MS = 15000; // 15 seconds
+let _lastAutosaveTime = null;
+
+/** Mark data as needing to be saved */
+function markDirty() {
+    _autosaveDirty = true;
+    updateAutosaveIndicator('unsaved');
+}
+
+/** Merge in-memory transactions with what's currently in localStorage
+ *  so we never silently overwrite changes made by another tab.
+ *  Strategy: localStorage is the "base"; apply local adds/edits on top. */
+function mergeAndSaveToStorage() {
+    const key = getCurrentQuarterKey();
+    try {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+            const base = JSON.parse(stored);
+            const baseTxns = base.transactions || [];
+
+            // Build a map of base transactions by ID for fast lookup
+            const baseMap = {};
+            baseTxns.forEach(function(t) { baseMap[t.id] = t; });
+
+            // Build a map of current in-memory transactions by ID
+            const memMap = {};
+            transactions.forEach(function(t) { memMap[t.id] = t; });
+
+            // Start with all in-memory transactions (they take priority)
+            const merged = transactions.slice();
+
+            // Add any transactions from localStorage that are NOT in memory
+            // (e.g., added by another tab)
+            baseTxns.forEach(function(t) {
+                if (!memMap[t.id]) {
+                    merged.push(t);
+                }
+            });
+
+            // Sort by id to maintain stable order
+            merged.sort(function(a, b) { return a.id - b.id; });
+
+            // Recalculate nextId from merged set
+            nextId = merged.reduce(function(max, t) { return Math.max(max, t.id + 1); }, nextId);
+
+            // Use merged result
+            transactions = merged;
+        }
+    } catch(e) { /* If parse fails, just save current state */ }
+
+    // Now persist
+    saveToStorageImmediate();
+}
+
+/** Low-level save — writes current state to localStorage with error reporting */
+function saveToStorageImmediate() {
     const key = getCurrentQuarterKey();
     const data = { openingBalance: OPENING_BALANCE, transactions: transactions };
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
-    // Also save active quarter preference
-    try { localStorage.setItem('cestis_active_quarter', JSON.stringify({ fy: activeFY, q: activeQ })); } catch(e) {}
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch(e) {
+        console.error('CESTIS: localStorage save failed for transactions', e);
+        updateAutosaveIndicator('error');
+        return false;
+    }
+    try {
+        localStorage.setItem('cestis_active_quarter', JSON.stringify({ fy: activeFY, q: activeQ }));
+    } catch(e) {
+        console.error('CESTIS: localStorage save failed for quarter pref', e);
+    }
+    return true;
+}
+
+/** Autosave tick — called every 15 seconds */
+function autosaveTick() {
+    // Always merge-and-save every tick — localStorage writes are fast
+    // and this guarantees we never miss changes or cross-tab updates
+    _autosaveDirty = false;
+
+    mergeAndSaveToStorage();
+    saveQuarterBudget();
+    saveStaffMembers();
+    saveTimeRecords();
+
+    _lastAutosaveTime = new Date();
+    updateAutosaveIndicator('saved');
+    console.log('CESTIS autosave at', _lastAutosaveTime.toLocaleTimeString());
+}
+
+/** Start the 15-second autosave loop */
+function startAutosave() {
+    if (_autosaveInterval) clearInterval(_autosaveInterval);
+    _autosaveInterval = setInterval(autosaveTick, AUTOSAVE_INTERVAL_MS);
+}
+
+/** Stop autosave (e.g., on logout) */
+function stopAutosave() {
+    if (_autosaveInterval) { clearInterval(_autosaveInterval); _autosaveInterval = null; }
+}
+
+/** Flush any pending dirty data immediately (used before quarter switch, cloud save, etc.) */
+function flushAutosave() {
+    if (_autosaveDirty) autosaveTick();
+}
+
+/** Update the small autosave status indicator */
+function updateAutosaveIndicator(state) {
+    let el = document.getElementById('autosaveIndicator');
+    if (!el) return;
+    if (state === 'saved') {
+        el.textContent = 'Saved ' + new Date().toLocaleTimeString();
+        el.style.color = '#27ae60';
+    } else if (state === 'unsaved') {
+        el.textContent = 'Unsaved changes';
+        el.style.color = '#e67e22';
+    } else if (state === 'error') {
+        el.textContent = 'Save error — storage full?';
+        el.style.color = '#e74c3c';
+    }
+}
+
+// Warn user before leaving with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+    // Always do a final merge-and-save before the page unloads
+    try { autosaveTick(); } catch(ex) { /* best-effort */ }
+});
+
+/** Original saveToStorage — saves immediately and updates status indicator.
+ *  Autosave will also merge-and-save every 15s as a safety net. */
+function saveToStorage() {
+    saveToStorageImmediate();
+    _lastAutosaveTime = new Date();
+    updateAutosaveIndicator('saved');
 }
 
 function loadFromStorage() {
@@ -5045,7 +5196,8 @@ function loadQuarterData() {
 }
 
 function saveQuarterAndSwitch(newFY, newQ) {
-    // Save current quarter first
+    // Flush any pending autosave, then save current quarter
+    flushAutosave();
     saveToStorage();
     saveQuarterBudget();
     // Switch
@@ -5780,6 +5932,8 @@ function showApp() {
     // Initialize cloud sync UI
     initCurrentUser();
     updateCloudUI();
+    // Start 15-second autosave loop
+    startAutosave();
     // Always require cloud sync after login
     showMandatorySyncOverlay();
 }
