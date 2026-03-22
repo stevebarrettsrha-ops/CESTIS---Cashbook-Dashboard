@@ -2384,8 +2384,8 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                     <div class="form-group" id="printLayoutGroup">
                         <label>Print Layout</label>
                         <select id="reportPrintLayout">
-                            <option value="fit-page">Fit to One Page (Portrait)</option>
-                            <option value="full-size">Full Size (Landscape, Multi-Page)</option>
+                            <option value="fit-page">Portrait - Fit to Page</option>
+                            <option value="full-size">Landscape - Full Size</option>
                         </select>
                     </div>
                 </div>
@@ -4945,23 +4945,11 @@ function printReport() {
     }
     var css = '';
     if (type === 'cashbook' && layout === 'fit-page') {
-        // Fit to one page: portrait, scale everything down
-        css += '@media print { @page { size: portrait; margin: 5mm; } ';
-        css += '.report-sheet { padding:0 !important; } ';
-        css += '.report-sheet .report-header-block { margin-bottom:4px !important; padding-bottom:4px !important; } ';
-        css += '.report-sheet .report-title { font-size:10pt !important; } ';
-        css += '.report-sheet .report-subtitle { font-size:7pt !important; } ';
-        css += '.report-sheet .report-meta { font-size:6pt !important; } ';
-        css += '.cb-scroll-wrapper th, .cb-scroll-wrapper td { font-size:5pt !important; padding:1px 2px !important; } ';
-        css += '.cb-scroll-wrapper table { width:100% !important; table-layout:fixed !important; } ';
-        css += '.report-sheet .report-footer-block { margin-top:4px !important; padding-top:2px !important; font-size:5pt !important; } ';
-        css += '}';
+        // Portrait, single page – browser "Fit to page" scaling handles the rest
+        css += '@media print { @page { size: portrait; margin: 5mm; } }';
     } else if (type === 'cashbook' && layout === 'full-size') {
-        // Full size: landscape, multiple pages, no shrinking
-        css += '@media print { @page { size: landscape; margin: 5mm; } ';
-        css += '.cb-scroll-wrapper th, .cb-scroll-wrapper td { font-size:7pt !important; padding:3px 5px !important; white-space:nowrap !important; } ';
-        css += '.cb-scroll-wrapper table { width:auto !important; } ';
-        css += '}';
+        // Landscape, multiple pages at actual size
+        css += '@media print { @page { size: landscape; margin: 5mm; } }';
     } else {
         css += '@media print { @page { size: portrait; margin: 10mm; } }';
     }
