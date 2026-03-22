@@ -552,20 +552,18 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .rdoc-info-row b { font-weight:700; }
 .rdoc-info-row .rdoc-info-val { border-bottom:1px solid #000; padding:0 4px; min-width:140px; display:inline-block; }
 
-/* Two-column balance section — table-based for perfect row alignment */
+/* Two-column balance section — NO borders, NO backgrounds, just underlined values */
 .rdoc-balance-table {
     width:100%; border-collapse:collapse; margin-bottom:14px; font-size:9.5pt;
 }
-.rdoc-balance-table td { padding:5px 10px; vertical-align:middle; }
-.rdoc-balance-table .rdoc-bt-left { width:50%; border-right:1px solid #999; }
-.rdoc-balance-table .rdoc-bt-right { width:50%; }
+.rdoc-balance-table td { padding:5px 8px; vertical-align:middle; border:none; }
 .rdoc-balance-table .rdoc-bt-label { font-weight:700; }
 .rdoc-balance-table .rdoc-bt-val {
     font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right;
-    white-space:nowrap; width:120px; border-bottom:1px solid #000;
+    white-space:nowrap; width:110px; border-bottom:1px solid #000;
 }
-.rdoc-balance-table .rdoc-bt-total td { border-top:1.5px solid #000; font-weight:700; }
-.rdoc-balance-table .rdoc-bt-total .rdoc-bt-val { border-bottom:2px double #000; }
+.rdoc-balance-table .rdoc-bt-total td { font-weight:700; }
+.rdoc-balance-table .rdoc-bt-total .rdoc-bt-val { border-bottom:1px solid #000; }
 
 /* Cheques issued section */
 .rdoc-cheques-section { margin-bottom:12px; }
@@ -582,16 +580,16 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right; min-width:100px;
     border-bottom:1px solid #000;
 }
-.rdoc-cheques-summary .rdoc-chq-line.rdoc-chq-total .rdoc-chq-val { border-bottom:2px double #000; font-weight:700; }
+.rdoc-cheques-summary .rdoc-chq-line.rdoc-chq-total .rdoc-chq-val { font-weight:700; }
 
-/* Uncleared cheques table */
+/* Uncleared cheques table — ONLY grey is on the header row */
 .rdoc-uncleared-wrap { font-size:9pt; }
 .rdoc-uncleared-caption {
     font-size:8pt; font-style:italic; text-align:center; margin-bottom:4px; color:#333;
 }
 .rdoc-uncleared-wrap table { border-collapse:collapse; width:100%; text-transform:none; }
 .rdoc-uncleared-wrap th {
-    background:#c0b894; color:#000; padding:4px 8px; border:1px solid #999;
+    background:#bfbfbf; color:#000; padding:4px 8px; border:1px solid #999;
     font-weight:700; font-size:8.5pt; text-align:center; text-transform:none;
 }
 .rdoc-uncleared-wrap td {
@@ -610,15 +608,15 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     border-bottom:1px solid #000; min-width:100px; text-align:right; padding:0 4px;
 }
 
-/* Bottom balance row */
+/* Bottom balance row — border around row, yellow ONLY on value boxes */
 .rdoc-bottom-balance {
     display:grid; grid-template-columns:1fr 1fr; gap:0;
-    border:1.5px solid #000; margin-bottom:4px; background:#f5f5f5;
+    border:1px solid #000; margin-bottom:4px;
 }
 .rdoc-bottom-bal-cell {
     display:flex; align-items:center; gap:8px; padding:8px 10px; font-size:10pt;
 }
-.rdoc-bottom-bal-cell:first-child { border-right:1.5px solid #000; }
+.rdoc-bottom-bal-cell:first-child { border-right:1px solid #000; }
 .rdoc-bottom-bal-cell b { font-weight:700; }
 .rdoc-bottom-bal-cell .rdoc-bal-val {
     background:#fef9c3; padding:3px 8px; border:1px solid #999; font-weight:700;
@@ -845,15 +843,15 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     }
     .recon-preview-overlay .recon-doc-page:last-child { page-break-after:auto !important; break-after:auto !important; }
     .recon-preview-overlay .rdoc-header { border-bottom:2px solid #000 !important; }
-    .recon-preview-overlay .rdoc-balance-table { border-collapse:collapse !important; }
-    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-left { border-right:1px solid #999 !important; }
+    /* Balance table: NO borders, NO backgrounds — just underlined values */
+    .recon-preview-overlay .rdoc-balance-table td { border:none !important; background:none !important; }
     .recon-preview-overlay .rdoc-balance-table .rdoc-bt-val { border-bottom:1px solid #000 !important; }
-    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-total td { border-top:1.5px solid #000 !important; }
-    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-total .rdoc-bt-val { border-bottom:2px double #000 !important; }
-    .recon-preview-overlay .rdoc-bottom-balance { border:1.5px solid #000 !important; background:#f5f5f5 !important; }
-    .recon-preview-overlay .rdoc-bottom-bal-cell:first-child { border-right:1.5px solid #000 !important; }
+    /* Bottom balance: border on row, yellow only on value boxes */
+    .recon-preview-overlay .rdoc-bottom-balance { border:1px solid #000 !important; background:none !important; }
+    .recon-preview-overlay .rdoc-bottom-bal-cell:first-child { border-right:1px solid #000 !important; }
     .recon-preview-overlay .rdoc-bottom-bal-cell .rdoc-bal-val { background:#fef9c3 !important; border:1px solid #999 !important; }
-    .recon-preview-overlay .rdoc-uncleared-wrap th { background:#c0b894 !important; border:1px solid #999 !important; }
+    /* Uncleared cheques: ONLY grey on header */
+    .recon-preview-overlay .rdoc-uncleared-wrap th { background:#bfbfbf !important; border:1px solid #999 !important; }
     .recon-preview-overlay .rdoc-uncleared-wrap td { border:1px solid #ccc !important; }
     .recon-preview-overlay .rdoc-difference.matched { color:#16a34a !important; }
     .recon-preview-overlay .rdoc-difference.unmatched { color:#dc2626 !important; }
