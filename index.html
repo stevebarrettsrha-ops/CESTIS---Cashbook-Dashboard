@@ -547,69 +547,78 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 /* Project / Month row */
 .rdoc-info-row {
     display:flex; justify-content:space-between; align-items:baseline;
-    border-bottom:1px solid #000; padding:6px 0; margin-bottom:12px; font-size:10pt;
+    border-bottom:1px solid #000; padding:6px 0; margin-bottom:14px; font-size:10pt;
 }
 .rdoc-info-row b { font-weight:700; }
-.rdoc-info-row .rdoc-info-val { border-bottom:1px solid #000; padding:0 4px; min-width:120px; display:inline-block; }
+.rdoc-info-row .rdoc-info-val { border-bottom:1px solid #000; padding:0 4px; min-width:140px; display:inline-block; }
 
-/* Two-column balance section */
-.rdoc-balance-grid {
-    display:grid; grid-template-columns:1fr 1fr; gap:0; margin-bottom:12px;
-    border:1px solid #000;
+/* Two-column balance section — table-based for perfect row alignment */
+.rdoc-balance-table {
+    width:100%; border-collapse:collapse; margin-bottom:14px; font-size:9.5pt;
 }
-.rdoc-bal-left, .rdoc-bal-right { padding:0; }
-.rdoc-bal-row {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:5px 10px; border-bottom:1px solid #ccc; font-size:9.5pt; min-height:28px;
+.rdoc-balance-table td { padding:5px 10px; vertical-align:middle; }
+.rdoc-balance-table .rdoc-bt-left { width:50%; border-right:1px solid #999; }
+.rdoc-balance-table .rdoc-bt-right { width:50%; }
+.rdoc-balance-table .rdoc-bt-label { font-weight:700; }
+.rdoc-balance-table .rdoc-bt-val {
+    font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right;
+    white-space:nowrap; width:120px; border-bottom:1px solid #000;
 }
-.rdoc-bal-row.rdoc-total { border-top:2px solid #000; border-bottom:2px solid #000; font-weight:700; background:#f5f5f5; }
-.rdoc-bal-left { border-right:1px solid #000; }
-.rdoc-bal-label { flex:1; }
-.rdoc-bal-val { font-weight:600; text-align:right; min-width:100px; font-family:'JetBrains Mono', monospace; }
+.rdoc-balance-table .rdoc-bt-total td { border-top:1.5px solid #000; font-weight:700; }
+.rdoc-balance-table .rdoc-bt-total .rdoc-bt-val { border-bottom:2px double #000; }
 
 /* Cheques issued section */
 .rdoc-cheques-section { margin-bottom:12px; }
-.rdoc-cheques-section h4 { font-size:10pt; font-weight:700; margin-bottom:6px; text-decoration:underline; }
+.rdoc-cheques-section > h4 { font-size:10pt; font-weight:700; margin-bottom:6px; text-decoration:underline; }
 .rdoc-cheques-grid {
-    display:grid; grid-template-columns:200px 1fr; gap:0; align-items:start;
+    display:grid; grid-template-columns:220px 1fr; gap:0 16px; align-items:start;
 }
-.rdoc-cheques-summary { font-size:9.5pt; }
+.rdoc-cheques-summary { font-size:9.5pt; padding-top:2px; }
 .rdoc-cheques-summary .rdoc-chq-line {
     display:flex; justify-content:space-between; padding:3px 0; gap:8px;
 }
 .rdoc-cheques-summary .rdoc-chq-line .rdoc-chq-label { flex:1; }
 .rdoc-cheques-summary .rdoc-chq-line .rdoc-chq-val {
-    font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right; min-width:90px;
+    font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right; min-width:100px;
     border-bottom:1px solid #000;
 }
-.rdoc-cheques-summary .rdoc-chq-line.rdoc-chq-total .rdoc-chq-val { border-bottom:2px solid #000; font-weight:700; }
+.rdoc-cheques-summary .rdoc-chq-line.rdoc-chq-total .rdoc-chq-val { border-bottom:2px double #000; font-weight:700; }
 
 /* Uncleared cheques table */
-.rdoc-uncleared-table { font-size:9pt; width:100%; }
+.rdoc-uncleared-wrap { font-size:9pt; }
 .rdoc-uncleared-caption {
     font-size:8pt; font-style:italic; text-align:center; margin-bottom:4px; color:#333;
 }
-.rdoc-uncleared-table table { border-collapse:collapse; width:100%; }
-.rdoc-uncleared-table th {
-    background:#d4d4d4; color:#000; padding:4px 8px; border:1px solid #999;
-    font-weight:700; font-size:8.5pt; text-align:center;
+.rdoc-uncleared-wrap table { border-collapse:collapse; width:100%; text-transform:none; }
+.rdoc-uncleared-wrap th {
+    background:#c0b894; color:#000; padding:4px 8px; border:1px solid #999;
+    font-weight:700; font-size:8.5pt; text-align:center; text-transform:none;
 }
-.rdoc-uncleared-table td {
+.rdoc-uncleared-wrap td {
     padding:4px 8px; border:1px solid #ccc; font-family:'JetBrains Mono', monospace; font-size:8.5pt;
 }
-.rdoc-uncleared-table td.amount { text-align:right; }
-.rdoc-uncleared-table td.center { text-align:center; }
-.rdoc-uncleared-table tfoot td { font-weight:700; border-top:2px solid #000; }
+.rdoc-uncleared-wrap td.amount { text-align:right; }
+.rdoc-uncleared-wrap td.center { text-align:center; }
+/* Cheques total row (standalone below the table) */
+.rdoc-cheques-total-row {
+    display:flex; justify-content:center; align-items:center; gap:16px;
+    padding:6px 0; margin-top:4px; font-size:9.5pt;
+}
+.rdoc-cheques-total-row .rdoc-cht-label { font-weight:700; }
+.rdoc-cheques-total-row .rdoc-cht-val {
+    font-family:'JetBrains Mono', monospace; font-weight:700;
+    border-bottom:1px solid #000; min-width:100px; text-align:right; padding:0 4px;
+}
 
 /* Bottom balance row */
 .rdoc-bottom-balance {
     display:grid; grid-template-columns:1fr 1fr; gap:0;
-    border:1px solid #000; margin-bottom:4px;
+    border:1.5px solid #000; margin-bottom:4px; background:#f5f5f5;
 }
 .rdoc-bottom-bal-cell {
     display:flex; align-items:center; gap:8px; padding:8px 10px; font-size:10pt;
 }
-.rdoc-bottom-bal-cell:first-child { border-right:1px solid #000; }
+.rdoc-bottom-bal-cell:first-child { border-right:1.5px solid #000; }
 .rdoc-bottom-bal-cell b { font-weight:700; }
 .rdoc-bottom-bal-cell .rdoc-bal-val {
     background:#fef9c3; padding:3px 8px; border:1px solid #999; font-weight:700;
@@ -836,15 +845,16 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     }
     .recon-preview-overlay .recon-doc-page:last-child { page-break-after:auto !important; break-after:auto !important; }
     .recon-preview-overlay .rdoc-header { border-bottom:2px solid #000 !important; }
-    .recon-preview-overlay .rdoc-balance-grid { border:1px solid #000 !important; }
-    .recon-preview-overlay .rdoc-bal-left { border-right:1px solid #000 !important; }
-    .recon-preview-overlay .rdoc-bal-row { border-bottom:1px solid #ccc !important; }
-    .recon-preview-overlay .rdoc-bal-row.rdoc-total { border-top:2px solid #000 !important; border-bottom:2px solid #000 !important; background:#f5f5f5 !important; }
-    .recon-preview-overlay .rdoc-bottom-balance { border:1px solid #000 !important; }
-    .recon-preview-overlay .rdoc-bottom-bal-cell:first-child { border-right:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-balance-table { border-collapse:collapse !important; }
+    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-left { border-right:1px solid #999 !important; }
+    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-val { border-bottom:1px solid #000 !important; }
+    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-total td { border-top:1.5px solid #000 !important; }
+    .recon-preview-overlay .rdoc-balance-table .rdoc-bt-total .rdoc-bt-val { border-bottom:2px double #000 !important; }
+    .recon-preview-overlay .rdoc-bottom-balance { border:1.5px solid #000 !important; background:#f5f5f5 !important; }
+    .recon-preview-overlay .rdoc-bottom-bal-cell:first-child { border-right:1.5px solid #000 !important; }
     .recon-preview-overlay .rdoc-bottom-bal-cell .rdoc-bal-val { background:#fef9c3 !important; border:1px solid #999 !important; }
-    .recon-preview-overlay .rdoc-uncleared-table th { background:#d4d4d4 !important; border:1px solid #999 !important; }
-    .recon-preview-overlay .rdoc-uncleared-table td { border:1px solid #ccc !important; }
+    .recon-preview-overlay .rdoc-uncleared-wrap th { background:#c0b894 !important; border:1px solid #999 !important; }
+    .recon-preview-overlay .rdoc-uncleared-wrap td { border:1px solid #ccc !important; }
     .recon-preview-overlay .rdoc-difference.matched { color:#16a34a !important; }
     .recon-preview-overlay .rdoc-difference.unmatched { color:#dc2626 !important; }
     /* Hide all other content when printing recon preview */
@@ -6702,9 +6712,13 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     var bankTotalA = !isNaN(bankVal) ? bankVal : 0;
 
     // Build HTML matching the exact image layout
+    var bankDisplay = !isNaN(bankVal) ? fmt(bankVal) : '$ -';
+    var bankTotalDisplay = bankDisplay;
+    var adjustedDisplay = !isNaN(adjustedBank) ? fmt(adjustedBank) : '$ -';
+
     var h = '<div class="recon-doc-page">';
 
-    // Header with logo
+    // ===== HEADER with logo =====
     h += '<div class="rdoc-header">';
     h += '<div class="rdoc-logo">';
     if (logo) {
@@ -6720,39 +6734,50 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     h += '</div>';
     h += '</div>';
 
-    // Project Name / Month row
+    // ===== Project Name / Month row =====
     h += '<div class="rdoc-info-row">';
     h += '<span><b>Project Name:</b> &nbsp; <span class="rdoc-info-val">' + RECON_PROJECT_NAME + '</span></span>';
     h += '<span><b>Month:</b> &nbsp; <span class="rdoc-info-val">' + monthName.toUpperCase() + ' ' + calYear + '</span></span>';
     h += '</div>';
 
-    // Two-column balance grid
-    h += '<div class="rdoc-balance-grid">';
+    // ===== Two-column balance section (HTML table for perfect row alignment) =====
+    h += '<table class="rdoc-balance-table">';
+    // Row 1: Opening balances
+    h += '<tr>';
+    h += '<td class="rdoc-bt-left rdoc-bt-label">Balance shown in Cash Book<br>Beginning of month</td>';
+    h += '<td class="rdoc-bt-left rdoc-bt-val">' + fmt(openBal) + '</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-label">Balance on Bank Statement</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-val">' + bankDisplay + '</td>';
+    h += '</tr>';
+    // Row 2: Deposits
+    h += '<tr>';
+    h += '<td class="rdoc-bt-left rdoc-bt-label">Deposit during month<br>Subvention</td>';
+    h += '<td class="rdoc-bt-left rdoc-bt-val">' + (monthDeposits > 0 ? fmt(monthDeposits) : '$ -') + '</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-label">Deposit made not shown on<br>statement</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-val">$ -</td>';
+    h += '</tr>';
+    // Row 3: Other Deposits / spacer
+    h += '<tr>';
+    h += '<td class="rdoc-bt-left rdoc-bt-label">Other Deposits*</td>';
+    h += '<td class="rdoc-bt-left rdoc-bt-val">$ -</td>';
+    h += '<td class="rdoc-bt-right"></td>';
+    h += '<td class="rdoc-bt-right"></td>';
+    h += '</tr>';
+    // Row 4: TOTAL (A)
+    h += '<tr class="rdoc-bt-total">';
+    h += '<td class="rdoc-bt-left rdoc-bt-label">TOTAL (A)</td>';
+    h += '<td class="rdoc-bt-left rdoc-bt-val">' + fmt(totalA) + '</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-label">TOTAL (A)</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-val">' + bankTotalDisplay + '</td>';
+    h += '</tr>';
+    h += '</table>';
 
-    // Left column: Cash Book
-    h += '<div class="rdoc-bal-left">';
-    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Balance shown in Cash Book<br>Beginning of month</b></span><span class="rdoc-bal-val">' + fmt(openBal) + '</span></div>';
-    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Deposit during month<br>Subvention</b></span><span class="rdoc-bal-val">' + (monthDeposits > 0 ? fmt(monthDeposits) : '$ -') + '</span></div>';
-    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Other Deposits*</b></span><span class="rdoc-bal-val">$ -</span></div>';
-    h += '<div class="rdoc-bal-row rdoc-total"><span class="rdoc-bal-label">TOTAL (A)</span><span class="rdoc-bal-val">' + fmt(totalA) + '</span></div>';
-    h += '</div>';
-
-    // Right column: Bank Statement
-    h += '<div class="rdoc-bal-right">';
-    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Balance on Bank Statement</b></span><span class="rdoc-bal-val">' + (!isNaN(bankVal) ? fmt(bankVal) : '—') + '</span></div>';
-    h += '<div class="rdoc-bal-row"><span class="rdoc-bal-label"><b>Deposit made not shown on<br>statement</b></span><span class="rdoc-bal-val">$ -</span></div>';
-    h += '<div class="rdoc-bal-row" style="visibility:hidden"><span>&nbsp;</span><span>&nbsp;</span></div>';
-    h += '<div class="rdoc-bal-row rdoc-total"><span class="rdoc-bal-label">TOTAL (A)</span><span class="rdoc-bal-val">' + (!isNaN(bankVal) ? fmt(bankVal) : '—') + '</span></div>';
-    h += '</div>';
-
-    h += '</div>'; // end balance grid
-
-    // Total cheques issued section
+    // ===== Total cheques issued section =====
     h += '<div class="rdoc-cheques-section">';
     h += '<h4>Total cheques issued</h4>';
     h += '<div class="rdoc-cheques-grid">';
 
-    // Left side: summary
+    // Left side: summary (Cash Book, Bank Charges, Total)
     h += '<div class="rdoc-cheques-summary">';
     h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Cash Book</span><span class="rdoc-chq-val">' + fmt(chequesTotal) + '</span></div>';
     h += '<div class="rdoc-chq-line"><span class="rdoc-chq-label">Bank Charges</span><span class="rdoc-chq-val">' + fmt(monthBankCharges) + '</span></div>';
@@ -6760,7 +6785,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     h += '</div>';
 
     // Right side: uncleared cheques table
-    h += '<div class="rdoc-uncleared-table">';
+    h += '<div class="rdoc-uncleared-wrap">';
     h += '<div class="rdoc-uncleared-caption">(cheques issued but not shown on bank statement)</div>';
     h += '<table><thead><tr><th>Cheque Amount</th><th>Cheque No.</th><th>Cheque Date</th></tr></thead>';
     h += '<tbody>';
@@ -6770,32 +6795,39 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
             h += '<tr><td class="amount">' + fmt(uc.payment) + '</td><td class="center">' + uc.cheque + '</td><td class="center">' + chqDate + '</td></tr>';
         });
     } else {
-        h += '<tr><td colspan="3" style="text-align:center;color:#999;font-style:italic;">No uncleared cheques</td></tr>';
+        // Empty rows to match the original look
+        h += '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
     }
-    // Total row
-    h += '</tbody><tfoot><tr><td class="amount" style="text-align:right;">Total &nbsp;&nbsp; ' + fmt(unclearedTotal > 0 ? chequesTotal : chequesTotal) + '</td><td></td><td></td></tr></tfoot>';
-    h += '</table></div>';
+    h += '</tbody></table>';
+    h += '</div>'; // end uncleared wrap
 
     h += '</div>'; // end cheques grid
-    h += '</div>'; // end cheques section
 
-    // Bottom balance row
-    h += '<div class="rdoc-bottom-balance">';
-    h += '<div class="rdoc-bottom-bal-cell"><b>Cash Book Balance b/d</b> &nbsp; <span class="rdoc-bal-val">' + fmt(closeBal) + '</span></div>';
-    h += '<div class="rdoc-bottom-bal-cell" style="justify-content:flex-end;"><b>Bank Balance</b> &nbsp; <span class="rdoc-bal-val">' + (!isNaN(adjustedBank) ? fmt(adjustedBank) : '—') + '</span></div>';
+    // Standalone total row below cheques (spanning full width, matching original)
+    h += '<div class="rdoc-cheques-total-row">';
+    h += '<span class="rdoc-cht-label">Total</span>';
+    h += '<span class="rdoc-cht-val">' + fmt(chequesTotal) + '</span>';
     h += '</div>';
 
-    // Difference
+    h += '</div>'; // end cheques section
+
+    // ===== Bottom balance row =====
+    h += '<div class="rdoc-bottom-balance">';
+    h += '<div class="rdoc-bottom-bal-cell"><b>Cash Book Balance<br>b/d</b> &nbsp; <span class="rdoc-bal-val">' + fmt(closeBal) + '</span></div>';
+    h += '<div class="rdoc-bottom-bal-cell" style="justify-content:flex-end;"><b>Bank Balance</b> &nbsp; <span class="rdoc-bal-val">' + adjustedDisplay + '</span></div>';
+    h += '</div>';
+
+    // ===== Difference =====
     h += '<div class="rdoc-difference ' + diffClass + '">' + (!isNaN(diff) ? fmt(diff) : '') + '</div>';
 
-    // Signature lines
+    // ===== Signature lines =====
     h += '<div class="rdoc-signatures">';
     h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Prepared by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
     h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Checked by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
     h += '<div class="rdoc-sig-row"><div class="rdoc-sig-line"><b>Verified by:</b><span class="rdoc-sig-blank"></span></div><div class="rdoc-sig-line"><b>Date:</b><span class="rdoc-sig-blank"></span></div></div>';
     h += '</div>';
 
-    // Footer note
+    // ===== Footer =====
     h += '<div class="rdoc-footer-note">Other Deposits*: (stale-date cheques, returned cheques, lodgments).</div>';
     h += '<div class="rdoc-version">CTI/Bank Reconciliation/Version 2.0/' + new Date().toLocaleDateString('en-GB') + '</div>';
 
