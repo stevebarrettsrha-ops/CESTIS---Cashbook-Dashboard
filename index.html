@@ -459,12 +459,12 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 /* Sticky frozen columns for cashbook */
 .cb-scroll-wrapper .cb-sticky { position: sticky; z-index: 2; }
 .cb-scroll-wrapper thead .cb-sticky { z-index: 3; }
-.cb-scroll-wrapper .cb-col0 { left: 0; min-width: 80px; max-width: 90px; }
-.cb-scroll-wrapper .cb-col1 { left: 80px; min-width: 70px; max-width: 80px; }
-.cb-scroll-wrapper .cb-col2 { left: 150px; min-width: 180px; max-width: 220px; }
-.cb-scroll-wrapper .cb-col3 { left: 330px; min-width: 85px; }
-.cb-scroll-wrapper .cb-col4 { left: 415px; min-width: 85px; }
-.cb-scroll-wrapper .cb-col5 { left: 500px; min-width: 90px; border-right: 3px solid #333 !important; }
+.cb-scroll-wrapper .cb-col0 { left: 0; width: 82px; min-width: 82px; max-width: 82px; }
+.cb-scroll-wrapper .cb-col1 { left: 82px; width: 72px; min-width: 72px; max-width: 72px; }
+.cb-scroll-wrapper .cb-col2 { left: 154px; width: 190px; min-width: 190px; max-width: 190px; }
+.cb-scroll-wrapper .cb-col3 { left: 344px; width: 110px; min-width: 110px; max-width: 110px; }
+.cb-scroll-wrapper .cb-col4 { left: 454px; width: 110px; min-width: 110px; max-width: 110px; }
+.cb-scroll-wrapper .cb-col5 { left: 564px; width: 115px; min-width: 115px; max-width: 115px; border-right: 3px solid #333 !important; }
 /* Ensure sticky cells get proper background */
 .cb-scroll-wrapper tbody td.cb-sticky { background: #fff; }
 .cb-scroll-wrapper tbody tr:nth-child(even) td.cb-sticky { background: #fafafa; }
@@ -2361,7 +2361,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 
             <div class="card">
                 <div class="card-title">📑 Report Generator</div>
-                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Report Type</label>
                         <select id="reportType" onchange="generateReport()">
@@ -2379,6 +2379,13 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                         <select id="reportDateRange" onchange="generateReport()">
                             <option value="current-quarter">Current Quarter</option>
                             <option value="all">All Transactions</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="printLayoutGroup">
+                        <label>Print Layout</label>
+                        <select id="reportPrintLayout">
+                            <option value="fit-page">Portrait - Fit to Page</option>
+                            <option value="full-size">Landscape - Full Size</option>
                         </select>
                     </div>
                 </div>
@@ -4617,6 +4624,10 @@ function generateReport() {
     var subtitleEl = document.getElementById('reportSubtitleLine');
     var metaEl = document.getElementById('reportMetaLine');
     var contentEl = document.getElementById('reportContent');
+
+    // Show/hide print layout option (only for cashbook)
+    var printLayoutGroup = document.getElementById('printLayoutGroup');
+    if (printLayoutGroup) printLayoutGroup.style.display = (type === 'cashbook') ? '' : 'none';
     if (!contentEl) return;
 
     var d = calcTotals();
@@ -4922,19 +4933,27 @@ function printReport() {
         document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
         reportsPage.classList.add('active');
     }
-    // Set landscape for cashbook (many columns), portrait for others
+    // Set print layout based on report type and layout selection
     var type = document.getElementById('reportType').value;
+    var printLayout = document.getElementById('reportPrintLayout');
+    var layout = (printLayout && type === 'cashbook') ? printLayout.value : 'portrait';
     var printStyle = document.getElementById('printPageStyle');
     if (!printStyle) {
         printStyle = document.createElement('style');
         printStyle.id = 'printPageStyle';
         document.head.appendChild(printStyle);
     }
-    if (type === 'cashbook') {
-        printStyle.textContent = '@media print { @page { size: landscape; margin: 5mm; } }';
+    var css = '';
+    if (type === 'cashbook' && layout === 'fit-page') {
+        // Portrait, single page – browser "Fit to page" scaling handles the rest
+        css += '@media print { @page { size: portrait; margin: 5mm; } }';
+    } else if (type === 'cashbook' && layout === 'full-size') {
+        // Landscape, multiple pages at actual size
+        css += '@media print { @page { size: landscape; margin: 5mm; } }';
     } else {
-        printStyle.textContent = '@media print { @page { size: portrait; margin: 10mm; } }';
+        css += '@media print { @page { size: portrait; margin: 10mm; } }';
     }
+    printStyle.textContent = css;
     // Trigger browser print dialog (user can choose Save as PDF)
     window.print();
 }
