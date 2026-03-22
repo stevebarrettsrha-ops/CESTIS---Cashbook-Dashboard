@@ -2229,6 +2229,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
                 </div>
             </div>
             <div class="cloud-sync-info" id="cloudSyncInfo"></div>
+            <div class="cloud-sync-info" id="autoSyncStatus" style="font-size:0.65rem; margin-top:4px; color:var(--text3);">Auto-sync: OFF</div>
         </div>
         <div class="sidebar-logout">
             <div class="nav-item" onclick="handleLogout()"><span class="icon">&#x1F6AA;</span> Sign Out</div>
@@ -2946,6 +2947,8 @@ let lastSyncTime = localStorage.getItem('cestisLastSyncTime') ? new Date(localSt
 let lastSavedBy = null;
 let cloudFileTimestamp = null;
 let cloudSyncing = false;
+let autoSyncInterval = null;
+const AUTO_SYNC_INTERVAL_MS = 15000; // 15 seconds
 
 // Google Token Client for OAuth (Google Identity Services)
 let googleTokenClient = null;
@@ -3014,11 +3017,13 @@ function updateCloudUI(connected) {
         if (connectedDiv) connectedDiv.style.display = 'block';
         if (statusDot) statusDot.className = 'cloud-status-dot connected';
         if (statusText) statusText.textContent = 'Connected';
+        startAutoSync();
     } else {
         if (notConnectedDiv) notConnectedDiv.style.display = 'block';
         if (connectedDiv) connectedDiv.style.display = 'none';
         if (statusDot) statusDot.className = 'cloud-status-dot';
         if (statusText) statusText.textContent = 'Not connected';
+        stopAutoSync();
     }
     updateLastSyncDisplay();
 }
@@ -7448,6 +7453,235 @@ function startCloudMonitor(){
       }
     }
   }, 60000);
+}
+
+// ============================================================
+// AUTO-SYNC: Merge & Save to Cloud every 15 seconds
+// ============================================================
+function startAutoSync() {
+    if (autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(autoMergeAndSave, AUTO_SYNC_INTERVAL_MS);
+    updateAutoSyncStatusUI(true);
+}
+
+function stopAutoSync() {
+    if (autoSyncInterval) {
+        clearInterval(autoSyncInterval);
+        autoSyncInterval = null;
+    }
+    updateAutoSyncStatusUI(false);
+}
+
+function updateAutoSyncStatusUI(active) {
+    var el = document.getElementById('autoSyncStatus');
+    if (el) {
+        el.textContent = active ? 'Auto-sync: ON (every 15s)' : 'Auto-sync: OFF';
+        el.style.color = active ? 'var(--green, #4CAF50)' : 'var(--text3, #888)';
+    }
+}
+
+async function autoMergeAndSave() {
+    // Skip if not connected, already syncing, or offline
+    if (!isCloudConnected || !googleAccessToken || cloudSyncing || !navigator.onLine) return;
+
+    // Check token expiry before attempting sync
+    var savedExpiry = localStorage.getItem('cestisGoogleTokenExpiry');
+    if (savedExpiry && new Date(savedExpiry) <= new Date()) return;
+
+    cloudSyncing = true;
+    setCloudSyncing(true);
+
+    try {
+        // Ensure we have the correct file ID
+        if (!cloudFileId) await findExistingBackupFile();
+
+        // --- STEP 1: Merge from cloud (pull changes from other users) ---
+        if (cloudFileId) {
+            var pullResponse = await fetch(
+                'https://www.googleapis.com/drive/v3/files/' + cloudFileId + '?alt=media',
+                { headers: { 'Authorization': 'Bearer ' + googleAccessToken } }
+            );
+
+            if (pullResponse.ok) {
+                var backupData = await pullResponse.json();
+                if (backupData.data && backupData.version) {
+                    silentMerge(backupData);
+                }
+            }
+        }
+
+        // --- STEP 2: Save to cloud (push local changes) ---
+        var backupPayload = prepareBackupData();
+        var jsonContent = JSON.stringify(backupPayload, null, 2);
+        var blob = new Blob([jsonContent], { type: 'application/json' });
+
+        var pushResponse;
+        if (cloudFileId) {
+            pushResponse = await fetch(
+                'https://www.googleapis.com/upload/drive/v3/files/' + cloudFileId + '?uploadType=media',
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'Bearer ' + googleAccessToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: blob
+                }
+            );
+        } else {
+            var metadata = {
+                name: GOOGLE_DRIVE_CONFIG.BACKUP_FILE_NAME,
+                parents: [GOOGLE_DRIVE_CONFIG.FOLDER_ID],
+                mimeType: 'application/json'
+            };
+            var formData = new FormData();
+            formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            formData.append('file', blob);
+
+            pushResponse = await fetch(
+                'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+                {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + googleAccessToken },
+                    body: formData
+                }
+            );
+
+            if (pushResponse.ok) {
+                var result = await pushResponse.json();
+                cloudFileId = result.id;
+                localStorage.setItem('cestisCloudFileId', cloudFileId);
+                localStorage.setItem('cestisCloudFolderId', GOOGLE_DRIVE_CONFIG.FOLDER_ID);
+            }
+        }
+
+        if (pushResponse.ok) {
+            lastSyncTime = new Date();
+            localStorage.setItem('cestisLastSyncTime', lastSyncTime.toISOString());
+            lastSavedBy = currentUser ? currentUser.fullName : 'Unknown';
+            cloudFileTimestamp = new Date().toISOString();
+            updateLastSyncDisplay();
+            updateLastSavedByDisplay();
+        }
+
+    } catch (error) {
+        console.error('Auto-sync error:', error);
+        // If token expired, stop auto-sync
+        if (error.message && (error.message.includes('invalid_token') || error.message.includes('Invalid Credentials'))) {
+            stopAutoSync();
+        }
+    } finally {
+        cloudSyncing = false;
+        setCloudSyncing(false);
+    }
+}
+
+// Silent merge: adds new items from cloud without UI prompts
+function silentMerge(backupData) {
+    var d = backupData.data;
+    var changed = false;
+
+    // Merge quarterly transaction data
+    if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
+        Object.keys(d.quarterlyTransactions).forEach(function(key) {
+            var cloudData = d.quarterlyTransactions[key];
+            var localRaw = localStorage.getItem(key);
+            if (!localRaw) {
+                // Quarter not present locally — add it entirely
+                try { localStorage.setItem(key, JSON.stringify(cloudData)); changed = true; } catch(e) {}
+            } else {
+                // Merge individual transactions by id
+                try {
+                    var localData = JSON.parse(localRaw);
+                    if (Array.isArray(cloudData.transactions) && Array.isArray(localData.transactions)) {
+                        var localIds = new Set(localData.transactions.map(function(t) { return t.id; }));
+                        var added = 0;
+                        cloudData.transactions.forEach(function(ct) {
+                            if (!localIds.has(ct.id)) {
+                                localData.transactions.push(ct);
+                                added++;
+                            }
+                        });
+                        if (added > 0) {
+                            localStorage.setItem(key, JSON.stringify(localData));
+                            changed = true;
+                        }
+                    }
+                } catch(e) {}
+            }
+        });
+    }
+
+    // Merge active in-memory transactions
+    if (Array.isArray(d.transactions)) {
+        var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
+        d.transactions.forEach(function(cloudTxn) {
+            if (!localTxnIds.has(cloudTxn.id)) {
+                transactions.push(cloudTxn);
+                changed = true;
+            }
+        });
+        if (changed) {
+            nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+            saveToStorage();
+        }
+    }
+
+    // Merge quarterly budgets
+    if (d.quarterlyBudgets && typeof d.quarterlyBudgets === 'object') {
+        Object.keys(d.quarterlyBudgets).forEach(function(key) {
+            if (!localStorage.getItem(key)) {
+                try { localStorage.setItem(key, JSON.stringify(d.quarterlyBudgets[key])); } catch(e) {}
+            }
+        });
+    }
+
+    // Merge budget for active quarter
+    if (d.budget && typeof d.budget === 'object') {
+        Object.keys(d.budget).forEach(function(cat) {
+            if (BUDGET[cat] === undefined) {
+                BUDGET[cat] = d.budget[cat];
+                changed = true;
+            }
+        });
+        if (d.budgetSections && typeof d.budgetSections === 'object') {
+            Object.keys(d.budgetSections).forEach(function(cat) {
+                if (!BUDGET_LINE_SECTIONS[cat]) {
+                    BUDGET_LINE_SECTIONS[cat] = d.budgetSections[cat];
+                }
+            });
+        }
+    }
+
+    // Merge staff members
+    if (Array.isArray(d.staffMembers)) {
+        var localStaffNames = staffMembers.map(function(s) { return (s.name || '').toLowerCase(); });
+        d.staffMembers.forEach(function(cloudStaff) {
+            if (!localStaffNames.includes((cloudStaff.name || '').toLowerCase())) {
+                staffMembers.push(cloudStaff);
+                changed = true;
+            }
+        });
+        if (changed) {
+            try { localStorage.setItem('cestisStaffMembers', JSON.stringify(staffMembers)); } catch(e) {}
+        }
+    }
+
+    // Merge time records
+    if (Array.isArray(d.timeRecords)) {
+        var localRecordKeys = new Set(timeRecords.map(function(r) {
+            return (r.date || '') + '|' + (r.staffId || r.name || '');
+        }));
+        d.timeRecords.forEach(function(cloudRecord) {
+            var key = (cloudRecord.date || '') + '|' + (cloudRecord.staffId || cloudRecord.name || '');
+            if (!localRecordKeys.has(key)) {
+                timeRecords.push(cloudRecord);
+            }
+        });
+        try { localStorage.setItem('cestisTimeRecords', JSON.stringify(timeRecords)); } catch(e) {}
+    }
+
+    if (changed) refreshAll();
 }
 
 // Listen for browser online/offline events
