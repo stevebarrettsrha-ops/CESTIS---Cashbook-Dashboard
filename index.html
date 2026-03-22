@@ -443,8 +443,11 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .report-sheet .amount { text-align: right; font-family: var(--mono); }
 .report-sheet tfoot td { font-weight: 700; border-top: 2px solid #333; background: #f3f4f6; }
 /* Cashbook report specific */
+.cb-scroll-wrapper { overflow-x: auto; overflow-y: visible; position: relative; }
+.cb-scroll-wrapper table { border-collapse: separate; border-spacing: 0; }
+.cb-scroll-wrapper th, .cb-scroll-wrapper td { border: 1px solid #bbb; padding: 4px 6px; }
 .report-sheet .cb-header-row { background: #2e7d32; color: #fff; }
-.report-sheet .cb-header-row th { color: #fff; background: #2e7d32; border-bottom: 2px solid #1b5e20; font-size: 8pt; padding: 6px; }
+.report-sheet .cb-header-row th { color: #fff; background: #2e7d32; font-size: 8pt; padding: 6px; }
 .report-sheet .cb-subvention-row { background: #fff9c4; }
 .report-sheet .cb-subvention-row td { font-weight: 700; color: #333; }
 .report-sheet .cb-balance-bf td { font-weight: 700; background: #e8f5e9; }
@@ -452,19 +455,23 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
 .report-sheet .cb-cancelled td { color: #999; font-style: italic; }
 .report-sheet .cb-total-row { background: #e3f2fd; }
 .report-sheet .cb-total-row td { font-weight: 700; border-top: 2px solid #333; border-bottom: 2px solid #333; }
-.report-sheet .cb-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 14px;
-    font-size: 9pt;
-}
-.report-sheet .cb-info-box {
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    border-radius: 4px;
-}
-.report-sheet .cb-info-box strong { display: block; color: #333; margin-bottom: 2px; }
+/* Sticky frozen columns for cashbook */
+.cb-scroll-wrapper .cb-sticky { position: sticky; z-index: 2; }
+.cb-scroll-wrapper thead .cb-sticky { z-index: 3; }
+.cb-scroll-wrapper .cb-col0 { left: 0; min-width: 80px; max-width: 90px; }
+.cb-scroll-wrapper .cb-col1 { left: 80px; min-width: 70px; max-width: 80px; }
+.cb-scroll-wrapper .cb-col2 { left: 150px; min-width: 180px; max-width: 220px; }
+.cb-scroll-wrapper .cb-col3 { left: 330px; min-width: 85px; }
+.cb-scroll-wrapper .cb-col4 { left: 415px; min-width: 85px; }
+.cb-scroll-wrapper .cb-col5 { left: 500px; min-width: 90px; border-right: 3px solid #333 !important; }
+/* Ensure sticky cells get proper background */
+.cb-scroll-wrapper tbody td.cb-sticky { background: #fff; }
+.cb-scroll-wrapper tbody tr:nth-child(even) td.cb-sticky { background: #fafafa; }
+.cb-scroll-wrapper .cb-subvention-row td.cb-sticky { background: #fff9c4; }
+.cb-scroll-wrapper .cb-balance-bf td.cb-sticky { background: #e8f5e9; }
+.cb-scroll-wrapper .cb-bank-charges td.cb-sticky { background: #fff; }
+.cb-scroll-wrapper .cb-cancelled td.cb-sticky { background: #fff; }
+.cb-scroll-wrapper .cb-total-row td.cb-sticky { background: #e3f2fd; }
 
 /* Print */
 @media print {
@@ -4638,60 +4645,90 @@ function generateReport() {
             }
         });
 
-        html += '<div style="overflow-x:auto;">';
-        html += '<table style="min-width:' + (600 + budgetKeys.length * 100) + 'px;">';
+        // Helper: wrap cell with sticky class for first 6 columns
+        var stickyTd = function(colIdx, content, extraClass, extraStyle) {
+            var cls = 'cb-sticky cb-col' + colIdx;
+            if (extraClass) cls += ' ' + extraClass;
+            var style = extraStyle ? ' style="' + extraStyle + '"' : '';
+            return '<td class="' + cls + '"' + style + '>' + content + '</td>';
+        };
+        var stickyTh = function(colIdx, content, extraClass, extraStyle) {
+            var cls = 'cb-sticky cb-col' + colIdx;
+            if (extraClass) cls += ' ' + extraClass;
+            var style = extraStyle ? ' style="' + extraStyle + '"' : '';
+            return '<th class="' + cls + '"' + style + '>' + content + '</th>';
+        };
+
+        html += '<div class="cb-scroll-wrapper">';
+        html += '<table>';
 
         // === BUDGETED header row ===
         html += '<thead>';
         html += '<tr style="background:#ffeb3b;color:#000;font-weight:700;font-size:8pt;">';
-        html += '<td colspan="5" style="text-align:right;border:1px solid #999;padding:4px 6px;">BUDGETED</td>';
-        html += '<td style="border:1px solid #999;padding:4px 6px;"></td>';
+        html += stickyTd(0, '', '', 'background:#ffeb3b;');
+        html += stickyTd(1, '', '', 'background:#ffeb3b;');
+        html += stickyTd(2, '', '', 'background:#ffeb3b;');
+        html += stickyTd(3, '', '', 'background:#ffeb3b;');
+        html += stickyTd(4, 'BUDGETED', '', 'background:#ffeb3b;text-align:right;font-weight:700;');
+        html += stickyTd(5, '', '', 'background:#ffeb3b;');
         budgetKeys.forEach(function(k) {
-            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(BUDGET[k] || 0) + '</td>';
+            html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
         });
         html += '</tr>';
 
         // === GRAND TOTAL row ===
         html += '<tr style="background:#00bcd4;color:#000;font-weight:700;font-size:8pt;">';
-        html += '<td colspan="5" style="text-align:right;border:1px solid #999;padding:4px 6px;">GRAND TOTAL</td>';
-        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalBudgetAllocated) + '</td>';
+        html += stickyTd(0, '', '', 'background:#00bcd4;');
+        html += stickyTd(1, '', '', 'background:#00bcd4;');
+        html += stickyTd(2, '', '', 'background:#00bcd4;');
+        html += stickyTd(3, '', '', 'background:#00bcd4;');
+        html += stickyTd(4, 'GRAND TOTAL', '', 'background:#00bcd4;text-align:right;font-weight:700;');
+        html += stickyTd(5, fmt(totalBudgetAllocated), 'amount', 'background:#00bcd4;');
         budgetKeys.forEach(function(k) {
-            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(BUDGET[k] || 0) + '</td>';
+            html += '<td class="amount">' + fmt(BUDGET[k] || 0) + '</td>';
         });
         html += '</tr>';
 
         // === SUBVENTION PERIOD / SPENT / BALANCE rows ===
         var totalSpent = budgetKeys.reduce(function(s,k){ return s + catSpent[k]; }, 0);
         html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
-        html += '<td style="border:1px solid #999;padding:4px 6px;">SUBVENTION PERIOD</td>';
-        html += '<td style="border:1px solid #999;padding:4px 6px;font-style:italic;">FROM</td>';
-        html += '<td style="border:1px solid #999;padding:4px 6px;">' + qm.shortLabel + ' ' + activeFY + '</td>';
-        html += '<td colspan="2" style="text-align:right;border:1px solid #999;padding:4px 6px;">SPENT</td>';
-        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalSpent) + '</td>';
+        html += stickyTd(0, 'SUBVENTION PERIOD', '', 'background:#4caf50;white-space:nowrap;');
+        html += stickyTd(1, '<em>FROM</em>', '', 'background:#4caf50;');
+        html += stickyTd(2, qm.shortLabel + ' ' + activeFY, '', 'background:#4caf50;');
+        html += stickyTd(3, '', '', 'background:#4caf50;');
+        html += stickyTd(4, 'SPENT', '', 'background:#4caf50;text-align:right;');
+        html += stickyTd(5, fmt(totalSpent), 'amount', 'background:#4caf50;');
         budgetKeys.forEach(function(k) {
-            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(catSpent[k]) + '</td>';
+            html += '<td class="amount">' + fmt(catSpent[k]) + '</td>';
         });
         html += '</tr>';
 
         html += '<tr style="background:#4caf50;color:#000;font-weight:700;font-size:8pt;">';
-        html += '<td colspan="4" style="border:1px solid #999;padding:4px 6px;"></td>';
-        html += '<td style="text-align:right;border:1px solid #999;padding:4px 6px;">BALANCE</td>';
-        html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(totalBudgetAllocated - totalSpent) + '</td>';
+        html += stickyTd(0, '', '', 'background:#4caf50;');
+        html += stickyTd(1, '', '', 'background:#4caf50;');
+        html += stickyTd(2, '', '', 'background:#4caf50;');
+        html += stickyTd(3, '', '', 'background:#4caf50;');
+        html += stickyTd(4, 'BALANCE', '', 'background:#4caf50;text-align:right;');
+        html += stickyTd(5, fmt(totalBudgetAllocated - totalSpent), 'amount', 'background:#4caf50;');
         budgetKeys.forEach(function(k) {
             var bal = (BUDGET[k] || 0) - catSpent[k];
-            html += '<td class="amount" style="border:1px solid #999;padding:4px 6px;">' + fmt(bal) + '</td>';
+            html += '<td class="amount">' + fmt(bal) + '</td>';
         });
         html += '</tr>';
 
         // === Empty spacer row ===
-        html += '<tr><td colspan="' + colCount + '" style="height:8px;"></td></tr>';
+        html += '<tr><td colspan="' + colCount + '" style="height:8px;border:none;"></td></tr>';
 
         // === Column headers ===
         html += '<tr class="cb-header-row">';
-        html += '<th>Date</th><th>Cheque #</th><th>Details</th>';
-        html += '<th class="amount">Deposit</th><th class="amount">Payment</th><th class="amount">Balance</th>';
+        html += stickyTh(0, 'Date', '', 'background:#2e7d32;color:#fff;');
+        html += stickyTh(1, 'Cheque #', '', 'background:#2e7d32;color:#fff;');
+        html += stickyTh(2, 'Details', '', 'background:#2e7d32;color:#fff;');
+        html += stickyTh(3, 'Deposit', 'amount', 'background:#2e7d32;color:#fff;');
+        html += stickyTh(4, 'Payment', 'amount', 'background:#2e7d32;color:#fff;');
+        html += stickyTh(5, 'Balance', 'amount', 'background:#2e7d32;color:#fff;');
         budgetKeys.forEach(function(k) {
-            html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;">' + k + '</th>';
+            html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:90px;background:#2e7d32;color:#fff;">' + k + '</th>';
         });
         html += '</tr>';
         html += '</thead>';
@@ -4701,8 +4738,13 @@ function generateReport() {
         var balance = OPENING_BALANCE;
 
         // Balance B/F row
-        html += '<tr class="cb-balance-bf"><td></td><td></td><td>BALANCE B/F</td>';
-        html += '<td></td><td></td><td class="amount">' + fmt(balance) + '</td>';
+        html += '<tr class="cb-balance-bf">';
+        html += stickyTd(0, '', '', 'background:#e8f5e9;');
+        html += stickyTd(1, '', '', 'background:#e8f5e9;');
+        html += stickyTd(2, 'BALANCE B/F', '', 'background:#e8f5e9;font-weight:700;');
+        html += stickyTd(3, '', '', 'background:#e8f5e9;');
+        html += stickyTd(4, '', '', 'background:#e8f5e9;');
+        html += stickyTd(5, fmt(balance), 'amount', 'background:#e8f5e9;font-weight:700;');
         budgetKeys.forEach(function() { html += '<td></td>'; });
         html += '</tr>';
 
@@ -4716,17 +4758,18 @@ function generateReport() {
             }
 
             var rowClass = '';
-            if (isCancelled) rowClass = 'cb-cancelled';
-            else if (isSubvention) rowClass = 'cb-subvention-row';
-            else if (isBankCharge) rowClass = 'cb-bank-charges';
+            var rowBg = '#fff';
+            if (isCancelled) { rowClass = 'cb-cancelled'; rowBg = '#fff'; }
+            else if (isSubvention) { rowClass = 'cb-subvention-row'; rowBg = '#fff9c4'; }
+            else if (isBankCharge) { rowClass = 'cb-bank-charges'; rowBg = '#fff'; }
 
             html += '<tr class="' + rowClass + '">';
-            html += '<td>' + (t.date || '') + '</td>';
-            html += '<td>' + (t.cheque || '') + '</td>';
-            html += '<td>' + (t.details || '') + '</td>';
-            html += '<td class="amount">' + (t.deposit > 0 ? fmt(t.deposit) : '') + '</td>';
-            html += '<td class="amount">' + (t.payment > 0 ? fmt(t.payment) : (isCancelled ? '-' : '')) + '</td>';
-            html += '<td class="amount">' + fmt(balance) + '</td>';
+            html += stickyTd(0, t.date || '', '', 'background:' + rowBg + ';');
+            html += stickyTd(1, t.cheque || '', '', 'background:' + rowBg + ';');
+            html += stickyTd(2, t.details || '', '', 'background:' + rowBg + ';');
+            html += stickyTd(3, t.deposit > 0 ? fmt(t.deposit) : '', 'amount', 'background:' + rowBg + ';');
+            html += stickyTd(4, t.payment > 0 ? fmt(t.payment) : (isCancelled ? '-' : ''), 'amount', 'background:' + rowBg + ';');
+            html += stickyTd(5, fmt(balance), 'amount', 'background:' + rowBg + ';');
 
             // Category columns - show amount in matching column
             budgetKeys.forEach(function(k) {
@@ -4734,9 +4777,6 @@ function generateReport() {
                     html += '<td class="amount">' + fmt(t.payment) + '</td>';
                 } else if (!isCancelled && t.deposit > 0 && t.category === k) {
                     html += '<td class="amount">' + fmt(t.deposit) + '</td>';
-                } else if (isCancelled && t.category === 'Cancelled' && k === 'Bank Charges') {
-                    // Show cancelled marker in relevant column if needed
-                    html += '<td></td>';
                 } else {
                     html += '<td></td>';
                 }
@@ -4748,10 +4788,12 @@ function generateReport() {
 
         // === Totals footer ===
         html += '<tfoot><tr class="cb-total-row">';
-        html += '<td colspan="3" style="text-align:right;">Totals</td>';
-        html += '<td class="amount">' + fmt(d.totalDeposits) + '</td>';
-        html += '<td class="amount">' + fmt(d.totalPayments) + '</td>';
-        html += '<td class="amount">' + fmt(balance) + '</td>';
+        html += stickyTd(0, '', '', 'background:#e3f2fd;');
+        html += stickyTd(1, '', '', 'background:#e3f2fd;');
+        html += stickyTd(2, 'Totals', '', 'background:#e3f2fd;text-align:right;font-weight:700;');
+        html += stickyTd(3, fmt(d.totalDeposits), 'amount', 'background:#e3f2fd;font-weight:700;');
+        html += stickyTd(4, fmt(d.totalPayments), 'amount', 'background:#e3f2fd;font-weight:700;');
+        html += stickyTd(5, fmt(balance), 'amount', 'background:#e3f2fd;font-weight:700;');
         budgetKeys.forEach(function(k) {
             html += '<td class="amount">' + (catSpent[k] > 0 ? fmt(catSpent[k]) : '') + '</td>';
         });
