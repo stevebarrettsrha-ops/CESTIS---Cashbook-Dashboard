@@ -6404,6 +6404,8 @@ function renderMonthlyRecon() {
 
             const savedBank = loadReconBankBalance(reconFY, q, mKey);
             const bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+            const savedDepNotShown = loadDepositNotShown(reconFY, q, mKey);
+            const depNotShownVal = savedDepNotShown !== '' ? parseFloat(savedDepNotShown) : 0;
             const diff = !isNaN(bankVal) ? bankVal - closeBal : NaN;
             const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
             const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
@@ -6415,7 +6417,7 @@ function renderMonthlyRecon() {
                 if (preUnclearedList.indexOf(chq.id) >= 0) preUnclearedTotal += chq.payment;
             });
             fyTotalUncleared += preUnclearedTotal;
-            const preAdjustedDiff = !isNaN(bankVal) ? (bankVal - preUnclearedTotal) - closeBal : NaN;
+            const preAdjustedDiff = !isNaN(bankVal) ? (bankVal + depNotShownVal - preUnclearedTotal) - closeBal : NaN;
 
             // Status based on adjusted difference (bank balance minus uncleared cheques vs cashbook)
             let statusClass, statusText;
@@ -6479,8 +6481,8 @@ function renderMonthlyRecon() {
                 cardsHtml += '</tbody></table></div>';
             }
 
-            // Adjusted bank balance = bank statement - uncleared cheques
-            var adjustedBankBal = !isNaN(bankVal) ? bankVal - preUnclearedTotal : NaN;
+            // Adjusted bank balance = bank statement + deposits not shown - uncleared cheques
+            var adjustedBankBal = !isNaN(bankVal) ? bankVal + depNotShownVal - preUnclearedTotal : NaN;
             var adjustedDiff = !isNaN(adjustedBankBal) ? adjustedBankBal - closeBal : NaN;
             var adjustedDiffDisplay = !isNaN(adjustedDiff) ? ((adjustedDiff >= 0 ? '' : '-') + fmt(Math.abs(adjustedDiff))) : '—';
             var adjustedDiffColor = !isNaN(adjustedDiff) ? (Math.abs(adjustedDiff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
@@ -6492,6 +6494,12 @@ function renderMonthlyRecon() {
                             'onchange="onReconBankInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
                             'placeholder="Enter bank balance">' +
                         '<span class="recon-diff" style="color:' + diffColor + ';">Raw Diff: ' + diffDisplay + '</span>' +
+                    '</div>' +
+                    '<div class="recon-month-bank">' +
+                        '<label>Deposit not shown on statement:</label>' +
+                        '<input type="number" step="0.01" value="' + (savedDepNotShown !== '' ? savedDepNotShown : '') + '" ' +
+                            'onchange="onDepositNotShownInput(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',this.value)" ' +
+                            'placeholder="0.00">' +
                     '</div>';
 
             // Bank Reconciliation Statement section
@@ -6502,6 +6510,13 @@ function renderMonthlyRecon() {
                         '<span class="rs-label">Balance per Bank Statement</span>' +
                         '<span class="rs-value">' + fmt(bankVal) + '</span>' +
                     '</div>';
+
+                if (depNotShownVal > 0) {
+                    cardsHtml += '<div class="recon-statement-line">' +
+                        '<span class="rs-label">Add: Deposit Not Shown on Statement</span>' +
+                        '<span class="rs-value" style="color:var(--green);">+ ' + fmt(depNotShownVal) + '</span>' +
+                    '</div>';
+                }
 
                 if (unclearedCheques.length > 0) {
                     cardsHtml += '<div class="recon-statement-line">' +
@@ -6594,6 +6609,24 @@ function toggleUnclearedCheque(fy, q, monthKey, chequeId) {
     if (idx >= 0) list.splice(idx, 1);
     else list.push(chequeId);
     saveUnclearedCheques(fy, q, monthKey, list);
+    renderMonthlyRecon();
+}
+
+// Deposit not shown on statement storage
+function getDepositNotShownKey(fy, q, monthKey) {
+    return 'cestis_recon_depnotshown_' + fy + '_Q' + q + '_' + monthKey;
+}
+
+function saveDepositNotShown(fy, q, monthKey, value) {
+    try { localStorage.setItem(getDepositNotShownKey(fy, q, monthKey), value); } catch(e) {}
+}
+
+function loadDepositNotShown(fy, q, monthKey) {
+    try { return localStorage.getItem(getDepositNotShownKey(fy, q, monthKey)) || ''; } catch(e) { return ''; }
+}
+
+function onDepositNotShownInput(fy, q, monthKey, value) {
+    saveDepositNotShown(fy, q, monthKey, value);
     renderMonthlyRecon();
 }
 
@@ -6731,19 +6764,20 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     // Bank balance and uncleared cheques
     var savedBank = loadReconBankBalance(fy, q, mKey);
     var bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
+    var savedDepNotShown = loadDepositNotShown(fy, q, mKey);
+    var depNotShownVal = savedDepNotShown !== '' ? parseFloat(savedDepNotShown) : 0;
     var unclearedList = loadUnclearedCheques(fy, q, mKey);
     var unclearedCheques = monthCheques.filter(function(c) { return unclearedList.indexOf(c.id) >= 0; });
     var unclearedTotal = unclearedCheques.reduce(function(s,c){ return s + (c.payment||0); }, 0);
-    var adjustedBank = !isNaN(bankVal) ? bankVal - unclearedTotal : NaN;
+    var bankPlusDeposits = !isNaN(bankVal) ? bankVal + depNotShownVal : NaN;
+    var adjustedBank = !isNaN(bankVal) ? bankVal + depNotShownVal - unclearedTotal : NaN;
     var diff = !isNaN(adjustedBank) ? adjustedBank - closeBal : NaN;
     var diffClass = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'matched' : 'unmatched') : '';
 
-    // Total cheques on bank statement = bank side total (deposits visible to bank)
-    var bankTotalA = !isNaN(bankVal) ? bankVal : 0;
-
     // Build HTML matching the exact image layout
     var bankDisplay = !isNaN(bankVal) ? fmt(bankVal) : '$ -';
-    var bankTotalDisplay = bankDisplay;
+    var depNotShownDisplay = depNotShownVal > 0 ? fmt(depNotShownVal) : '$ -';
+    var bankTotalDisplay = !isNaN(bankPlusDeposits) ? fmt(bankPlusDeposits) : bankDisplay;
     var adjustedDisplay = !isNaN(adjustedBank) ? fmt(adjustedBank) : '$ -';
 
     var h = '<div class="recon-doc-page">';
@@ -6784,7 +6818,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     h += '<td class="rdoc-bt-left rdoc-bt-label">Deposit during month<br>Subvention</td>';
     h += '<td class="rdoc-bt-left rdoc-bt-val">' + (monthDeposits > 0 ? fmt(monthDeposits) : '$ -') + '</td>';
     h += '<td class="rdoc-bt-right rdoc-bt-label">Deposit made not shown on<br>statement</td>';
-    h += '<td class="rdoc-bt-right rdoc-bt-val">$ -</td>';
+    h += '<td class="rdoc-bt-right rdoc-bt-val">' + depNotShownDisplay + '</td>';
     h += '</tr>';
     // Row 3: Other Deposits / spacer
     h += '<tr>';
