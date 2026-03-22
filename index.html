@@ -6836,7 +6836,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     // Standalone total row below cheques (spanning full width, matching original)
     h += '<div class="rdoc-cheques-total-row">';
     h += '<span class="rdoc-cht-label">Total</span>';
-    h += '<span class="rdoc-cht-val">' + fmt(monthPayments) + '</span>';
+    h += '<span class="rdoc-cht-val">' + fmt(unclearedTotal) + '</span>';
     h += '</div>';
 
     h += '</div>'; // end cheques section
