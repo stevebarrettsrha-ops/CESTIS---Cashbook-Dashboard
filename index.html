@@ -6680,11 +6680,15 @@ function openReconPreview() {
     renderReconPreviewMonth();
     document.getElementById('reconPreviewOverlay').classList.add('show');
     document.body.style.overflow = 'hidden';
+    var mainEl = document.querySelector('.main');
+    if (mainEl) mainEl.style.overflow = 'hidden';
 }
 
 function closeReconPreview() {
     document.getElementById('reconPreviewOverlay').classList.remove('show');
     document.body.style.overflow = '';
+    var mainEl = document.querySelector('.main');
+    if (mainEl) mainEl.style.overflow = '';
 }
 
 function renderReconPreviewMonth() {
