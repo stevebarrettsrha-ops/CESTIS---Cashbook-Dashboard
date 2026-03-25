@@ -4455,8 +4455,14 @@ function renderReconciliation() {
     // Auto-recalculate difference if bank balance was previously entered
     calcRecon();
 
-    // Cheque register
-    const cheques = transactions.filter(t => t.cheque);
+    // Cheque register — only active quarter
+    const reconQm = getQuarterMeta(activeQ);
+    const reconQuarterMonths = new Set(reconQm.months);
+    const cheques = transactions.filter(t => {
+        if (!t.cheque) return false;
+        const m = getMonth(t.date);
+        return m && reconQuarterMonths.has(m);
+    });
     let html = '';
     cheques.forEach(t => {
         const status = t.category === 'Cancelled' ? '<span class="tag tag-cancelled">VOID</span>' : '<span class="tag tag-salary">Issued</span>';
@@ -4509,11 +4515,16 @@ function renderCharts(d) {
             scales:{y:{ticks:{callback:v=>fmtShort(v)},grid:{color:'#222842'}},x:{grid:{display:false}}}}
     });
 
-    // Running Balance Line
+    // Running Balance Line — only active quarter transactions
     destroyChart('chartBalance');
     let bal = OPENING_BALANCE;
     const balData = [{x:'B/F',y:bal}];
-    transactions.filter(t=>t.category!=='Cancelled').forEach(t => {
+    const balQuarterMonths = new Set(qm.months);
+    transactions.filter(t => {
+        if (t.category === 'Cancelled') return false;
+        const m = getMonth(t.date);
+        return m && balQuarterMonths.has(m);
+    }).forEach(t => {
         bal += t.deposit - t.payment;
         balData.push({x:t.date?t.date.substring(5):'', y:bal});
     });
