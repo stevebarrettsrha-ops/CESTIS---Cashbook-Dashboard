@@ -3511,6 +3511,9 @@ function restoreBackupData(backupData) {
         saveTimeRecords();
     }
 
+    // Sanitize: remove any transactions that don't belong to the active quarter
+    sanitizeTransactionsForQuarter();
+
     // Save to localStorage
     saveToStorage();
     try { localStorage.setItem('cestis_active_quarter', JSON.stringify({ fy: activeFY, q: activeQ })); } catch(e) {}
@@ -3880,6 +3883,9 @@ async function mergeFromCloud() {
         cloudFileTimestamp = backupData.timestamp;
         updateLastSavedByDisplay();
 
+        // Sanitize: remove any cross-quarter transactions
+        sanitizeTransactionsForQuarter();
+
         // Refresh UI
         refreshAll();
 
@@ -3950,6 +3956,53 @@ let activeQ = 3;
 function getQuarterMeta(q) { return QUARTER_META.find(m => m.q === q); }
 function getQuarterKey(fy, q) { return 'cestis_quarter_' + fy + '_Q' + q; }
 function getCurrentQuarterKey() { return getQuarterKey(activeFY, activeQ); }
+
+// One-time cleanup: sanitize ALL quarterly transaction data in localStorage
+// to remove cross-quarter contamination from prior sync bugs.
+function sanitizeAllQuarterlyStorage() {
+    for (var fy = 2024; fy <= 2027; fy++) {
+        var fyStr = fy + '/' + (fy + 1);
+        for (var q = 1; q <= 4; q++) {
+            var key = getQuarterKey(fyStr, q);
+            var raw = localStorage.getItem(key);
+            if (!raw) continue;
+            try {
+                var data = JSON.parse(raw);
+                if (!Array.isArray(data.transactions)) continue;
+                var qm = getQuarterMeta(q);
+                var validMonths = new Set(qm.months);
+                var before = data.transactions.length;
+                data.transactions = data.transactions.filter(function(t) {
+                    var m = getMonth(t.date);
+                    return !m || validMonths.has(m);
+                });
+                if (data.transactions.length !== before) {
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+            } catch(e) {}
+        }
+    }
+}
+
+// Sanitize the in-memory transactions array: remove any transactions whose date
+// falls outside the active quarter's months. This prevents cross-quarter data
+// contamination from sync operations.
+function sanitizeTransactionsForQuarter() {
+    var qm = getQuarterMeta(activeQ);
+    if (!qm) return;
+    var quarterMonths = new Set(qm.months);
+    var before = transactions.length;
+    transactions = transactions.filter(function(t) {
+        var m = getMonth(t.date);
+        // Keep transactions with no date (edge case) or whose month is in this quarter
+        if (!m) return true;
+        return quarterMonths.has(m);
+    });
+    if (transactions.length !== before) {
+        nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+        saveToStorage();
+    }
+}
 
 // Get the calendar year for a month in a fiscal quarter
 function getCalendarYear(fy, q, monthIdx) {
@@ -4278,11 +4331,14 @@ function renderTransactions() {
     const qm = getQuarterMeta(activeQ);
     const quarterMonths = new Set(qm.months);
     transactions.forEach((t, idx) => {
-        balance += t.deposit - t.payment;
         const m = getMonth(t.date);
 
-        // Always filter by current quarter months (safety net)
-        if (m && !quarterMonths.has(m) && t.category !== 'Subvention' && t.category !== 'Cancelled') return;
+        // Filter out transactions whose date falls outside this quarter's months
+        if (m && !quarterMonths.has(m)) return;
+
+        // Accumulate balance only for transactions that belong to this quarter
+        balance += t.deposit - t.payment;
+
         if (currentFilter !== 'all' && m !== currentFilter && t.category !== 'Subvention') return;
         if (search && !t.details.toLowerCase().includes(search) && !(t.cheque||'').toLowerCase().includes(search) && !t.category.toLowerCase().includes(search)) return;
 
@@ -4786,7 +4842,14 @@ function populateVoidDropdown() {
     if (!sel) return;
 
     sel.innerHTML = '';
-    const active = transactions.filter(t => t.category !== 'Cancelled' && (t.cheque || t.payment > 0 || t.deposit > 0));
+    const voidQm = getQuarterMeta(activeQ);
+    const voidQMonths = new Set(voidQm.months);
+    const active = transactions.filter(t => {
+        if (t.category === 'Cancelled') return false;
+        if (!(t.cheque || t.payment > 0 || t.deposit > 0)) return false;
+        var m = getMonth(t.date);
+        return !m || voidQMonths.has(m);
+    });
 
     const filtered = search
         ? active.filter(t =>
@@ -4805,7 +4868,7 @@ function populateVoidDropdown() {
     });
 
     // Update void count badge
-    const voidedCount = transactions.filter(t => t.category === 'Cancelled').length;
+    const voidedCount = transactions.filter(t => { if (t.category !== 'Cancelled') return false; var m = getMonth(t.date); return !m || voidQMonths.has(m); }).length;
     const badge = document.getElementById('voidCountBadge');
     if (badge) badge.textContent = voidedCount + ' voided';
 
@@ -4881,7 +4944,13 @@ function populateUnvoidDropdown() {
     if (!sel) return;
 
     sel.innerHTML = '';
-    const voided = transactions.filter(t => t.category === 'Cancelled');
+    const unvoidQm = getQuarterMeta(activeQ);
+    const unvoidQMonths = new Set(unvoidQm.months);
+    const voided = transactions.filter(t => {
+        if (t.category !== 'Cancelled') return false;
+        var m = getMonth(t.date);
+        return !m || unvoidQMonths.has(m);
+    });
 
     const filtered = search
         ? voided.filter(t =>
@@ -6117,6 +6186,9 @@ function loadFromStorage() {
         }
     } catch(e) {}
 
+    // One-time cleanup of all quarterly data in localStorage (fixes prior cross-quarter contamination)
+    sanitizeAllQuarterlyStorage();
+
     loadQuarterData();
 }
 
@@ -6152,6 +6224,8 @@ function loadQuarterData() {
         transactions = [];
         nextId = 100;
     }
+    // Remove any transactions that don't belong to this quarter (cross-quarter contamination cleanup)
+    sanitizeTransactionsForQuarter();
 }
 
 function saveQuarterAndSwitch(newFY, newQ) {
@@ -7814,7 +7888,10 @@ function silentMerge(backupData) {
         try { localStorage.setItem('cestisTimeRecords', JSON.stringify(timeRecords)); } catch(e) {}
     }
 
-    if (changed) refreshAll();
+    if (changed) {
+        sanitizeTransactionsForQuarter();
+        refreshAll();
+    }
 }
 
 // Listen for browser online/offline events
