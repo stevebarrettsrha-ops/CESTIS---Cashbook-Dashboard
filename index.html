@@ -3479,6 +3479,19 @@ function restoreBackupData(backupData) {
         Object.keys(d.quarterlyTransactions).forEach(function(key) {
             try { localStorage.setItem(key, JSON.stringify(d.quarterlyTransactions[key])); } catch(e) {}
         });
+        // Reload the active quarter's transactions from localStorage to ensure consistency
+        var activeKey = getQuarterKey(activeFY, activeQ);
+        var activeData = localStorage.getItem(activeKey);
+        if (activeData) {
+            try {
+                var parsed = JSON.parse(activeData);
+                if (typeof parsed.openingBalance === 'number') OPENING_BALANCE = parsed.openingBalance;
+                if (Array.isArray(parsed.transactions)) {
+                    transactions = parsed.transactions;
+                    nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+                }
+            } catch(e) {}
+        }
     }
     // Restore current quarter budget
     if (d.budget && typeof d.budget === 'object') {
@@ -3751,18 +3764,41 @@ async function mergeFromCloud() {
         var d = backupData.data;
         var mergeStats = { transactionsAdded: 0, budgetAmountsAdded: 0, staffAdded: 0, timeRecordsAdded: 0 };
 
-        // Merge transactions — add cloud transactions that don't exist locally (match by id)
+        // Merge transactions — only merge into in-memory if cloud's active quarter matches local
         if (Array.isArray(d.transactions)) {
-            var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
-            d.transactions.forEach(function(cloudTxn) {
-                if (!localTxnIds.has(cloudTxn.id)) {
-                    transactions.push(cloudTxn);
-                    mergeStats.transactionsAdded++;
+            var cloudFY = d.activeFY || activeFY;
+            var cloudQ = d.activeQ || activeQ;
+            if (cloudFY === activeFY && cloudQ === activeQ) {
+                // Same quarter — merge into in-memory transactions
+                var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
+                d.transactions.forEach(function(cloudTxn) {
+                    if (!localTxnIds.has(cloudTxn.id)) {
+                        transactions.push(cloudTxn);
+                        mergeStats.transactionsAdded++;
+                    }
+                });
+                if (mergeStats.transactionsAdded > 0) {
+                    nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+                    saveToStorage();
                 }
-            });
-            if (mergeStats.transactionsAdded > 0) {
-                nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
-                saveToStorage();
+            } else {
+                // Different quarter — merge into the correct localStorage key
+                var cloudKey = getQuarterKey(cloudFY, cloudQ);
+                var localRaw = localStorage.getItem(cloudKey);
+                try {
+                    var localData = localRaw ? JSON.parse(localRaw) : { openingBalance: d.openingBalance || 0, transactions: [] };
+                    if (!Array.isArray(localData.transactions)) localData.transactions = [];
+                    var existingIds = new Set(localData.transactions.map(function(t) { return t.id; }));
+                    d.transactions.forEach(function(cloudTxn) {
+                        if (!existingIds.has(cloudTxn.id)) {
+                            localData.transactions.push(cloudTxn);
+                            mergeStats.transactionsAdded++;
+                        }
+                    });
+                    if (mergeStats.transactionsAdded > 0) {
+                        localStorage.setItem(cloudKey, JSON.stringify(localData));
+                    }
+                } catch(e) {}
             }
         }
 
@@ -3795,7 +3831,9 @@ async function mergeFromCloud() {
         }
         // Merge quarterly transaction data from cloud (adds data for quarters not present locally)
         if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
+            var currentQKeyMerge = getCurrentQuarterKey();
             Object.keys(d.quarterlyTransactions).forEach(function(key) {
+                if (key === currentQKeyMerge) return; // Current quarter handled via in-memory merge above
                 if (!localStorage.getItem(key)) {
                     try { localStorage.setItem(key, JSON.stringify(d.quarterlyTransactions[key])); } catch(e) {}
                 }
@@ -4237,11 +4275,14 @@ function renderTransactions() {
         <td class="amount positive">${fmt(OPENING_BALANCE)}</td><td></td>
         <td class="amount" style="font-weight:700;">${fmt(balance)}</td><td class="no-print"></td><td class="no-print"></td></tr>`;
 
+    const qm = getQuarterMeta(activeQ);
+    const quarterMonths = new Set(qm.months);
     transactions.forEach((t, idx) => {
         balance += t.deposit - t.payment;
         const m = getMonth(t.date);
 
-        const qm = getQuarterMeta(activeQ);
+        // Always filter by current quarter months (safety net)
+        if (m && !quarterMonths.has(m) && t.category !== 'Subvention' && t.category !== 'Cancelled') return;
         if (currentFilter !== 'all' && m !== currentFilter && t.category !== 'Subvention') return;
         if (search && !t.details.toLowerCase().includes(search) && !(t.cheque||'').toLowerCase().includes(search) && !t.category.toLowerCase().includes(search)) return;
 
@@ -7631,9 +7672,12 @@ function silentMerge(backupData) {
     var changed = false;
 
     // Merge quarterly transaction data
+    var currentQKey = getCurrentQuarterKey();
     if (d.quarterlyTransactions && typeof d.quarterlyTransactions === 'object') {
         Object.keys(d.quarterlyTransactions).forEach(function(key) {
             var cloudData = d.quarterlyTransactions[key];
+            // Skip the current active quarter key — it will be handled via in-memory merge below
+            if (key === currentQKey) return;
             var localRaw = localStorage.getItem(key);
             if (!localRaw) {
                 // Quarter not present locally — add it entirely
@@ -7659,20 +7703,60 @@ function silentMerge(backupData) {
                 } catch(e) {}
             }
         });
+        // Also merge current quarter's data from quarterlyTransactions into in-memory
+        var currentQData = d.quarterlyTransactions[currentQKey];
+        if (currentQData && Array.isArray(currentQData.transactions)) {
+            var localTxnIdsQ = new Set(transactions.map(function(t) { return t.id; }));
+            currentQData.transactions.forEach(function(ct) {
+                if (!localTxnIdsQ.has(ct.id)) {
+                    transactions.push(ct);
+                    changed = true;
+                }
+            });
+            if (changed) {
+                nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+                saveToStorage();
+            }
+        }
     }
 
-    // Merge active in-memory transactions
+    // Merge active in-memory transactions only if cloud's active quarter matches local
     if (Array.isArray(d.transactions)) {
-        var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
-        d.transactions.forEach(function(cloudTxn) {
-            if (!localTxnIds.has(cloudTxn.id)) {
-                transactions.push(cloudTxn);
-                changed = true;
+        var cloudFY = d.activeFY || activeFY;
+        var cloudQ = d.activeQ || activeQ;
+        if (cloudFY === activeFY && cloudQ === activeQ) {
+            // Same quarter — merge into in-memory transactions
+            var localTxnIds = new Set(transactions.map(function(t) { return t.id; }));
+            d.transactions.forEach(function(cloudTxn) {
+                if (!localTxnIds.has(cloudTxn.id)) {
+                    transactions.push(cloudTxn);
+                    changed = true;
+                }
+            });
+            if (changed) {
+                nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
+                saveToStorage();
             }
-        });
-        if (changed) {
-            nextId = transactions.reduce(function(max, t) { return Math.max(max, t.id + 1); }, 100);
-            saveToStorage();
+        } else {
+            // Different quarter — merge into the correct localStorage key
+            var cloudKey = getQuarterKey(cloudFY, cloudQ);
+            var localRaw = localStorage.getItem(cloudKey);
+            try {
+                var localData = localRaw ? JSON.parse(localRaw) : { openingBalance: d.openingBalance || 0, transactions: [] };
+                if (!Array.isArray(localData.transactions)) localData.transactions = [];
+                var existingIds = new Set(localData.transactions.map(function(t) { return t.id; }));
+                var added = 0;
+                d.transactions.forEach(function(ct) {
+                    if (!existingIds.has(ct.id)) {
+                        localData.transactions.push(ct);
+                        added++;
+                    }
+                });
+                if (added > 0) {
+                    localStorage.setItem(cloudKey, JSON.stringify(localData));
+                    changed = true;
+                }
+            } catch(e) {}
         }
     }
 
