@@ -4745,12 +4745,14 @@ function saveTransaction() {
             transactions[idx] = Object.assign({}, transactions[idx], data);
         }
     } else {
+        // Skip past any IDs that are in the deletedTxnIds list to avoid collisions
+        while (deletedTxnIds.indexOf(nextId) !== -1) { nextId++; }
         data.id = nextId++;
         transactions.push(data);
     }
     closeModal();
-    refreshAll();
     saveToStorage();
+    refreshAll();
 }
 
 function deleteTxn(id) {
@@ -7761,8 +7763,11 @@ function silentMerge(backupData) {
     var d = backupData.data;
     var changed = false;
 
-    // Merge cloud's deletedTxnIds into local — if another user deleted a transaction, honour it
-    if (Array.isArray(d.deletedTxnIds)) {
+    // Merge cloud's deletedTxnIds — only if cloud's active quarter matches local
+    // This prevents deletions from one quarter polluting another quarter's data
+    var cloudActiveFY = d.activeFY || activeFY;
+    var cloudActiveQ = d.activeQ || activeQ;
+    if (Array.isArray(d.deletedTxnIds) && cloudActiveFY === activeFY && cloudActiveQ === activeQ) {
         var localDelSet = new Set(deletedTxnIds);
         d.deletedTxnIds.forEach(function(id) {
             if (!localDelSet.has(id)) {
