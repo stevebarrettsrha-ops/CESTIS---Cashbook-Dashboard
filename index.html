@@ -6549,6 +6549,10 @@ function renderMonthlyRecon() {
             const monthPaymentsExCharges = monthPayments - monthBankCharges;
             const monthCheques = monthTxns.filter(t => t.cheque && t.payment > 0);
             const chequeCount = monthCheques.length;
+            // All payment transactions (cheques + non-cheque payments like bank transfers, bank charges)
+            const monthAllPayments = monthTxns.filter(t => t.payment > 0);
+            const nonChequePayments = monthAllPayments.filter(t => !t.cheque);
+            const allPaymentCount = monthAllPayments.length;
             const txnCount = monthTxns.length;
 
             const openBal = runningBalance;
@@ -6567,11 +6571,11 @@ function renderMonthlyRecon() {
             const diffDisplay = !isNaN(diff) ? ((diff >= 0 ? '' : '-') + fmt(Math.abs(diff))) : '—';
             const diffColor = !isNaN(diff) ? (Math.abs(diff) < 1 ? 'var(--green)' : 'var(--red)') : 'var(--text3)';
 
-            // Pre-calculate uncleared cheques total for status determination
+            // Pre-calculate uncleared total for status determination (includes all payment types)
             const preUnclearedList = loadUnclearedCheques(reconFY, q, mKey);
             let preUnclearedTotal = 0;
-            monthCheques.forEach(function(chq) {
-                if (preUnclearedList.indexOf(chq.id) >= 0) preUnclearedTotal += chq.payment;
+            monthAllPayments.forEach(function(txn) {
+                if (preUnclearedList.indexOf(txn.id) >= 0) preUnclearedTotal += txn.payment;
             });
             fyTotalUncleared += preUnclearedTotal;
             const preAdjustedDiff = !isNaN(bankVal) ? (bankVal + depNotShownVal - preUnclearedTotal) - closeBal : NaN;
@@ -6602,7 +6606,7 @@ function renderMonthlyRecon() {
                     '</div>' +
                     '<div class="recon-month-details">' +
                         '<div class="recon-detail-row">' +
-                            '<span class="detail-label">Payments (' + chequeCount + ' cheques)</span>' +
+                            '<span class="detail-label">Payments (' + chequeCount + ' cheques' + (nonChequePayments.length > 0 ? ', ' + nonChequePayments.length + ' other' : '') + ')</span>' +
                             '<span class="detail-value" style="color:var(--red);">- ' + fmt(monthPaymentsExCharges) + '</span>' +
                         '</div>' +
                         '<div class="recon-detail-row">' +
@@ -6615,25 +6619,26 @@ function renderMonthlyRecon() {
                         '</div>' +
                     '</div>';
 
-            // Cheque register toggle with uncleared checkboxes
+            // Payment register toggle with uncleared checkboxes
             // (reuses preUnclearedList from status calculation above)
-            var unclearedCheques = [];
+            var unclearedItems = [];
 
-            if (chequeCount > 0) {
+            if (allPaymentCount > 0) {
                 var chequesId = 'recon-cheques-' + q + '-' + mKey;
                 cardsHtml += '<button class="recon-cheques-toggle" onclick="toggleReconCheques(\'' + chequesId + '\')">' +
-                    '▸ View ' + chequeCount + ' cheque(s) issued — tick uncleared cheques</button>' +
+                    '▸ View ' + allPaymentCount + ' payment(s) issued — tick uncleared items</button>' +
                     '<div class="recon-cheques-list" id="' + chequesId + '">' +
-                        '<table><thead><tr><th style="width:30px">Uncleared</th><th>Chq #</th><th>Payee</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
-                monthCheques.forEach(function(chq) {
-                    var isUncleared = preUnclearedList.indexOf(chq.id) >= 0;
-                    if (isUncleared) unclearedCheques.push(chq);
-                    cardsHtml += '<tr class="' + (isUncleared ? 'cheque-uncleared' : '') + '">' +
+                        '<table><thead><tr><th style="width:30px">Uncleared</th><th>Chq # / Type</th><th>Payee / Details</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+                monthAllPayments.forEach(function(txn) {
+                    var isUncleared = preUnclearedList.indexOf(txn.id) >= 0;
+                    if (isUncleared) unclearedItems.push(txn);
+                    var typeLabel = txn.cheque ? txn.cheque : (txn.category === 'Bank Charges' ? 'Bank Charge' : 'Direct Transfer');
+                    cardsHtml += '<tr class="' + (isUncleared ? 'cheque-uncleared' : '') + (!txn.cheque ? ' non-cheque-row' : '') + '">' +
                         '<td style="text-align:center"><input type="checkbox" ' + (isUncleared ? 'checked' : '') +
-                            ' onchange="toggleUnclearedCheque(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',' + chq.id + ')" title="Mark as not yet cleared at bank"></td>' +
-                        '<td class="cheque-num">' + chq.cheque + '</td>' +
-                        '<td>' + chq.details + '</td>' +
-                        '<td class="amount negative">' + fmt(chq.payment) + '</td></tr>';
+                            ' onchange="toggleUnclearedCheque(\'' + reconFY + '\',' + q + ',\'' + mKey + '\',' + txn.id + ')" title="Mark as not yet cleared at bank"></td>' +
+                        '<td class="cheque-num">' + typeLabel + '</td>' +
+                        '<td>' + txn.details + '</td>' +
+                        '<td class="amount negative">' + fmt(txn.payment) + '</td></tr>';
                 });
                 cardsHtml += '</tbody></table></div>';
             }
@@ -6675,20 +6680,21 @@ function renderMonthlyRecon() {
                     '</div>';
                 }
 
-                if (unclearedCheques.length > 0) {
+                if (unclearedItems.length > 0) {
                     cardsHtml += '<div class="recon-statement-line">' +
-                        '<span class="rs-label">Less: Cheques Issued &amp; Not Yet Cleared (' + unclearedCheques.length + ')</span>' +
+                        '<span class="rs-label">Less: Payments Issued &amp; Not Yet Cleared (' + unclearedItems.length + ')</span>' +
                         '<span class="rs-value" style="color:var(--amber);">- ' + fmt(preUnclearedTotal) + '</span>' +
                     '</div>';
-                    unclearedCheques.forEach(function(uc) {
+                    unclearedItems.forEach(function(uc) {
+                        var ucLabel = uc.cheque ? ('Chq #' + uc.cheque) : (uc.category === 'Bank Charges' ? 'Bank Charge' : 'Direct Transfer');
                         cardsHtml += '<div class="recon-statement-line rs-indent">' +
-                            '<span class="rs-label">Chq #' + uc.cheque + ' — ' + uc.details + '</span>' +
+                            '<span class="rs-label">' + ucLabel + ' — ' + uc.details + '</span>' +
                             '<span class="rs-value">' + fmt(uc.payment) + '</span>' +
                         '</div>';
                     });
                 } else {
                     cardsHtml += '<div class="recon-statement-line">' +
-                        '<span class="rs-label">Less: Cheques Issued &amp; Not Yet Cleared</span>' +
+                        '<span class="rs-label">Less: Payments Issued &amp; Not Yet Cleared</span>' +
                         '<span class="rs-value" style="color:var(--text3);">$0.00</span>' +
                     '</div>';
                 }
@@ -6916,18 +6922,19 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     var monthPayments = monthTxns.reduce(function(s,t){ return s + (t.payment||0); }, 0);
     var monthBankCharges = monthTxns.filter(function(t){ return t.category === 'Bank Charges'; }).reduce(function(s,t){ return s + (t.payment||0); }, 0);
     var monthCheques = monthTxns.filter(function(t){ return t.cheque && t.payment > 0; });
+    var monthAllPayments = monthTxns.filter(function(t){ return t.payment > 0; });
     var chequesTotal = monthCheques.reduce(function(s,t){ return s + (t.payment||0); }, 0);
     var closeBal = openBal + monthDeposits - monthPayments;
     var totalA = openBal + monthDeposits;
 
-    // Bank balance and uncleared cheques
+    // Bank balance and uncleared items (includes all payment types)
     var savedBank = loadReconBankBalance(fy, q, mKey);
     var bankVal = savedBank !== '' ? parseFloat(savedBank) : NaN;
     var savedDepNotShown = loadDepositNotShown(fy, q, mKey);
     var depNotShownVal = savedDepNotShown !== '' ? parseFloat(savedDepNotShown) : 0;
     var unclearedList = loadUnclearedCheques(fy, q, mKey);
-    var unclearedCheques = monthCheques.filter(function(c) { return unclearedList.indexOf(c.id) >= 0; });
-    var unclearedTotal = unclearedCheques.reduce(function(s,c){ return s + (c.payment||0); }, 0);
+    var unclearedItems = monthAllPayments.filter(function(c) { return unclearedList.indexOf(c.id) >= 0; });
+    var unclearedTotal = unclearedItems.reduce(function(s,c){ return s + (c.payment||0); }, 0);
     var bankPlusDeposits = !isNaN(bankVal) ? bankVal + depNotShownVal : NaN;
     var adjustedBank = !isNaN(bankVal) ? bankVal + depNotShownVal - unclearedTotal : NaN;
     var diff = !isNaN(adjustedBank) ? adjustedBank - closeBal : NaN;
@@ -7009,13 +7016,14 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
 
     // Right side: uncleared cheques table
     h += '<div class="rdoc-uncleared-wrap">';
-    h += '<div class="rdoc-uncleared-caption">(cheques issued but not shown on bank statement)</div>';
-    h += '<table><thead><tr><th>Cheque Amount</th><th>Cheque No.</th><th>Cheque Date</th></tr></thead>';
+    h += '<div class="rdoc-uncleared-caption">(payments issued but not shown on bank statement)</div>';
+    h += '<table><thead><tr><th>Amount</th><th>Chq # / Type</th><th>Date</th></tr></thead>';
     h += '<tbody>';
-    if (unclearedCheques.length > 0) {
-        unclearedCheques.forEach(function(uc) {
+    if (unclearedItems.length > 0) {
+        unclearedItems.forEach(function(uc) {
             var chqDate = uc.date ? formatReconDate(uc.date) : '';
-            h += '<tr><td class="amount">' + fmt(uc.payment) + '</td><td class="center">' + uc.cheque + '</td><td class="center">' + chqDate + '</td></tr>';
+            var typeLabel = uc.cheque ? uc.cheque : (uc.category === 'Bank Charges' ? 'Bank Charge' : 'Direct Transfer');
+            h += '<tr><td class="amount">' + fmt(uc.payment) + '</td><td class="center">' + typeLabel + '</td><td class="center">' + chqDate + '</td></tr>';
         });
     } else {
         // Empty rows to match the original look
