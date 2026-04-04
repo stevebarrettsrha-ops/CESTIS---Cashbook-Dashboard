@@ -7017,7 +7017,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     // Right side: uncleared cheques table
     h += '<div class="rdoc-uncleared-wrap">';
     h += '<div class="rdoc-uncleared-caption">(payments issued but not shown on bank statement)</div>';
-    h += '<table><thead><tr><th>Amount</th><th>Cheque No.</th><th>Date</th></tr></thead>';
+    h += '<table><thead><tr><th>Cheque Amount</th><th>Cheque No.</th><th>Date</th></tr></thead>';
     h += '<tbody>';
     if (unclearedItems.length > 0) {
         unclearedItems.forEach(function(uc) {
