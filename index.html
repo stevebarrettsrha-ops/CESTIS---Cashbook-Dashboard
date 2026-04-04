@@ -6628,7 +6628,7 @@ function renderMonthlyRecon() {
                 cardsHtml += '<button class="recon-cheques-toggle" onclick="toggleReconCheques(\'' + chequesId + '\')">' +
                     '▸ View ' + allPaymentCount + ' payment(s) issued — tick uncleared items</button>' +
                     '<div class="recon-cheques-list" id="' + chequesId + '">' +
-                        '<table><thead><tr><th style="width:30px">Uncleared</th><th>Chq # / Type</th><th>Payee / Details</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
+                        '<table><thead><tr><th style="width:30px">Uncleared</th><th>Cheque No.</th><th>Payee / Details</th><th style="text-align:right">Amount</th></tr></thead><tbody>';
                 monthAllPayments.forEach(function(txn) {
                     var isUncleared = preUnclearedList.indexOf(txn.id) >= 0;
                     if (isUncleared) unclearedItems.push(txn);
@@ -7017,7 +7017,7 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     // Right side: uncleared cheques table
     h += '<div class="rdoc-uncleared-wrap">';
     h += '<div class="rdoc-uncleared-caption">(payments issued but not shown on bank statement)</div>';
-    h += '<table><thead><tr><th>Amount</th><th>Chq # / Type</th><th>Date</th></tr></thead>';
+    h += '<table><thead><tr><th>Amount</th><th>Cheque No.</th><th>Date</th></tr></thead>';
     h += '<tbody>';
     if (unclearedItems.length > 0) {
         unclearedItems.forEach(function(uc) {
