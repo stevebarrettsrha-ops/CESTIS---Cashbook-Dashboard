@@ -4351,7 +4351,7 @@ function renderTransactions() {
         // Accumulate balance only for transactions that belong to this quarter
         balance += t.deposit - t.payment;
 
-        if (currentFilter !== 'all' && m !== currentFilter && t.category !== 'Subvention') return;
+        if (currentFilter !== 'all' && m !== currentFilter) return;
         if (search && !t.details.toLowerCase().includes(search) && !(t.cheque||'').toLowerCase().includes(search) && !t.category.toLowerCase().includes(search)) return;
 
         const isCancelled = t.category === 'Cancelled';
