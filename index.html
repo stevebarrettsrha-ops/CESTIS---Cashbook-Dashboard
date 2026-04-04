@@ -655,6 +655,105 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     margin-top:10px; font-size:7pt; color:#999; padding-top:4px;
 }
 
+/* ---- Financial Data Form Live Preview ---- */
+.fin-preview-overlay {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,0.85); overflow-y:auto; padding:1rem;
+}
+.fin-preview-overlay.show { display:block; }
+.fin-preview-toolbar {
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:.75rem 1.25rem; margin-bottom:1rem; gap:.75rem; flex-wrap:wrap;
+}
+.fin-preview-toolbar .rpt-title { font-size:.9375rem; font-weight:700; color:var(--accent2); }
+.fin-preview-toolbar .rpt-actions { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.fin-preview-toolbar .rpt-month-nav { display:flex; gap:.375rem; align-items:center; }
+.fin-preview-toolbar select {
+    background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-size:.8125rem; padding:.375rem .5rem; font-family:var(--sans);
+}
+.fin-preview-pages { max-width:820px; margin:0 auto; }
+
+/* Financial doc page (white paper) */
+.fdoc-page {
+    background:#fff; color:#000; width:100%; max-width:800px; margin:0 auto 2rem;
+    padding:40px 48px 36px; box-shadow:0 4px 24px rgba(0,0,0,0.5); border-radius:4px;
+    font-family:'Times New Roman', Times, serif; font-size:10pt; line-height:1.4;
+    page-break-after:always; position:relative;
+    display:flex; flex-direction:column; min-height:calc(100vh - 76px);
+}
+.fdoc-page:last-child { page-break-after:auto; }
+
+/* Financial doc info rows */
+.fdoc-info-row {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:6px 0; margin-bottom:14px; font-size:10pt;
+}
+.fdoc-info-row b { font-weight:700; }
+.fdoc-info-row .fdoc-info-val { border-bottom:1px solid #000; padding:0 4px; min-width:140px; display:inline-block; }
+
+/* Page 1: Summary table */
+.fdoc-summary-table {
+    width:80%; margin:0 auto 18px; border-collapse:collapse; font-size:10pt;
+}
+.fdoc-summary-table td { padding:6px 8px; vertical-align:middle; border:none; }
+.fdoc-summary-table .fdoc-st-label { font-weight:700; text-transform:uppercase; }
+.fdoc-summary-table .fdoc-st-val {
+    font-family:'JetBrains Mono', monospace; font-weight:600; text-align:right;
+    white-space:nowrap; width:140px; border-bottom:1px solid #000;
+}
+.fdoc-summary-table .fdoc-st-header td {
+    font-weight:700; text-align:right; padding-bottom:2px;
+}
+.fdoc-summary-table .fdoc-st-spacer td { height:6px; }
+
+/* Activities and signature sections */
+.fdoc-note { font-weight:700; font-size:9.5pt; margin:16px 0 4px; }
+.fdoc-note-sub { font-size:9pt; margin-bottom:14px; }
+.fdoc-activities-title { font-weight:700; font-size:10pt; margin:14px 0 8px; }
+.fdoc-activity-line {
+    display:flex; gap:8px; margin-bottom:10px; font-size:10pt;
+}
+.fdoc-activity-num { font-weight:700; min-width:20px; }
+.fdoc-activity-blank { flex:1; border-bottom:1px solid #000; min-height:1em; }
+
+.fdoc-signatures { margin-top:24px; font-size:9.5pt; }
+.fdoc-sig-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:10px;
+}
+.fdoc-sig-line { display:flex; align-items:baseline; gap:4px; }
+.fdoc-sig-line b { white-space:nowrap; }
+.fdoc-sig-line .fdoc-sig-blank { flex:1; border-bottom:1px solid #000; min-width:80px; height:1em; }
+.fdoc-sig-verified { font-style:italic; }
+.fdoc-sig-verified b { font-style:italic; }
+
+/* Page 2: Items table */
+.fdoc-items-heading { font-weight:700; font-size:10pt; margin-bottom:12px; text-transform:uppercase; }
+.fdoc-items-table {
+    width:100%; border-collapse:collapse; font-size:9.5pt; margin-bottom:12px;
+}
+.fdoc-items-table th {
+    font-weight:700; text-decoration:underline; padding:4px 8px;
+    text-align:left; font-size:10pt; border-bottom:2px solid #000;
+}
+.fdoc-items-table th:last-child { text-align:right; }
+.fdoc-items-table td { padding:5px 8px; border-bottom:1px solid #ccc; }
+.fdoc-items-table td:last-child {
+    text-align:right; font-family:'JetBrains Mono', monospace; font-weight:600;
+}
+.fdoc-items-table .fdoc-total-row td {
+    font-weight:700; border-top:2px solid #000; border-bottom:2px solid #000;
+    padding-top:8px; padding-bottom:8px;
+}
+
+/* Page 2 signatures with role labels */
+.fdoc-sig-role { font-size:8.5pt; text-align:center; font-weight:700; }
+
+.fdoc-footer-wrap { margin-top:auto; }
+.fdoc-version { margin-top:10px; font-size:7pt; color:#999; padding-top:4px; }
+
 /* Print */
 @media print {
     /* ---- Hide non-printable UI ---- */
@@ -864,6 +963,22 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     /* Hide all other content when printing recon preview */
     body.printing-recon-preview .app { display:none !important; }
     body.printing-recon-preview .recon-preview-overlay.show { display:block !important; }
+
+    /* ---- Financial Data Form Live Preview print ---- */
+    .fin-preview-overlay.show {
+        display:block !important; position:static !important; background:transparent !important;
+        padding:0 !important; overflow:visible !important;
+    }
+    .fin-preview-overlay .fin-preview-toolbar { display:none !important; }
+    .fin-preview-overlay .fdoc-page {
+        box-shadow:none !important; margin:0 !important; padding:24px 28px !important;
+        max-width:100% !important; width:100% !important;
+        page-break-after:always !important; break-after:page !important;
+        min-height:100vh !important;
+    }
+    .fin-preview-overlay .fdoc-page:last-child { page-break-after:auto !important; break-after:auto !important; }
+    body.printing-fin-preview .app { display:none !important; }
+    body.printing-fin-preview .fin-preview-overlay.show { display:block !important; }
 }
 
 /* Budget Amounts Styles */
@@ -2463,6 +2578,7 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
             <div class="page-header">
                 <div><h2>Financial Data Collection Form</h2><div class="subtitle">CESTIS-Financial Management</div></div>
                 <div class="header-actions">
+                    <button class="btn btn-primary" onclick="openFinPreview()">📄 Live Preview Form</button>
                     <button class="btn btn-primary" onclick="window.print()">🖨 Print Form</button>
                 </div>
             </div>
@@ -2918,6 +3034,27 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
         </div>
     </div>
     <div class="recon-preview-pages" id="reconPreviewPages"></div>
+</div>
+
+<!-- ====== FINANCIAL DATA FORM LIVE PREVIEW OVERLAY ====== -->
+<div class="fin-preview-overlay" id="finPreviewOverlay">
+    <div class="fin-preview-toolbar">
+        <span class="rpt-title">Live Preview Form</span>
+        <div class="rpt-actions">
+            <div class="rpt-month-nav">
+                <label style="font-size:.75rem;color:var(--text2);">Quarter:</label>
+                <select id="finPreviewQuarter" onchange="renderFinPreviewPages()">
+                    <option value="active">Active Quarter</option>
+                </select>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('finLogoInput').click()">Upload Logo</button>
+            <input type="file" id="finLogoInput" accept="image/*" style="display:none" onchange="handleFinLogoUpload(event)">
+            <button class="btn btn-ghost btn-sm" onclick="removeFinLogo()">Remove Logo</button>
+            <button class="btn btn-primary btn-sm" onclick="printFinPreview()">Print / Save PDF</button>
+            <button class="btn btn-danger btn-sm" onclick="closeFinPreview()">Close</button>
+        </div>
+    </div>
+    <div class="fin-preview-pages" id="finPreviewPages"></div>
 </div>
 
 <script>
@@ -7088,6 +7225,289 @@ function printReconPreview() {
     printStyle.textContent = '@media print { @page { size: portrait; margin: 8mm; } }';
     window.print();
     document.body.classList.remove('printing-recon-preview');
+}
+
+// ============================================================
+// FINANCIAL DATA FORM LIVE PREVIEW
+// ============================================================
+const FIN_LOGO_KEY = 'cestis_fin_logo';
+const FIN_ORG_LINE1 = 'HEART/NSTA TRUST';
+const FIN_ORG_LINE2 = 'FINANCIAL DATA COLLECTION FORM';
+const FIN_ORG_LINE3 = '(CTI)';
+const FIN_INSTITUTION = 'Community Educational and Skills Training Institute and Services Limited \u2013 Hazard STC';
+
+function getFinLogo() {
+    try { return localStorage.getItem(FIN_LOGO_KEY) || ''; } catch(e) { return ''; }
+}
+
+function handleFinLogoUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 500000) { alert('Logo file must be under 500KB.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try { localStorage.setItem(FIN_LOGO_KEY, e.target.result); } catch(ex) { alert('Could not save logo.'); }
+        renderFinPreviewPages();
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+function removeFinLogo() {
+    try { localStorage.removeItem(FIN_LOGO_KEY); } catch(e) {}
+    renderFinPreviewPages();
+}
+
+function openFinPreview() {
+    // Build quarter selector options
+    var sel = document.getElementById('finPreviewQuarter');
+    sel.innerHTML = '<option value="active">Current Quarter (' + getQuarterMeta(activeQ).shortLabel + ' ' + activeFY + ')</option>';
+    [1,2,3,4].forEach(function(q) {
+        var qm = getQuarterMeta(q);
+        sel.innerHTML += '<option value="' + q + '"' + (q === activeQ ? ' selected' : '') + '>' + qm.label + ' ' + activeFY + '</option>';
+    });
+    renderFinPreviewPages();
+    document.getElementById('finPreviewOverlay').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFinPreview() {
+    document.getElementById('finPreviewOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function renderFinPreviewPages() {
+    var sel = document.getElementById('finPreviewQuarter').value;
+    var q = sel === 'active' ? activeQ : parseInt(sel);
+    var container = document.getElementById('finPreviewPages');
+    container.innerHTML = generateFinDocPage1(q) + generateFinDocPage2(q);
+}
+
+function getFinQuarterData(q) {
+    // Load data for the specified quarter
+    var qm = getQuarterMeta(q);
+    var data = loadQuarterDataForRecon(activeFY, q);
+    var activeTxns = data.transactions.filter(function(t) { return t.category !== 'Cancelled'; });
+
+    var totalDeposits = 0, totalPayments = 0;
+    var catSpend = {};
+    activeTxns.forEach(function(t) {
+        totalDeposits += t.deposit || 0;
+        totalPayments += t.payment || 0;
+        if (t.payment > 0 && t.category !== 'Subvention') {
+            catSpend[t.category] = (catSpend[t.category] || 0) + t.payment;
+        }
+    });
+
+    var openBal = data.openingBalance;
+    var totalAvailable = openBal + totalDeposits;
+    var closingBalance = openBal + totalDeposits - totalPayments;
+    var bankCharges = catSpend['Bank Charges'] || 0;
+
+    return {
+        openBal: openBal,
+        totalDeposits: totalDeposits,
+        totalPayments: totalPayments,
+        totalAvailable: totalAvailable,
+        closingBalance: closingBalance,
+        bankCharges: bankCharges,
+        catSpend: catSpend,
+        qm: qm
+    };
+}
+
+function getFinReportingPeriod(q) {
+    var qm = getQuarterMeta(q);
+    return qm.monthNames[0] + ' \u2013 ' + qm.monthNames[2] + ' ' + getQuarterCalendarYear(activeFY, q);
+}
+
+function getFinReportDate() {
+    var d = new Date();
+    var dd = String(d.getDate()).padStart(2, '0');
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var yyyy = d.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+}
+
+function generateFinDocPage1(q) {
+    var fd = getFinQuarterData(q);
+    var logo = getFinLogo();
+
+    var h = '<div class="fdoc-page">';
+
+    // Header with logo
+    h += '<div class="rdoc-header">';
+    h += '<div class="rdoc-logo">';
+    if (logo) {
+        h += '<img src="' + logo + '" alt="Logo">';
+    } else {
+        h += '<div class="rdoc-logo-placeholder" onclick="document.getElementById(\'finLogoInput\').click()">Click to<br>upload<br>logo</div>';
+    }
+    h += '</div>';
+    h += '<div class="rdoc-header-text">';
+    h += '<h2>' + FIN_ORG_LINE1 + '</h2>';
+    h += '<h3><i>' + FIN_ORG_LINE2 + '</i></h3>';
+    h += '<h4><i>' + FIN_ORG_LINE3 + '</i></h4>';
+    h += '</div>';
+    h += '</div>';
+
+    // Institution/Project and Reporting Period row
+    h += '<div class="fdoc-info-row">';
+    h += '<span><b>INSTITUTION/PROJECT:</b> &nbsp; <span class="fdoc-info-val">' + FIN_INSTITUTION + '</span></span>';
+    h += '</div>';
+    h += '<div class="fdoc-info-row">';
+    h += '<span><b>REPORTING PERIOD:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportingPeriod(q) + '</span></span>';
+    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate() + '</span></span>';
+    h += '</div>';
+
+    // Financial summary table
+    h += '<table class="fdoc-summary-table">';
+    h += '<tr class="fdoc-st-header"><td></td><td style="text-align:right;font-weight:700;">$</td></tr>';
+    h += '<tr><td class="fdoc-st-label">OPENING SUBVENTION BALANCE</td><td class="fdoc-st-val">' + fmt(fd.openBal) + '</td></tr>';
+    h += '<tr><td class="fdoc-st-label">SUBVENTION RECEIVED DURING THE PERIOD</td><td class="fdoc-st-val">' + fmt(fd.totalDeposits) + '</td></tr>';
+    h += '<tr><td class="fdoc-st-label">OTHER DEPOSITS</td><td class="fdoc-st-val">$-</td></tr>';
+    h += '<tr class="fdoc-st-spacer"><td></td><td></td></tr>';
+    h += '<tr><td class="fdoc-st-label">TOTAL SUBVENTION AVAILABLE</td><td class="fdoc-st-val">' + fmt(fd.totalAvailable) + '</td></tr>';
+    h += '<tr><td class="fdoc-st-label">AMOUNT SPENT DURING PERIOD</td><td class="fdoc-st-val">' + fmt(fd.totalPayments) + '</td></tr>';
+    h += '<tr class="fdoc-st-spacer"><td></td><td></td></tr>';
+    h += '<tr><td class="fdoc-st-label">CLOSING BALANCE</td><td class="fdoc-st-val">' + fmt(fd.closingBalance) + '</td></tr>';
+    h += '</table>';
+
+    // NB note
+    h += '<div class="fdoc-note">NB. &nbsp; PLEASE LIST THE SPECIFIC ITEMS OF EXPENSES FOR WHICH THE</div>';
+    h += '<div class="fdoc-note-sub" style="padding-left:36px;">SUBVENTION WAS USED ON PAGE 2</div>';
+
+    // Major Activities
+    h += '<div class="fdoc-activities-title">MAJOR ACTIVITIES ACCOMPLISHED DURING PERIOD:</div>';
+    for (var i = 1; i <= 5; i++) {
+        h += '<div class="fdoc-activity-line"><span class="fdoc-activity-num">' + i + '.</span><span class="fdoc-activity-blank"></span></div>';
+    }
+
+    // Signatures
+    h += '<div class="fdoc-signatures">';
+    h += '<div class="fdoc-sig-row"><div class="fdoc-sig-line"><b>Prepared By:</b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-line"><b>Date:</b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '<div class="fdoc-sig-row"><div class="fdoc-sig-line"><b>Checked By:</b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-line"><b>Date:</b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '<div class="fdoc-sig-row"><div class="fdoc-sig-line fdoc-sig-verified"><b><i>Verified By:</i></b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-line"><b><i>Date:</i></b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '</div>';
+
+    // Footer
+    h += '<div class="fdoc-footer-wrap">';
+    h += '<div style="display:flex;justify-content:space-between;font-size:7pt;color:#999;margin-top:10px;">';
+    h += '<span>CTI/Financial Data Form/Version 2:0:12/03/2020</span>';
+    h += '<span>Page 1 of 2</span>';
+    h += '</div>';
+    h += '</div>';
+
+    h += '</div>'; // end page
+    return h;
+}
+
+function generateFinDocPage2(q) {
+    var fd = getFinQuarterData(q);
+    var logo = getFinLogo();
+
+    var h = '<div class="fdoc-page">';
+
+    // Header with logo (same as page 1)
+    h += '<div class="rdoc-header">';
+    h += '<div class="rdoc-logo">';
+    if (logo) {
+        h += '<img src="' + logo + '" alt="Logo">';
+    } else {
+        h += '<div class="rdoc-logo-placeholder" onclick="document.getElementById(\'finLogoInput\').click()">Click to<br>upload<br>logo</div>';
+    }
+    h += '</div>';
+    h += '<div class="rdoc-header-text">';
+    h += '<h2>' + FIN_ORG_LINE1 + '</h2>';
+    h += '<h3><i>' + FIN_ORG_LINE2 + '</i></h3>';
+    h += '<h4><i>' + FIN_ORG_LINE3 + '</i></h4>';
+    h += '</div>';
+    h += '</div>';
+
+    // Institution/Project and Reporting Period row
+    h += '<div class="fdoc-info-row">';
+    h += '<span><b>INSTITUTION/PROJECT:</b> &nbsp; <span class="fdoc-info-val">' + FIN_INSTITUTION + '</span></span>';
+    h += '</div>';
+    h += '<div class="fdoc-info-row">';
+    h += '<span><b>REPORTING PERIOD:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportingPeriod(q) + '</span></span>';
+    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate() + '</span></span>';
+    h += '</div>';
+
+    // Items heading
+    h += '<div class="fdoc-items-heading">ITEMS OF RECIPENT EXPENSES (FUNDED BY HEART SUBVENTION)</div>';
+
+    // Items table
+    h += '<table class="fdoc-items-table">';
+    h += '<thead><tr><th style="text-decoration:underline;">ITEMS</th><th style="text-align:right;text-decoration:underline;">EXPENSES $</th></tr></thead>';
+    h += '<tbody>';
+
+    // Get budget entries and spending
+    var totalExpenses = 0;
+    var shownCats = {};
+
+    // Show all BUDGET categories first
+    var budgetKeys = Object.keys(BUDGET);
+    budgetKeys.sort(function(a, b) { return a.localeCompare(b); });
+
+    budgetKeys.forEach(function(cat) {
+        shownCats[cat] = true;
+        var amt = fd.catSpend[cat] || 0;
+        var display = amt > 0 ? fmt(amt) : '$-';
+        h += '<tr><td>' + cat.toUpperCase() + '</td><td>' + display + '</td></tr>';
+        totalExpenses += amt;
+    });
+
+    // Show unbudgeted categories
+    Object.keys(fd.catSpend).sort().forEach(function(cat) {
+        if (cat === 'Subvention' || shownCats[cat]) return;
+        var amt = fd.catSpend[cat];
+        h += '<tr><td>' + cat.toUpperCase() + '</td><td>' + fmt(amt) + '</td></tr>';
+        totalExpenses += amt;
+    });
+
+    // Total row
+    h += '<tr class="fdoc-total-row"><td><b>TOTAL:</b></td><td><b>' + fmt(totalExpenses) + '</b></td></tr>';
+    h += '</tbody></table>';
+
+    // Signatures with role labels
+    h += '<div class="fdoc-signatures">';
+    h += '<div class="fdoc-sig-row">';
+    h += '<div><div class="fdoc-sig-line"><b><i>Prepared By:</i></b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-role">Coordinator (Signature)</div></div>';
+    h += '<div><div class="fdoc-sig-line"><b>Date:</b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '</div>';
+    h += '<div class="fdoc-sig-row">';
+    h += '<div><div class="fdoc-sig-line"><b>Checked By:</b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-role">Treasurer (Signature)</div></div>';
+    h += '<div><div class="fdoc-sig-line"><b>Date:</b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '</div>';
+    h += '<div class="fdoc-sig-row">';
+    h += '<div><div class="fdoc-sig-line"><b>Verified By:</b><span class="fdoc-sig-blank"></span></div><div class="fdoc-sig-role"><b>CTI Officer (Signature)</b></div></div>';
+    h += '<div><div class="fdoc-sig-line"><b>Date:</b><span class="fdoc-sig-blank"></span></div></div>';
+    h += '</div>';
+    h += '</div>';
+
+    // Footer
+    h += '<div class="fdoc-footer-wrap">';
+    h += '<div style="display:flex;justify-content:space-between;font-size:7pt;color:#999;margin-top:10px;">';
+    h += '<span>CTI/Financial Data Form/Version 2:0:12/03/2020</span>';
+    h += '<span>Page 2 of 2</span>';
+    h += '</div>';
+    h += '</div>';
+
+    h += '</div>'; // end page
+    return h;
+}
+
+function printFinPreview() {
+    document.body.classList.add('printing-fin-preview');
+    var printStyle = document.getElementById('finPrintPageStyle');
+    if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'finPrintPageStyle';
+        document.head.appendChild(printStyle);
+    }
+    printStyle.textContent = '@media print { @page { size: portrait; margin: 8mm; } }';
+    window.print();
+    document.body.classList.remove('printing-fin-preview');
 }
 
 // ============================================================
