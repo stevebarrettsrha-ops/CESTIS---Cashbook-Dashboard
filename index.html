@@ -6538,7 +6538,7 @@ function renderMonthlyRecon() {
             const monthNum = qm.monthNums[mi];
 
             const monthTxns = activeTxns.filter(t => {
-                if (!t.date) return false;
+                if (!t.date) return mi === 0; // Include dateless transactions in first month of quarter
                 return parseInt(t.date.split('-')[1]) === monthNum;
             });
 
@@ -6898,7 +6898,8 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
     for (var i = 0; i < thisMonthIdx; i++) {
         var prevMonthNum = qm.monthNums[i];
         var prevTxns = activeTxns.filter(function(t) {
-            return t.date && parseInt(t.date.split('-')[1]) === prevMonthNum;
+            if (!t.date) return i === 0; // Include dateless transactions in first month of quarter
+            return parseInt(t.date.split('-')[1]) === prevMonthNum;
         });
         var prevDep = prevTxns.reduce(function(s,t){ return s + (t.deposit||0); }, 0);
         var prevPay = prevTxns.reduce(function(s,t){ return s + (t.payment||0); }, 0);
@@ -6908,7 +6909,8 @@ function generateReconDocPage(fy, q, mKey, monthName, monthNum) {
 
     // This month's transactions
     var monthTxns = activeTxns.filter(function(t) {
-        return t.date && parseInt(t.date.split('-')[1]) === monthNum;
+        if (!t.date) return thisMonthIdx === 0; // Include dateless transactions in first month of quarter
+        return parseInt(t.date.split('-')[1]) === monthNum;
     });
     var monthDeposits = monthTxns.reduce(function(s,t){ return s + (t.deposit||0); }, 0);
     var monthPayments = monthTxns.reduce(function(s,t){ return s + (t.payment||0); }, 0);
