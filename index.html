@@ -7322,12 +7322,12 @@ function getFinReportingPeriod(q) {
     return qm.monthNames[0] + ' \u2013 ' + qm.monthNames[2] + ' ' + getQuarterCalendarYear(activeFY, q);
 }
 
-function getFinReportDate() {
-    var d = new Date();
-    var dd = String(d.getDate()).padStart(2, '0');
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    var yyyy = d.getFullYear();
-    return dd + '/' + mm + '/' + yyyy;
+function getFinReportDate(q) {
+    var qm = getQuarterMeta(q);
+    var lastMonthNum = qm.monthNums[2];
+    var calYear = getQuarterCalendarYear(activeFY, q);
+    var mm = String(lastMonthNum).padStart(2, '0');
+    return '25/' + mm + '/' + calYear;
 }
 
 function generateFinDocPage1(q) {
@@ -7358,7 +7358,7 @@ function generateFinDocPage1(q) {
     h += '</div>';
     h += '<div class="fdoc-info-row">';
     h += '<span><b>REPORTING PERIOD:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportingPeriod(q) + '</span></span>';
-    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate() + '</span></span>';
+    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate(q) + '</span></span>';
     h += '</div>';
 
     // Financial summary table
@@ -7431,7 +7431,7 @@ function generateFinDocPage2(q) {
     h += '</div>';
     h += '<div class="fdoc-info-row">';
     h += '<span><b>REPORTING PERIOD:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportingPeriod(q) + '</span></span>';
-    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate() + '</span></span>';
+    h += '<span><b>DATE:</b> &nbsp; <span class="fdoc-info-val">' + getFinReportDate(q) + '</span></span>';
     h += '</div>';
 
     // Items heading
