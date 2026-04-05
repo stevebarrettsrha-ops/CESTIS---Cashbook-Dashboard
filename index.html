@@ -910,28 +910,46 @@ tbody tr.bank-charge { color:var(--text3); font-style:italic; }
     #page-reports > .card:not(#reportPreviewCard) { display:none !important; }
     #reportPreviewCard { display:block !important; border:none !important; padding:0 !important; margin:0 !important; background:transparent !important; }
     #reportPreviewCard .card-title { display:none !important; }
-    .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; }
-    .report-sheet { box-shadow:none !important; padding:0 !important; margin:0 !important; max-width:100% !important; width:100% !important; }
-    .report-sheet table { page-break-inside:auto !important; font-size:7pt !important; border:1px solid #999 !important; }
+    .report-preview { background:transparent !important; padding:0 !important; max-height:none !important; overflow:visible !important; width:100% !important; max-width:100% !important; }
+    .report-sheet { box-shadow:none !important; padding:0 !important; margin:0 !important; max-width:100% !important; width:100% !important; overflow:visible !important; }
+    .report-sheet table { page-break-inside:auto !important; font-size:7pt !important; border:1px solid #999 !important; width:100% !important; table-layout:auto !important; }
     .report-sheet thead { display:table-header-group; }
-    .report-sheet thead th { border:1px solid #999 !important; border-bottom:2px solid #666 !important; background:#f3f4f6 !important; color:#111 !important; }
-    .report-sheet tbody td { border:1px solid #bbb !important; }
+    .report-sheet thead th { border:1px solid #999 !important; border-bottom:2px solid #666 !important; background:#f3f4f6 !important; color:#111 !important; white-space:normal !important; word-wrap:break-word !important; }
+    .report-sheet tbody td { border:1px solid #bbb !important; white-space:normal !important; word-wrap:break-word !important; }
     .report-sheet tfoot td { border:1px solid #999 !important; }
     .report-sheet tr { page-break-inside:avoid; }
     .report-sheet .report-header-block { margin-bottom:10px; padding-bottom:8px; }
     .report-sheet .report-title { font-size:14pt !important; }
     .report-sheet .report-subtitle { font-size:10pt !important; }
     /* Cashbook print: unstick columns for flat print, preserve colors */
-    .cb-scroll-wrapper { overflow:visible !important; }
+    .cb-scroll-wrapper { overflow:visible !important; width:100% !important; }
+    .cb-scroll-wrapper table { width:100% !important; table-layout:auto !important; border-collapse:collapse !important; border-spacing:0 !important; }
     .cb-scroll-wrapper .cb-sticky { position:static !important; }
+    .cb-scroll-wrapper .cb-col0,
+    .cb-scroll-wrapper .cb-col1,
+    .cb-scroll-wrapper .cb-col2,
+    .cb-scroll-wrapper .cb-col3,
+    .cb-scroll-wrapper .cb-col4,
+    .cb-scroll-wrapper .cb-col5 {
+        width:auto !important; min-width:0 !important; max-width:none !important; left:auto !important;
+    }
+    .cb-scroll-wrapper .cb-col0 { width:8% !important; }
+    .cb-scroll-wrapper .cb-col1 { width:7% !important; }
+    .cb-scroll-wrapper .cb-col2 { width:28% !important; }
+    .cb-scroll-wrapper .cb-col3 { width:11% !important; }
+    .cb-scroll-wrapper .cb-col4 { width:11% !important; }
+    .cb-scroll-wrapper .cb-col5 { width:12% !important; border-right:2px solid #333 !important; }
     .report-sheet .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
     .report-sheet .cb-subvention-row td { background:#fff9c4 !important; }
     .report-sheet .cb-balance-bf td { background:#e8f5e9 !important; }
     .report-sheet .cb-total-row td { background:#e3f2fd !important; }
-    .cb-scroll-wrapper th, .cb-scroll-wrapper td { border:1px solid #999 !important; padding:2px 4px !important; font-size:6.5pt !important; }
+    .cb-scroll-wrapper th, .cb-scroll-wrapper td {
+        border:1px solid #999 !important; padding:2px 3px !important; font-size:6.5pt !important;
+        white-space:normal !important; word-wrap:break-word !important; overflow-wrap:break-word !important;
+    }
     /* Minor columns print: stacked tables */
-    .cb-minor-table { page-break-inside:avoid !important; border-collapse:collapse !important; }
-    .cb-minor-table td, .cb-minor-table th { border:1px solid #999 !important; padding:3px 5px !important; font-size:7pt !important; }
+    .cb-minor-table { page-break-inside:avoid !important; border-collapse:collapse !important; width:100% !important; table-layout:auto !important; }
+    .cb-minor-table td, .cb-minor-table th { border:1px solid #999 !important; padding:3px 5px !important; font-size:7pt !important; white-space:normal !important; word-wrap:break-word !important; }
     .cb-minor-table .cb-header-row th { background:#2e7d32 !important; color:#fff !important; }
     /* Print landscape hint for cashbook */
     @page { margin: 10mm; }
@@ -5365,14 +5383,14 @@ function generateReport() {
                 if (chunkIdx > 0) html += '<div style="height:12px;"></div>';
                 html += '<table class="cb-minor-table" style="width:100%;border-collapse:collapse;font-size:8pt;">';
 
-                var labelStyle = 'font-size:7pt;font-weight:700;white-space:nowrap;border:1px solid #999;padding:3px 6px;text-align:left;width:90px;min-width:90px;';
+                var labelStyle = 'font-size:7pt;font-weight:700;white-space:nowrap;border:1px solid #999;padding:3px 6px;text-align:left;width:80px;';
 
                 // Column headers
                 html += '<thead>';
                 html += '<tr class="cb-header-row">';
                 html += '<th style="' + labelStyle + 'background:#2e7d32;color:#fff;"></th>';
                 chunkKeys.forEach(function(k) {
-                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:80px;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;background:#2e7d32;color:#fff;border:1px solid #999;padding:3px 5px;">' + k + '</th>';
                 });
                 html += '</tr>';
                 html += '</thead>';
@@ -5494,7 +5512,7 @@ function generateReport() {
             html += stickyTh(5, 'Balance', 'amount', 'background:#2e7d32;color:#fff;');
             if (showMinor) {
                 budgetKeys.forEach(function(k) {
-                    html += '<th class="amount" style="font-size:7pt;white-space:normal;min-width:90px;background:#2e7d32;color:#fff;">' + k + '</th>';
+                    html += '<th class="amount" style="font-size:7pt;white-space:normal;background:#2e7d32;color:#fff;">' + k + '</th>';
                 });
             }
             html += '</tr>';
